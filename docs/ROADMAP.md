@@ -17,7 +17,7 @@ last_updated: 2026-11-27
 - [ ] Bước 0 kiểm chứng với 3 chủ DN xong (mock + phỏng vấn).
 - [ ] Trả lời được các câu hỏi ở `docs/requirements.md` mục 0.4 có ảnh hưởng tới MVP (máy chủ, đăng nhập).
 - [x] Duyệt P-01 … P-09 (2026-11-27 → 0.2 #015 – #022).
-- [ ] Duyệt P-10 … P-13 (nạp tiền, sandbox, đơn vị credit, hạn credit).
+- [x] Duyệt P-10 … P-13 (2026-11-27 → 0.2 #023 – #026).
 - [ ] Kiểm tra điều khoản Anthropic / OpenAI về tính phí lại dưới dạng credit; chuẩn bị pháp nhân xuất hoá đơn.
 
 ## Tổng quan
@@ -183,7 +183,7 @@ tính chi phí mỗi lần gọi, trừ credit của công ty theo hệ số gi�
 cho platform admin cộng / trừ credit tay có ghi lý do. Nạp tiền VietQR làm ở change 16.
 
 Đọc trước:
-- docs/requirements.md 0.2 #016 #018, 0.3 P-12 P-13, FR-04-05, FR-10-01, FR-10-03, FR-13, NFR-02, NFR-09
+- docs/requirements.md 0.2 #016 #018 #025 #026, FR-04-05, FR-10-01, FR-10-03, FR-13, NFR-02, NFR-09
 - docs/architecture.md mục 6 (Credit), 7
 - CLAUDE.md mục "Bí mật", "Chi phí"
 
@@ -524,7 +524,7 @@ nhận file kết quả, ghi SkillRun + CostEntry, giới hạn thời gian / du
 và cho chạy thử với file giả trước khi duyệt.
 
 Đọc trước:
-- docs/requirements.md 0.2 #015, 0.3 P-11, FR-03-06, FR-09-02, FR-09-02b, FR-14
+- docs/requirements.md 0.2 #015 #024, FR-03-06, FR-09-02, FR-09-02b, FR-14
 - docs/architecture.md mục 6 (Chạy script của skill), 12
 - Tài liệu code execution + Skills API của Anthropic; công cụ tương đương của OpenAI
 
@@ -557,7 +557,7 @@ platform admin xác nhận (hoặc huỷ) trên màn quản trị → cộng cre
 Owner xem lịch sử, tải sao kê tháng. Ghi số hoá đơn điện tử (xuất bên ngoài) vào TopUp.
 
 Đọc trước:
-- docs/requirements.md 0.2 #016, 0.3 P-10 P-12 P-13, FR-13
+- docs/requirements.md 0.2 #016 #023 #025 #026, FR-13
 - packages/billing (từ change 4)
 - docs/design/screens/credit.html, platform-admin.html
 
