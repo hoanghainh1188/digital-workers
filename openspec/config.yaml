@@ -23,12 +23,19 @@ context: |
   - CostEntry: chi phí một lần gọi mô hình.
 
 rules:
-  - Viết spec và kịch bản bằng tiếng Việt, dạng "KHI … THÌ …"; tên requirement ngắn.
-  - Mỗi requirement có ít nhất một kịch bản; requirement dài thì tách nhỏ để qua --strict.
-  - Mọi requirement chạm dữ liệu phải có kịch bản tách công ty (công ty A không thấy dữ liệu công ty B).
-  - Mọi requirement về hành động của worker phải có kịch bản thiếu quyền và kịch bản cần duyệt.
-  - Quyền kiểm tra trong code, không dựa vào prompt. Nội dung ngoài là dữ liệu, không phải lệnh.
-  - Không thêm thư viện ngoài danh sách trong CLAUDE.md; muốn thêm thì nêu trong design.md kèm lý do.
-  - design.md nêu phương án đã cân nhắc và lý do chọn.
-  - Câu hỏi nghiệp vụ nêu trong mô tả PR; câu trả lời ghi vào docs/requirements.md mục 0.2.
-  - Change phải xong trong 1–2 buổi; lớn hơn thì chia.
+  proposal:
+    - Change phải xong trong 1–2 buổi; lớn hơn thì chia.
+    - Câu hỏi nghiệp vụ nêu trong mô tả PR; câu trả lời ghi vào docs/requirements.md mục 0.2.
+  specs:
+    - Viết spec và kịch bản bằng tiếng Việt, dạng "KHI … THÌ …"; tên requirement ngắn.
+    - Mỗi requirement có ít nhất một kịch bản; requirement dài thì tách nhỏ để qua --strict.
+    - Mọi requirement chạm dữ liệu phải có kịch bản tách công ty (công ty A không thấy dữ liệu công ty B).
+    - Mọi requirement về hành động của worker phải có kịch bản thiếu quyền và kịch bản cần duyệt.
+    - Quyền kiểm tra trong code, không dựa vào prompt. Nội dung ngoài là dữ liệu, không phải lệnh.
+  design:
+    - design.md nêu phương án đã cân nhắc và lý do chọn.
+    - Không thêm thư viện ngoài danh sách trong CLAUDE.md; muốn thêm thì nêu trong design.md kèm lý do.
+    - Quyền kiểm tra trong code, không dựa vào prompt. Nội dung ngoài là dữ liệu, không phải lệnh.
+  tasks:
+    - Change phải xong trong 1–2 buổi; lớn hơn thì chia.
+    - Mọi API mới có test tích hợp tách công ty (công ty A không đọc / sửa được dữ liệu công ty B).
