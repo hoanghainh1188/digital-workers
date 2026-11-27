@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thư viện kỹ năng — Digital Workers (thiết kế)</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    :root { --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace; }
+    .tabs { display: flex; gap: 0.25rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); overflow-x: auto; }
+    .tab { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.625rem 0.875rem; border: 0; background: none; font-size: var(--text-sm); font-weight: 500; color: var(--muted-foreground); white-space: nowrap; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .tab[aria-selected='true'] { color: var(--foreground); border-bottom-color: var(--primary); }
+    .tab .n { font-variant-numeric: tabular-nums; color: var(--muted-foreground); font-weight: 600; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+    .search { position: relative; flex: 1 1 15rem; max-width: 22rem; }
+    .search svg { position: absolute; left: 0.75rem; top: 50%; translate: 0 -50%; width: 1rem; height: 1rem; color: var(--muted-foreground); }
+    .search .input { padding-left: 2.25rem; height: 2.375rem; }
+    .toolbar .select { width: auto; height: 2.375rem; font-size: var(--text-sm); }
+
+    /* Risk (FR-09-04) */
+    .risk { display: inline-flex; align-items: center; gap: 0.3rem; font-size: var(--text-xs); font-weight: 600; white-space: nowrap; }
+    .risk i { display: inline-flex; gap: 2px; }
+    .risk i b { width: 4px; height: 10px; border-radius: 1px; background: var(--border-strong); }
+    .risk.low { color: var(--success-ink); } .risk.low i b:nth-child(1) { background: var(--success); }
+    .risk.mid { color: var(--warning-ink); } .risk.mid i b:nth-child(-n+2) { background: var(--warning); }
+    .risk.high { color: var(--destructive-ink); } .risk.high i b { background: var(--destructive); }
+
+    .skills { display: grid; gap: 0.5rem; }
+    .skill {
+      display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: 0.5rem 1.25rem; align-items: center;
+      padding: 0.875rem 1rem; border-radius: 12px; background: var(--background); border: 1px solid var(--border);
+      text-decoration: none; color: inherit; box-shadow: var(--shadow-sm);
+      transition: border-color var(--duration-fast), box-shadow var(--duration-normal) var(--ease-out-expo);
+    }
+    .skill:hover { border-color: oklch(82% 0.06 258); box-shadow: var(--shadow-card); }
+    .skill:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+    .skill-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 10px; background: var(--canvas); border: 1px solid var(--border); color: var(--primary-ink); font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; }
+    .skill-main { min-width: 0; }
+    .skill-main b { display: block; font-size: var(--text-sm); }
+    .skill-main code { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted-foreground); }
+    .skill-main p { font-size: var(--text-xs); color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.125rem; }
+    .ver { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.4rem; border-radius: 5px; background: var(--muted); color: var(--foreground); }
+    .used { display: flex; align-items: center; gap: 0.25rem; font-size: var(--text-xs); color: var(--muted-foreground); min-width: 7.5rem; }
+    .used .worker-avatar { width: 1.5rem; height: 1.5rem; font-size: 0.5rem; border-radius: 7px; margin-left: -0.3rem; box-shadow: 0 0 0 2px var(--background); }
+    .used .worker-avatar:first-child { margin-left: 0; }
+    .used .worker-avatar::after { display: none; }
+    .tags { display: flex; gap: 0.375rem; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+
+    .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem; }
+    .tpl { display: grid; gap: 0.5rem; align-content: start; padding: 1rem; border-radius: 12px; background: var(--background); border: 1px solid var(--border); }
+    .tpl b { font-size: var(--text-sm); }
+    .tpl p { font-size: var(--text-xs); color: var(--muted-foreground); }
+    .tpl .row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem; }
+
+    /* Detail */
+    .detail { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 1fr); gap: 1.25rem; align-items: start; }
+    .dhead { display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: start; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .dhead h1 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+    .dhead code { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--muted-foreground); }
+    .dhead p { margin-top: 0.375rem; color: var(--muted-foreground); max-width: 60ch; }
+    .dhead .meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-top: 0.75rem; align-items: center; font-size: var(--text-sm); }
+    .dactions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
+    .dhead .skill-icon { width: 3.25rem; height: 3.25rem; font-size: 0.85rem; border-radius: 14px; }
+
+    .panel { padding: 1.25rem 1.5rem; }
+    .panel h2 { font-size: var(--text-base); font-weight: 650; margin-bottom: 0.875rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.25rem 0.5rem; }
+    .panel h2 .hint { font-size: var(--text-xs); font-weight: 400; color: var(--muted-foreground); }
+    .files { display: grid; grid-template-columns: 13rem minmax(0, 1fr); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .tree { list-style: none; margin: 0; padding: 0.5rem; background: var(--canvas); border-right: 1px solid var(--border); font-family: var(--font-mono); font-size: 0.78rem; }
+    .tree li { padding: 0.35rem 0.5rem; border-radius: 6px; display: flex; gap: 0.4rem; align-items: center; color: var(--muted-foreground); white-space: nowrap; }
+    .tree li.on { background: var(--background); color: var(--foreground); box-shadow: var(--shadow-sm); }
+    .tree li.in { padding-left: 1.4rem; }
+    pre.md { margin: 0; padding: 1rem 1.125rem; overflow: auto; max-height: 26rem; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; background: var(--background); white-space: pre; }
+    pre.md .fm { color: var(--role-admin-ink); }
+    pre.md .h { color: var(--primary-ink); font-weight: 700; }
+    pre.md .c { color: var(--muted-foreground); }
+
+    .versions { list-style: none; margin: 0; padding: 0; display: grid; }
+    .versions li { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.75rem; padding: 0 0 1rem; }
+    .versions li::before { content: ''; position: absolute; left: 1.05rem; top: 1.8rem; bottom: 0; width: 1.5px; background: var(--border); }
+    .versions li:last-child::before { display: none; }
+    .versions .ver { align-self: start; }
+    .versions .info { font-size: var(--text-sm); display: grid; gap: 0.25rem; }
+    .versions .info small { color: var(--muted-foreground); font-size: var(--text-xs); }
+    .versions .info .row { display: flex; flex-wrap: wrap; gap: 0.375rem; align-items: center; }
+    .versions .btn { height: 1.875rem; font-size: var(--text-xs); padding: 0 0.625rem; }
+
+    .assigned { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.625rem; }
+    .assigned li { display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem; align-items: center; font-size: var(--text-sm); }
+    .assigned .worker-avatar { width: 2rem; height: 2rem; font-size: 0.6rem; border-radius: 9px; }
+    .assigned small { display: block; font-size: var(--text-xs); color: var(--muted-foreground); }
+
+    /* Import */
+    .drop { display: grid; grid-template-columns: auto 1fr auto; gap: 0.875rem; align-items: center; padding: 1rem; border-radius: 12px; border: 1.5px dashed var(--border-strong); background: var(--canvas); }
+    .drop .zip { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 10px; background: var(--primary-soft); color: var(--primary-ink); font-weight: 700; font-size: 0.7rem; }
+    .drop small { display: block; color: var(--muted-foreground); font-size: var(--text-xs); }
+    .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; font-size: var(--text-sm); }
+    .checks li { display: grid; grid-template-columns: 1.25rem 1fr; gap: 0.5rem; align-items: start; }
+    .checks .ok { color: var(--success-ink); } .checks .warn { color: var(--warning-ink); } .checks .bad { color: var(--destructive-ink); }
+    .checks small { display: block; color: var(--muted-foreground); font-size: var(--text-xs); }
+    .checks code { font-family: var(--font-mono); font-size: 0.78rem; background: var(--muted); padding: 0 0.3rem; border-radius: 4px; }
+
+    @media (max-width: 1000px) {
+      .skill { grid-template-columns: auto minmax(0, 1fr) auto; }
+      .skill .used, .skill .ver-col { display: none; }
+      .detail { grid-template-columns: minmax(0, 1fr); }
+      .dhead { grid-template-columns: auto 1fr; }
+      .dactions { grid-column: 1 / -1; justify-content: flex-start; }
+    }
+    @media (max-width: 640px) {
+      .files { grid-template-columns: 1fr; }
+      .tree { border-right: 0; border-bottom: 1px solid var(--border); }
+      .skill { grid-template-columns: auto minmax(0, 1fr); }
+      .skill .tags { grid-column: 1 / -1; justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="proto-bar" role="region" aria-label="Điều khiển bản thiết kế">
+    <strong>Thiết kế · Thư viện kỹ năng</strong>
+    <fieldset>
+      <legend>Vai trò</legend>
+      <label><input type="radio" name="role" value="owner" checked><span>Owner / Admin</span></label>
+      <label><input type="radio" name="role" value="manager"><span>Trưởng phòng / Nhân viên</span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Màn</legend>
+      <label><input type="radio" name="view" value="list" checked><span>Thư viện</span></label>
+      <label><input type="radio" name="view" value="templates"><span>Mẫu có sẵn</span></label>
+      <label><input type="radio" name="view" value="detail"><span>Chi tiết kỹ năng</span></label>
+      <label><input type="radio" name="view" value="import"><span>Nhập .zip</span></label>
+      <label><input type="radio" name="view" value="import-error"><span>Nhập .zip lỗi</span></label>
+    </fieldset>
+    <a href="worker-profile.html">Hồ sơ worker →</a>
+  </div>
+
+  <div class="app">
+    <nav class="sidebar" aria-label="Điều hướng chính">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">DW</span> Digital Workers</div>
+      <div class="company-switch"><span class="avatar" aria-hidden="true">AP</span><div>Gốm An Phú<small>23 người · 7 nhân viên số</small></div></div>
+      <div class="nav-group">
+        <h2>Làm việc</h2>
+        <a class="nav-link" href="org-chart.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3h14v3"/></svg>Sơ đồ nhân sự số</a>
+        <a class="nav-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></svg>Hộp duyệt việc<span class="soon">SẮP CÓ</span></a>
+        <a class="nav-link" href="skill-library.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/></svg>Thư viện kỹ năng</a>
+      </div>
+      <div class="nav-group">
+        <h2>Công ty</h2>
+        <a class="nav-link" href="departments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>Phòng ban</a>
+        <a class="nav-link" href="users.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Người dùng</a>
+      </div>
+      <div class="sidebar-footer">
+        <span class="avatar" aria-hidden="true" data-show="role:owner">MĐ</span><span data-show="role:owner">Trần Minh Đức<small>Owner</small></span>
+        <span class="avatar a2" aria-hidden="true" data-show="role:manager" hidden>NL</span><span data-show="role:manager" hidden>Nguyễn Thị Lan<small>Trưởng phòng · Kinh doanh</small></span>
+      </div>
+    </nav>
+
+    <main class="main" style="max-width: 80rem">
+      <!-- ================= LIBRARY ================= -->
+      <div data-show="view:list,templates,import,import-error">
+        <header class="page-head">
+          <div>
+            <p class="eyebrow">Làm việc</p>
+            <h1>Thư viện kỹ năng</h1>
+            <p>Mỗi kỹ năng là một quy trình viết sẵn (chuẩn <code>SKILL.md</code>) để nhân viên số làm theo. Sửa là ra version mới; nhân viên số chỉ đổi sang version mới khi được duyệt.</p>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+            <button class="btn btn-outline" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Nhập .zip</button>
+            <button class="btn btn-primary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Viết kỹ năng</button>
+          </div>
+        </header>
+
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" type="button" data-show="view:list,import,import-error" aria-selected="true">Của công ty <span class="n">5</span></button>
+          <button class="tab" role="tab" type="button" data-show="view:templates" hidden aria-selected="false">Của công ty <span class="n">5</span></button>
+          <button class="tab" role="tab" type="button" data-show="view:list,import,import-error" aria-selected="false">Mẫu có sẵn <span class="n">10</span></button>
+          <button class="tab" role="tab" type="button" data-show="view:templates" hidden aria-selected="true">Mẫu có sẵn <span class="n">10</span></button>
+          <button class="tab" role="tab" type="button" aria-selected="false">Kể quy trình bằng tiếng Việt <span class="soon-tag">CHANGE 14</span></button>
+        </div>
+
+        <div data-show="view:list,import,import-error">
+          <div class="toolbar">
+            <label class="search"><span class="sr-only">Tìm kỹ năng</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input class="input" type="search" placeholder="Tìm theo tên hoặc mô tả"></label>
+            <label><span class="sr-only">Trạng thái</span><select class="select"><option>Mọi trạng thái</option><option>Đang dùng</option><option>Chờ duyệt</option><option>Nháp</option><option>Lưu trữ</option></select></label>
+            <label><span class="sr-only">Rủi ro</span><select class="select"><option>Mọi mức rủi ro</option><option>Thấp</option><option>Trung bình</option><option>Cao</option></select></label>
+          </div>
+
+          <div class="skills">
+            <a class="skill" href="skill-library.html?view=detail">
+              <span class="skill-icon" aria-hidden="true">BG</span>
+              <div class="skill-main"><b>Lập báo giá gốm cho đại lý</b><code>lap-bao-gia</code><p>Đọc yêu cầu, tra bảng giá + chiết khấu đại lý, xuất báo giá theo mẫu Excel.</p></div>
+              <div class="used"><span class="worker-avatar" aria-hidden="true">MB</span><span class="worker-avatar w2" aria-hidden="true">AĐ</span><span>2 đang dùng</span></div>
+              <div class="ver-col"><span class="ver">v2</span></div>
+              <div class="tags"><span class="badge badge-warning">v3 chờ duyệt</span><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span></div>
+            </a>
+            <a class="skill" href="skill-library.html?view=detail">
+              <span class="skill-icon" aria-hidden="true">CN</span>
+              <div class="skill-main"><b>Tổng hợp công nợ đại lý</b><code>tong-hop-cong-no</code><p>Đọc sheet công nợ, nhóm theo đại lý và hạn, soạn báo cáo sáng thứ Hai.</p></div>
+              <div class="used"><span class="worker-avatar w3" aria-hidden="true">TC</span><span>1 đang dùng</span></div>
+              <div class="ver-col"><span class="ver">v4</span></div>
+              <div class="tags"><span class="badge badge-success">Đang dùng</span><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span></div>
+            </a>
+            <a class="skill" href="skill-library.html?view=detail">
+              <span class="skill-icon" aria-hidden="true">ĐT</span>
+              <div class="skill-main"><b>Chính sách đổi trả</b><code>chinh-sach-doi-tra</code><p>Trả lời nhân viên về điều kiện đổi trả hàng lỗi, vỡ khi vận chuyển.</p></div>
+              <div class="used"><span class="worker-avatar w2" aria-hidden="true">VK</span><span>1 đang dùng</span></div>
+              <div class="ver-col"><span class="ver">v1</span></div>
+              <div class="tags"><span class="badge badge-success">Đang dùng</span><span class="risk low"><i><b></b><b></b><b></b></i>Thấp</span></div>
+            </a>
+            <a class="skill" href="skill-library.html?view=detail">
+              <span class="skill-icon" aria-hidden="true">PY</span>
+              <div class="skill-main"><b>Đối chiếu hoá đơn đầu vào</b><code>doi-chieu-hoa-don</code><p>So file XML hoá đơn với đơn mua hàng, đánh dấu chênh lệch. Có script Python.</p></div>
+              <div class="used"><span>Chưa ai dùng</span></div>
+              <div class="ver-col"><span class="ver">v1</span></div>
+              <div class="tags"><span class="badge badge-muted">Nháp</span><span class="badge badge-danger">Có script</span><span class="risk high"><i><b></b><b></b><b></b></i>Cao</span></div>
+            </a>
+            <a class="skill" href="skill-library.html?view=detail">
+              <span class="skill-icon" aria-hidden="true">CC</span>
+              <div class="skill-main"><b>Tổng hợp chấm công tuần</b><code>tong-hop-cham-cong</code><p>Gom bảng chấm công các phòng, tính giờ làm thêm, soạn bảng gửi kế toán.</p></div>
+              <div class="used"><span class="worker-avatar w3" aria-hidden="true">TC</span><span>1 đang dùng</span></div>
+              <div class="ver-col"><span class="ver">v2</span></div>
+              <div class="tags"><span class="badge badge-success">Đang dùng</span><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span></div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TEMPLATES ================= -->
+      <div class="tpl-grid" data-show="view:templates" hidden>
+        <article class="tpl"><b>Lập báo giá</b><p>Tra bảng giá, áp chiết khấu, xuất báo giá theo mẫu.</p><div class="row"><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Soạn hợp đồng từ mẫu</b><p>Điền thông tin khách vào mẫu hợp đồng, đánh dấu chỗ cần người kiểm.</p><div class="row"><span class="risk low"><i><b></b><b></b><b></b></i>Thấp</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Tóm tắt email</b><p>Tóm tắt email dài, nêu việc cần làm và hạn.</p><div class="row"><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Tổng hợp báo cáo ngày</b><p>Gom số liệu từ Sheets, viết báo cáo ngắn cho trưởng phòng.</p><div class="row"><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Trả lời câu hỏi nội bộ</b><p>Trả lời nhân viên dựa trên tài liệu quy trình của công ty.</p><div class="row"><span class="risk low"><i><b></b><b></b><b></b></i>Thấp</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Nhắc công nợ</b><p>Soạn tin nhắc thanh toán theo hạn; gửi cần duyệt.</p><div class="row"><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Soạn biên bản họp</b><p>Từ ghi chú rời rạc ra biên bản có quyết định và việc giao.</p><div class="row"><span class="risk low"><i><b></b><b></b><b></b></i>Thấp</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Kiểm tra đơn hàng</b><p>So đơn đặt với tồn kho, báo dòng thiếu hàng.</p><div class="row"><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Viết bài đăng sản phẩm</b><p>Viết mô tả sản phẩm cho Zalo / Facebook theo giọng của công ty.</p><div class="row"><span class="risk low"><i><b></b><b></b><b></b></i>Thấp</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+        <article class="tpl"><b>Tổng hợp chấm công</b><p>Gom bảng chấm công, tính giờ làm thêm.</p><div class="row"><span class="risk mid"><i><b></b><b></b><b></b></i>Trung bình</span><button class="btn btn-outline" type="button" style="height:2rem">Dùng mẫu</button></div></article>
+      </div>
+
+      <!-- ================= DETAIL ================= -->
+      <div data-show="view:detail" hidden>
+        <nav class="crumbs" aria-label="Vị trí" style="display:flex; gap:0.375rem; font-size:var(--text-sm); color:var(--muted-foreground); margin-bottom:1rem"><a href="skill-library.html" style="color:inherit; text-decoration:none">Thư viện kỹ năng</a><span aria-hidden="true">/</span><span aria-current="page">Lập báo giá gốm cho đại lý</span></nav>
+
+        <div class="callout callout-warning" style="margin-bottom:1rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <span data-show="role:owner"><b>v3 đang chờ duyệt.</b> 2 nhân viên số vẫn dùng v2 cho tới khi bạn duyệt; duyệt xong cả hai chuyển sang v3.</span>
+          <span data-show="role:manager" hidden><b>v3 bạn sửa đang chờ Owner / Admin duyệt.</b> 2 nhân viên số vẫn dùng v2 tới lúc đó.</span>
+        </div>
+
+        <section class="card dhead" aria-labelledby="sk">
+          <span class="skill-icon" aria-hidden="true">BG</span>
+          <div>
+            <h1 id="sk">Lập báo giá gốm cho đại lý</h1>
+            <code>lap-bao-gia</code>
+            <p>Đọc yêu cầu của đại lý, tra bảng giá và mức chiết khấu theo hạng đại lý, xuất báo giá theo mẫu Excel của công ty. Không gửi báo giá ra ngoài; chỉ soạn nháp.</p>
+            <div class="meta"><span class="badge badge-success">v2 đang dùng</span><span class="badge badge-warning">v3 chờ duyệt</span><span class="risk mid"><i><b></b><b></b><b></b></i>Rủi ro trung bình · đọc dữ liệu</span></div>
+          </div>
+          <div class="dactions">
+            <button class="btn btn-outline" type="button">Xuất .zip</button>
+            <button class="btn btn-outline" type="button">Sửa (tạo v4)</button>
+            <button class="btn btn-primary" type="button" data-show="role:owner">Duyệt v3</button>
+          </div>
+        </section>
+
+        <div class="detail">
+          <section class="card panel" aria-labelledby="files-h">
+            <h2 id="files-h">Nội dung v3 <span class="hint">So với v2: sửa chiết khấu, thêm bước kiểm tra tồn kho</span></h2>
+            <div class="files">
+              <ul class="tree" aria-label="File trong kỹ năng">
+                <li class="on">📄 SKILL.md</li>
+                <li>📁 templates/</li>
+                <li class="in">bao-gia-mau.xlsx</li>
+                <li>📁 reference/</li>
+                <li class="in">bang-gia-2026.md</li>
+                <li class="in">chiet-khau-dai-ly.md</li>
+              </ul>
+<pre class="md"><span class="fm">---
+name: lap-bao-gia
+description: Lập báo giá gốm cho đại lý theo bảng giá
+  và chiết khấu hiện hành. Dùng khi đại lý hỏi giá
+  hoặc gửi danh sách sản phẩm cần báo giá.
+---</span>
+
+<span class="h"># Lập báo giá gốm cho đại lý</span>
+
+<span class="h">## Khi nào dùng</span>
+Đại lý gửi tên / mã sản phẩm và số lượng, hỏi giá.
+
+<span class="h">## Các bước</span>
+1. Đọc danh sách sản phẩm. Thiếu mã thì hỏi lại.
+2. Tra giá trong <span class="c">reference/bang-gia-2026.md</span>.
+3. Áp chiết khấu theo hạng đại lý trong
+   <span class="c">reference/chiet-khau-dai-ly.md</span>.
+4. <b>(mới ở v3)</b> Kiểm tra tồn kho; hết hàng thì
+   ghi "liên hệ lại" thay vì báo giá.
+5. Điền vào <span class="c">templates/bao-gia-mau.xlsx</span>.
+6. Gửi bản nháp cho người giao việc. Không tự gửi
+   cho đại lý.</pre>
+            </div>
+          </section>
+
+          <aside style="display:grid; gap:1.25rem">
+            <section class="card panel" aria-labelledby="ver-h">
+              <h2 id="ver-h">Version</h2>
+              <ol class="versions">
+                <li><span class="ver">v3</span><div class="info"><div class="row"><span class="badge badge-warning">Chờ duyệt</span></div><span>Sửa bảng chiết khấu, thêm kiểm tra tồn kho</span><small>26/11 · Nguyễn Thị Lan</small></div></li>
+                <li><span class="ver">v2</span><div class="info"><div class="row"><span class="badge badge-success">Đang dùng</span></div><span>Thêm mẫu Excel mới</span><small>12/11 · duyệt bởi Trần Minh Đức</small></div></li>
+                <li><span class="ver">v1</span><div class="info"><div class="row"><span class="badge badge-muted">Cũ</span><button class="btn btn-ghost" type="button" data-show="role:owner">Quay lại v1</button></div><span>Bản đầu tiên, từ mẫu "Lập báo giá"</span><small>02/11 · Nguyễn Thị Lan</small></div></li>
+              </ol>
+            </section>
+
+            <section class="card panel" aria-labelledby="as-h">
+              <h2 id="as-h">Nhân viên số đang dùng <button class="btn btn-ghost" type="button" style="height:2rem">Giao thêm</button></h2>
+              <ul class="assigned">
+                <li><span class="worker-avatar" aria-hidden="true">MB</span><span>Minh · Báo giá<small>Chính thức · Kinh doanh</small></span><span class="ver">v2</span></li>
+                <li><span class="worker-avatar w2" aria-hidden="true">AĐ</span><span>An · Chăm sóc đại lý<small>Thử việc · Kinh doanh</small></span><span class="ver">v2</span></li>
+              </ul>
+            </section>
+          </aside>
+        </div>
+      </div>
+
+      <details class="notes" open>
+        <summary>Ghi chú cho change add-skill-library</summary>
+        <h3>Yêu cầu</h3>
+        <ul>
+          <li><b>FR-03-01</b>: kỹ năng theo chuẩn Agent Skills: <code>SKILL.md</code> (frontmatter <code>name</code>, <code>description</code> + nội dung) và file đi kèm. Hiện cây file và xem trước <code>SKILL.md</code>.</li>
+          <li><b>FR-03-02</b>: sửa là ra version mới ở trạng thái chờ duyệt; nhân viên số vẫn dùng version đang dùng tới khi duyệt. Màn chi tiết nói rõ ai đang dùng version nào.</li>
+          <li><b>FR-03-03</b>: quay lại version cũ bằng một nút (Owner / Admin).</li>
+          <li><b>FR-03-04</b>: 10 mẫu tiếng Việt ở tab "Mẫu có sẵn"; dùng mẫu là tạo bản nháp của công ty.</li>
+          <li><b>FR-03-05</b>: nhập / xuất <code>.zip</code>; nhập có danh sách kiểm tra, lỗi nói rõ cách sửa.</li>
+          <li><b>FR-03-06</b> + #015: kỹ năng có <code>scripts/</code> luôn rủi ro cao, nhãn "Có script"; chưa chạy được tới change 15, không giao cho worker chính thức khi chưa kiểm duyệt (change 11).</li>
+          <li>Ma trận quyền: ai cũng tạo / sửa bản nháp; chỉ Owner / Admin duyệt (và quay lại version cũ).</li>
+          <li>Mức rủi ro (FR-09-04) hiện bằng 3 vạch: thấp / trung bình / cao.</li>
+        </ul>
+        <h3>Câu hỏi nghiệp vụ</h3>
+        <ul>
+          <li>Mức rủi ro do ai đặt ở change 3 (trước khi có quét tự động ở change 11)? Thiết kế: hệ thống gợi ý theo nội dung (có script → cao), người tạo chọn, Owner / Admin sửa được.</li>
+          <li>Giao kỹ năng cho worker ở đâu: từ màn kỹ năng ("Giao thêm"), từ tab Kỹ năng của hồ sơ worker, hay cả hai?</li>
+          <li>Giao kỹ năng cho worker đang chính thức có cần duyệt không (FR-09-01 nói "thêm skill" kích hoạt kiểm duyệt)? Thiết kế change 3: Owner / Admin giao thẳng; Trưởng phòng giao thì chờ duyệt.</li>
+          <li>Giới hạn kích thước file <code>.zip</code> và loại file được nhận? Đề xuất: ≤ 10 MB, chỉ text / markdown / csv / xlsx / docx / pdf / ảnh; script chỉ <code>.py</code>.</li>
+          <li>Lưu trữ kỹ năng không dùng nữa: được khi còn worker dùng không? Đề xuất: không, phải gỡ khỏi worker trước.</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+
+  <!-- ================= IMPORT ================= -->
+  <div class="scrim" data-show="view:import,import-error" hidden>
+    <section class="dialog" style="width:min(36rem,100%)" role="dialog" aria-modal="true" aria-labelledby="imp">
+      <header class="dialog-head">
+        <h2 id="imp">Nhập kỹ năng từ .zip</h2>
+        <p>Gói phải có <code>SKILL.md</code> ở thư mục gốc. Kỹ năng nhập vào ở trạng thái Nháp.</p>
+      </header>
+      <div class="dialog-body">
+        <div class="drop">
+          <span class="zip" aria-hidden="true">ZIP</span>
+          <div data-show="view:import"><b>doi-chieu-hoa-don.zip</b><small>4 file · 38 KB</small></div>
+          <div data-show="view:import-error" hidden><b>bao-gia-cu.zip</b><small>2 file · 12 KB</small></div>
+          <button class="btn btn-ghost" type="button">Chọn file khác</button>
+        </div>
+        <ul class="checks" aria-label="Kết quả kiểm tra" data-show="view:import">
+          <li><span class="ok">✓</span><span>Có <code>SKILL.md</code> ở thư mục gốc</span></li>
+          <li><span class="ok">✓</span><span><code>name</code> và <code>description</code> hợp lệ<small>doi-chieu-hoa-don · "So file XML hoá đơn với đơn mua hàng…"</small></span></li>
+          <li><span class="ok">✓</span><span>Tên chưa có trong thư viện</span></li>
+          <li><span class="warn">!</span><span><b>Có thư mục <code>scripts/</code></b> (1 file Python)<small>Kỹ năng sẽ ở mức rủi ro <b>cao</b>. Chưa chạy được script, và chỉ giao cho nhân viên số chính thức sau khi kiểm duyệt.</small></span></li>
+        </ul>
+        <ul class="checks" aria-label="Kết quả kiểm tra" data-show="view:import-error" hidden>
+          <li><span class="bad">✕</span><span><b>Không tìm thấy <code>SKILL.md</code> ở thư mục gốc</b><small>Tìm thấy <code>bao-gia/SKILL.md</code> trong thư mục con. Nén lại từ bên trong thư mục <code>bao-gia</code>.</small></span></li>
+          <li><span class="bad">✕</span><span><b>Thiếu <code>description</code> trong frontmatter</b><small>Thêm một dòng mô tả: kỹ năng làm gì và khi nào dùng.</small></span></li>
+        </ul>
+      </div>
+      <footer class="dialog-foot">
+        <button class="btn btn-ghost" type="button">Huỷ</button>
+        <button class="btn btn-primary" type="button" data-show="view:import">Nhập làm bản nháp</button>
+        <button class="btn btn-primary" type="button" disabled data-show="view:import-error" hidden>Nhập làm bản nháp</button>
+      </footer>
+    </section>
+  </div>
+
+  <script src="_proto.js"></script>
+</body>
+</html>
