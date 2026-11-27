@@ -2,10 +2,10 @@
 
 ## 1. Lược đồ và RLS (`packages/db`)
 
-- [ ] 1.1 Thêm schema Drizzle cho `auth.*` (bảng Better Auth trong `pgSchema('auth')`) và migration tạo schema `auth` + quyền cho `dw_app`; kiểm tra `pnpm db:migrate` chạy hai lần không lỗi
-- [ ] 1.2 Thêm bảng `companies`, `members` (enum `role`, `status`, `user_id UNIQUE`), `audit_events`, RLS `ENABLE` + `FORCE` + policy theo `app.company_id`, `REVOKE UPDATE, DELETE` trên `audit_events`; test tích hợp: SQL thô dưới `dw_app` không đặt công ty → rỗng, đặt công ty A → chỉ thấy A, chèn dòng công ty B → bị từ chối, `UPDATE`/`DELETE` nhật ký → bị từ chối
-- [ ] 1.3 Viết helper `withCompany(db, companyId, fn)` (transaction + `set_config(..., true)`); test tích hợp: biến không rò sang transaction kế tiếp trên cùng kết nối pool
-- [ ] 1.4 Thêm hàm `app.member_for_user(user_id)` (`SECURITY DEFINER`, `search_path` cố định, chỉ `dw_app` được `EXECUTE`) và view `member_profiles` (`security_invoker`); test tích hợp: hàm chỉ trả thành viên của đúng `user_id`, view dưới công ty A không lộ email người công ty B
+- [x] 1.1 Thêm schema Drizzle cho `auth.*` (bảng Better Auth trong `pgSchema('auth')`) và migration tạo schema `auth` + quyền cho `dw_app`; kiểm tra `pnpm db:migrate` chạy hai lần không lỗi
+- [x] 1.2 Thêm bảng `companies`, `members` (enum `role`, `status`, `user_id UNIQUE`), `audit_events`, RLS `ENABLE` + `FORCE` + policy theo `app.company_id`, `REVOKE UPDATE, DELETE` trên `audit_events`; test tích hợp: SQL thô dưới `dw_app` không đặt công ty → rỗng, đặt công ty A → chỉ thấy A, chèn dòng công ty B → bị từ chối, `UPDATE`/`DELETE` nhật ký → bị từ chối
+- [x] 1.3 Viết helper `withCompany(db, companyId, fn)` (transaction + `set_config(..., true)`); test tích hợp: biến không rò sang transaction kế tiếp trên cùng kết nối pool
+- [x] 1.4 Thêm hàm `app.member_for_user(user_id)` (`SECURITY DEFINER`, `search_path` cố định, chỉ `dw_app` được `EXECUTE`) và view `member_profiles` (`security_invoker`); test tích hợp: hàm chỉ trả thành viên của đúng `user_id`, view dưới công ty A không lộ email người công ty B
 
 ## 2. Nền tảng dùng chung (`packages/core`, `packages/mail`)
 

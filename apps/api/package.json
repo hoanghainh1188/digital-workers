@@ -11,6 +11,8 @@
   "dependencies": {
     "@dw/core": "workspace:*",
     "@dw/db": "workspace:^",
+    "@fastify/rate-limit": "^11",
+    "better-auth": "1.7.28",
     "fastify": "^5.12.8",
     "pg": "^8.23.1",
     "zod": "^4"
