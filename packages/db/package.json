@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./testing": "./test/pg.ts"
+    "./testing": "./test/pg.ts",
+    "./auth-schema": "./src/schema/auth.ts",
+    "./drizzle": "./src/drizzle.ts"
   },
   "scripts": {
     "migrate": "node --env-file-if-exists=../../.env src/migrate-cli.ts",

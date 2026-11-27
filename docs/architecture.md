@@ -134,9 +134,14 @@ interface ChannelAdapter {
 
 ## 7. Dữ liệu và bảo mật
 
-- Mọi bảng nghiệp vụ có `company_id`; RLS bật, API đặt `app.company_id` mỗi request / mỗi task.
+- Mọi bảng nghiệp vụ có `company_id`; RLS `ENABLE` + `FORCE`, policy so với `app.current_company_id()` (đọc `app.company_id`, rỗng → NULL → không thấy dòng nào).
+- Chỉ truy vấn bảng nghiệp vụ qua `withCompany(db, companyId, fn)` (`packages/db`): mở transaction, `set_config('app.company_id', …, true)` nên giá trị không rò sang transaction kế tiếp trên cùng kết nối pool. API lấy `companyId` từ phiên, không bao giờ từ dữ liệu người dùng gửi lên.
+- Bảng của Better Auth (`users`, `sessions`, `accounts`, `verifications`) nằm trong schema `auth`, **không RLS** vì là danh tính toàn cục (một email trước khi biết công ty). Chỉ `apps/api/src/auth/` được chạm vào; nơi khác đọc tên / email qua view `member_profiles` (`security_invoker`, nên RLS của `members` vẫn lọc). Có test chặn import.
+- Từ phiên tìm ra thành viên bằng một hàm duy nhất `app.member_for_user(user_id)` (`SECURITY DEFINER`, owner `dw_owner`, `search_path` cố định, chỉ `dw_app` được `EXECUTE`); nó chỉ trả thành viên của chính `user_id` đó. Đây là lối đi qua RLS duy nhất.
+- `audit_events` chỉ thêm: `dw_app` không có `UPDATE` / `DELETE` / `TRUNCATE`. Ghi tên trường đã đổi, không ghi giá trị.
+- Truy cập id của công ty khác trả 404 giống id không tồn tại, kèm `AuditEvent access.not_found` ở công ty người gọi.
 - Bí mật (`ProviderKey`, token bot, mật khẩu connector) mã hoá AES-256-GCM; khoá chính lấy từ biến môi trường, không nằm trong DB.
-- Xác thực web (#012): Better Auth, email + mật khẩu và Google OAuth. Phiên lưu trong PostgreSQL. Zalo login sau MVP.
+- Xác thực web (#012): Better Auth, email + mật khẩu và Google OAuth, gắn ở `/api/auth/*`. Phiên lưu trong PostgreSQL, cookie httpOnly + SameSite=Lax (+ Secure ở prod), 30 ngày tự gia hạn (#043). Giới hạn thử sai theo IP (Better Auth) và theo email (10 lần / 15 phút, #044). Zalo login sau MVP.
 - Tài khoản chat của nhân viên (`ChannelIdentity`) ghép bằng mã một lần, hết hạn sau 10 phút.
 - Log (pino) che dữ liệu cá nhân và bí mật.
 

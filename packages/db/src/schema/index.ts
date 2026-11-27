@@ -1,2 +1,3 @@
-// Business tables arrive with change add-tenancy-and-users (company_id NOT NULL + RLS).
-export {};
+// Drizzle schema. Business tables carry company_id + RLS (design D1, D3).
+// Better Auth tables (./auth.ts) are deliberately not re-exported here.
+export * from './tenancy.ts';

@@ -1,6 +1,6 @@
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
-import * as schema from './schema/index.ts';
+import * as schema from './schema/all.ts';
 
 export type Database = {
   readonly pool: pg.Pool;

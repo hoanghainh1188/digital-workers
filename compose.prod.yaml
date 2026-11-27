@@ -44,6 +44,16 @@ services:
       DATABASE_URL: postgres://dw_app:${DW_APP_PASSWORD}@postgres:5432/dw
       PORT: "3000"
       HOST: 0.0.0.0
+      # Auth (add-tenancy-and-auth). The browser reaches api and web on one origin through Caddy.
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${PUBLIC_URL:?set PUBLIC_URL}
+      WEB_ORIGIN: ${PUBLIC_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      SMTP_URL: ${SMTP_URL:?set SMTP_URL}
+      MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM}
+      # Caddy is the only way in: trust its X-Forwarded-For / -Proto.
+      TRUST_PROXY: "true"
     depends_on:
       migrate: { condition: service_completed_successfully }
 

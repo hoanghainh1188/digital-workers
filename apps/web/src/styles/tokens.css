@@ -1,32 +1,55 @@
 /*
  * Bright Blue Base — white surfaces, blue as the single brand colour.
  * Semantic tokens only; components never use raw colour values.
+ * Mirrors docs/design/screens/_shared.css.
  */
 :root {
   --radius: 0.625rem;
 
   --background: oklch(100% 0 0);
+  --canvas: oklch(98.4% 0.004 255);
   --foreground: oklch(22% 0.03 262);
   --muted: oklch(97% 0.008 255);
   --muted-foreground: oklch(50% 0.03 260);
   --border: oklch(91% 0.015 258);
+  --border-strong: oklch(84% 0.02 258);
   --ring: oklch(62% 0.19 258);
 
   --primary: oklch(55% 0.21 262);
+  --primary-hover: oklch(50% 0.21 262);
   --primary-foreground: oklch(99% 0.005 255);
   --primary-soft: oklch(95% 0.035 258);
+  --primary-ink: oklch(42% 0.17 262);
 
   --card: oklch(100% 0 0);
   --card-foreground: var(--foreground);
 
   --success: oklch(62% 0.15 155);
+  --success-soft: oklch(95.5% 0.04 155);
+  --success-ink: oklch(42% 0.11 155);
   --warning: oklch(76% 0.15 75);
+  --warning-soft: oklch(96.5% 0.05 85);
+  --warning-ink: oklch(47% 0.11 65);
   --destructive: oklch(58% 0.22 27);
+  --destructive-soft: oklch(96% 0.03 25);
+  --destructive-ink: oklch(48% 0.19 27);
 
-  --font-sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --role-admin-soft: oklch(95% 0.04 290);
+  --role-admin-ink: oklch(45% 0.17 290);
+  --role-manager-soft: oklch(95.5% 0.04 195);
+  --role-manager-ink: oklch(43% 0.09 200);
 
-  --text-hero: clamp(2.25rem, 1.4rem + 3.6vw, 4.25rem);
+  /* Self-hosted through @fontsource/be-vietnam-pro (0.2 #045). */
+  --font-sans: "Be Vietnam Pro", system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --text-hero: clamp(2rem, 1.3rem + 2.6vw, 3.25rem);
+  --text-title: clamp(1.5rem, 1.2rem + 1vw, 1.875rem);
   --space-section: clamp(3rem, 2rem + 4vw, 6.5rem);
-  --duration-normal: 300ms;
+
+  --shadow-sm: 0 1px 2px oklch(22% 0.03 262 / 0.06);
+  --shadow-card: 0 1px 0 var(--border), 0 18px 40px -24px oklch(55% 0.21 262 / 0.28);
+
+  --duration-fast: 150ms;
+  --duration-normal: 260ms;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }

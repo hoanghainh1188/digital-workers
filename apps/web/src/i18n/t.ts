@@ -4,3 +4,7 @@ import { type MessageKey, vi } from './vi.ts';
 export function t(key: MessageKey): string {
   return vi[key];
 }
+
+export function isMessageKey(key: string): key is MessageKey {
+  return Object.hasOwn(vi, key);
+}

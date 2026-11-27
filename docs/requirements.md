@@ -79,6 +79,7 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 052 | 2026-11-27 | Đổi phòng ban của worker (kể cả đang chính thức): **chỉ Owner / Admin**; giữ nguyên trạng thái, chọn lại người quản lý theo phòng mới, có `AuditEvent`. (`add-worker-profile`) |
 | 053 | 2026-11-27 | Người quản lý worker: **bất kỳ ai trong phòng** hoặc Owner / Admin; mặc định là trưởng phòng. Người quản lý nhận cảnh báo và duyệt việc; chỉ trưởng phòng / Owner / Admin đổi trạng thái. (`add-worker-profile`) |
 | 054 | 2026-11-27 | **Bắt buộc lý do** khi cho nghỉ việc và khi trả lại đề nghị chính thức; tạm nghỉ không bắt buộc. (`add-worker-profile`) |
+| 055 | 2026-11-27 | Thêm **`@types/nodemailer`** (devDependency, MIT, chỉ khai báo kiểu cho `nodemailer`) vào danh sách thư viện được phép. Ma trận quyền mục 1 có thêm hàng **"Đổi thông tin công ty (tên, số điện thoại)"**: Owner và Admin được, Trưởng phòng và Nhân viên không. (`add-tenancy-and-auth`) |
 
 ### 0.3. Đề xuất chờ chốt
 
@@ -117,6 +118,7 @@ Hiện không có đề xuất chờ chốt.
 
 | Hành động | Owner | Admin | Manager | Member |
 |---|:-:|:-:|:-:|:-:|
+| Đổi thông tin công ty (tên, số điện thoại) | ✓ | ✓ | — | — |
 | Quản lý phòng ban, người dùng | ✓ | ✓ | — | — |
 | Tạo worker (bản nháp) | ✓ | ✓ | ✓ (phòng mình) | — |
 | Chuyển worker sang thử việc | ✓ | ✓ | ✓ (phòng mình) | — |

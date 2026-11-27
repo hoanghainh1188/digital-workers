@@ -11,6 +11,20 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-soft: var(--primary-soft);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-ink: var(--primary-ink);
+  --color-canvas: var(--canvas);
+  --color-border-strong: var(--border-strong);
+  --color-success-soft: var(--success-soft);
+  --color-success-ink: var(--success-ink);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-ink: var(--destructive-ink);
+  --color-role-admin-soft: var(--role-admin-soft);
+  --color-role-admin-ink: var(--role-admin-ink);
+  --color-role-manager-soft: var(--role-manager-soft);
+  --color-role-manager-ink: var(--role-manager-ink);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-success: var(--success);
@@ -28,6 +42,12 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+  a {
+    color: var(--primary-ink);
+    text-underline-offset: 3px;
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
