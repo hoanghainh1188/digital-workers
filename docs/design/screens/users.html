@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Người dùng — Digital Workers (thiết kế)</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.625rem; align-items: center; padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); }
+    .search { position: relative; flex: 1 1 16rem; max-width: 22rem; }
+    .search svg { position: absolute; left: 0.75rem; top: 50%; translate: 0 -50%; width: 1rem; height: 1rem; color: var(--muted-foreground); }
+    .search .input { padding-left: 2.25rem; height: 2.375rem; }
+    .toolbar .select { width: auto; height: 2.375rem; padding-right: 2rem; font-size: var(--text-sm); }
+    .toolbar .count { margin-left: auto; font-size: var(--text-sm); color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+    .you { margin-left: 0.375rem; font-size: var(--text-xs); font-weight: 500; color: var(--muted-foreground); }
+    .status-line { display: grid; gap: 0.125rem; }
+    .status-line small { color: var(--muted-foreground); font-size: var(--text-xs); }
+    tr.locked td:not(:last-child) { opacity: 0.55; }
+    .muted { color: var(--muted-foreground); }
+
+    /* Row menu (shown open on one row in the list state) */
+    .menu-anchor { position: relative; }
+    .menu {
+      position: absolute; right: 0; top: calc(100% + 0.25rem); z-index: 5; width: 13.5rem;
+      padding: 0.375rem; background: var(--background); border-radius: var(--radius); box-shadow: var(--shadow-pop);
+      animation: rise var(--duration-normal) var(--ease-out-expo);
+    }
+    .menu button { display: flex; width: 100%; align-items: center; gap: 0.625rem; padding: 0.5rem 0.625rem; border: 0; border-radius: 6px; background: none; font-size: var(--text-sm); text-align: left; cursor: pointer; }
+    .menu button:hover { background: var(--muted); }
+    .menu button svg { width: 1rem; height: 1rem; color: var(--muted-foreground); }
+    .menu hr { border: 0; border-top: 1px solid var(--border); margin: 0.375rem 0; }
+    .menu .danger { color: var(--destructive-ink); }
+    .menu .danger svg { color: currentColor; }
+
+    /* Invite dialog */
+    .dialog.wide { width: min(40rem, 100%); }
+    .emails { display: flex; flex-wrap: wrap; gap: 0.375rem; align-items: center; min-height: 2.75rem; padding: 0.375rem; border: 1px solid var(--primary); border-radius: calc(var(--radius) - 2px); box-shadow: 0 0 0 3px oklch(62% 0.19 258 / 0.18); }
+    .email-chip { display: inline-flex; align-items: center; gap: 0.25rem; height: 1.75rem; padding: 0 0.25rem 0 0.625rem; border-radius: 6px; background: var(--primary-soft); color: var(--primary-ink); font-size: var(--text-sm); font-weight: 500; }
+    .email-chip.bad { background: var(--destructive-soft); color: var(--destructive-ink); }
+    .email-chip button { display: grid; place-items: center; width: 1.25rem; height: 1.25rem; border: 0; border-radius: 4px; background: none; color: inherit; cursor: pointer; }
+    .emails input { flex: 1; min-width: 8rem; border: 0; outline: 0; height: 1.75rem; padding: 0 0.25rem; }
+    .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .role-card { position: relative; display: grid; gap: 0.25rem; align-content: start; padding: 0.75rem 0.875rem; border-radius: var(--radius); border: 1px solid var(--border-strong); cursor: pointer; transition: border-color var(--duration-fast), background-color var(--duration-fast), box-shadow var(--duration-fast); }
+    .role-card:hover { border-color: oklch(76% 0.06 258); }
+    .role-card input { position: absolute; opacity: 0; }
+    .role-card b { font-size: var(--text-sm); }
+    .role-card small { font-size: var(--text-xs); color: var(--muted-foreground); line-height: 1.45; }
+    .role-card:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 1px var(--primary); }
+    .role-card:has(input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
+    .role-card.disabled { opacity: 0.5; cursor: not-allowed; }
+    .can { display: grid; gap: 0.375rem; padding: 0.875rem 1rem; border-radius: var(--radius); background: var(--canvas); font-size: var(--text-sm); }
+    .can b { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); }
+    .can ul { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 1rem; }
+    .can li { display: flex; gap: 0.5rem; align-items: baseline; }
+    .can li::before { content: '✓'; color: var(--success); font-weight: 700; }
+    .can li.no::before { content: '—'; color: var(--muted-foreground); }
+    .can li.no { color: var(--muted-foreground); }
+    .filtered-empty { padding: 3rem 1rem; text-align: center; display: grid; gap: 0.75rem; justify-items: center; color: var(--muted-foreground); }
+    .filtered-empty b { color: var(--foreground); font-size: var(--text-lg); }
+
+    @media (max-width: 720px) {
+      .roles { grid-template-columns: 1fr; }
+      .can ul { grid-template-columns: 1fr; }
+      table.data .col-dept, table.data .col-seen { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="proto-bar" role="region" aria-label="Điều khiển bản thiết kế">
+    <strong>Thiết kế · Người dùng</strong>
+    <fieldset>
+      <legend>Xem với vai trò</legend>
+      <label><input type="radio" name="role" value="owner" checked><span>Owner</span></label>
+      <label><input type="radio" name="role" value="admin"><span>Admin</span></label>
+      <label><input type="radio" name="role" value="manager"><span>Trưởng phòng</span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Trạng thái</legend>
+      <label><input type="radio" name="state" value="list" checked><span>Danh sách</span></label>
+      <label><input type="radio" name="state" value="invite"><span>Mời người dùng</span></label>
+      <label><input type="radio" name="state" value="none"><span>Lọc không ra</span></label>
+      <label><input type="radio" name="state" value="last-owner"><span>Owner cuối cùng</span></label>
+    </fieldset>
+    <a href="departments.html">← Phòng ban</a>
+  </div>
+
+  <div class="app">
+    <nav class="sidebar" aria-label="Điều hướng chính">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">DW</span> Digital Workers</div>
+      <div class="company-switch"><span class="avatar" aria-hidden="true">AP</span><div>Gốm An Phú<small>23 người</small></div></div>
+      <div class="nav-group">
+        <h2>Làm việc</h2>
+        <a class="nav-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3h14v3"/></svg>Sơ đồ nhân sự số<span class="soon">SẮP CÓ</span></a>
+        <a class="nav-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></svg>Hộp duyệt việc<span class="soon">SẮP CÓ</span></a>
+        <a class="nav-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/></svg>Thư viện kỹ năng<span class="soon">SẮP CÓ</span></a>
+      </div>
+      <div class="nav-group">
+        <h2>Công ty</h2>
+        <a class="nav-link" href="departments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg>Phòng ban</a>
+        <a class="nav-link" href="users.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Người dùng</a>
+      </div>
+      <div class="sidebar-footer">
+        <span class="avatar" aria-hidden="true" data-show="role:owner">MĐ</span><span data-show="role:owner">Trần Minh Đức<small>Owner</small></span>
+        <span class="avatar a3" aria-hidden="true" data-show="role:admin" hidden>QA</span><span data-show="role:admin" hidden>Lê Quốc Anh<small>Admin</small></span>
+        <span class="avatar a2" aria-hidden="true" data-show="role:manager" hidden>NL</span><span data-show="role:manager" hidden>Nguyễn Thị Lan<small>Trưởng phòng · Kinh doanh</small></span>
+      </div>
+    </nav>
+
+    <main class="main">
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Công ty</p>
+          <h1 data-show="role:owner,admin">Người dùng</h1>
+          <h1 data-show="role:manager" hidden>Phòng Kinh doanh</h1>
+          <p data-show="role:owner,admin">Người thật trong công ty: ai được giao việc cho nhân viên số, ai duyệt, ai quản lý.</p>
+          <p data-show="role:manager" hidden>Thành viên phòng bạn. Owner hoặc Admin thêm người và đổi vai trò.</p>
+        </div>
+        <button class="btn btn-primary" type="button" data-show="role:owner,admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Mời người dùng
+        </button>
+      </header>
+
+      <section class="card" aria-label="Danh sách người dùng">
+        <div class="toolbar" data-show="role:owner,admin">
+          <label class="search"><span class="sr-only">Tìm theo tên hoặc email</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input class="input" type="search" placeholder="Tìm theo tên hoặc email" value="" data-show="state:list,invite,last-owner">
+            <input class="input" type="search" value="kế toán trưởng" data-show="state:none" hidden>
+          </label>
+          <label><span class="sr-only">Vai trò</span><select class="select"><option>Mọi vai trò</option><option>Owner</option><option>Admin</option><option>Trưởng phòng</option><option>Nhân viên</option></select></label>
+          <label><span class="sr-only">Phòng ban</span><select class="select"><option>Mọi phòng ban</option><option>Kinh doanh</option><option>Kế toán</option><option>Chăm sóc khách hàng</option><option>Hành chính – Nhân sự</option><option>Chưa có phòng ban</option></select></label>
+          <label><span class="sr-only">Trạng thái</span><select class="select"><option>Mọi trạng thái</option><option>Đang hoạt động</option><option>Đã mời</option><option>Đã khoá</option></select></label>
+          <span class="count" data-show="state:list,invite,last-owner">23 người · 2 lời mời</span>
+          <span class="count" data-show="state:none" hidden>0 kết quả</span>
+        </div>
+
+        <div class="table-wrap" data-show="state:list,invite,last-owner">
+          <table class="data">
+            <thead>
+              <tr><th scope="col">Người dùng</th><th scope="col">Vai trò</th><th scope="col" class="col-dept">Phòng ban</th><th scope="col">Trạng thái</th><th scope="col" class="col-seen">Hoạt động</th><th scope="col"><span class="sr-only">Thao tác</span></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="cell-person"><span class="avatar" aria-hidden="true">MĐ</span><div><b>Trần Minh Đức<span class="you" data-show="role:owner">(Bạn)</span></b><small>duc@gomanphu.vn</small></div></div></td>
+                <td><span class="badge badge-owner">Owner</span></td>
+                <td class="col-dept muted">—</td>
+                <td><span class="badge badge-success badge-dot">Đang hoạt động</span></td>
+                <td class="col-seen muted num">Vừa xong</td>
+                <td><div class="row-actions" data-show="role:owner"><button class="btn btn-ghost btn-icon" type="button" aria-label="Thao tác với Trần Minh Đức"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><div class="cell-person"><span class="avatar a3" aria-hidden="true">QA</span><div><b>Lê Quốc Anh<span class="you" data-show="role:admin" hidden>(Bạn)</span></b><small>anh.le@gomanphu.vn</small></div></div></td>
+                <td><span class="badge badge-admin">Admin</span></td>
+                <td class="col-dept muted">—</td>
+                <td><span class="badge badge-success badge-dot">Đang hoạt động</span></td>
+                <td class="col-seen muted num">2 giờ trước</td>
+                <td><div class="row-actions" data-show="role:owner"><button class="btn btn-ghost btn-icon" type="button" aria-label="Thao tác với Lê Quốc Anh"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><div class="cell-person"><span class="avatar a2" aria-hidden="true">NL</span><div><b>Nguyễn Thị Lan<span class="you" data-show="role:manager" hidden>(Bạn)</span></b><small>lan.nguyen@gomanphu.vn</small></div></div></td>
+                <td><span class="badge badge-manager">Trưởng phòng</span></td>
+                <td class="col-dept">Kinh doanh</td>
+                <td><span class="badge badge-success badge-dot">Đang hoạt động</span></td>
+                <td class="col-seen muted num">Hôm qua</td>
+                <td>
+                  <div class="row-actions menu-anchor" data-show="role:owner,admin">
+                    <button class="btn btn-ghost btn-icon" type="button" aria-label="Thao tác với Nguyễn Thị Lan" aria-expanded="true" aria-haspopup="menu"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+                    <div class="menu" role="menu" data-show="state:list">
+                      <button role="menuitem" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Đổi vai trò</button>
+                      <button role="menuitem" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>Chuyển phòng ban</button>
+                      <hr>
+                      <button role="menuitem" type="button" class="danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Khoá tài khoản</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="cell-person"><span class="avatar" aria-hidden="true">HV</span><div><b>Hoàng Văn Việt</b><small>viet.hoang@gomanphu.vn</small></div></div></td>
+                <td><span class="badge badge-member">Nhân viên</span></td>
+                <td class="col-dept">Kinh doanh</td>
+                <td><span class="badge badge-success badge-dot">Đang hoạt động</span></td>
+                <td class="col-seen muted num">3 ngày trước</td>
+                <td><div class="row-actions" data-show="role:owner,admin"><button class="btn btn-ghost btn-icon" type="button" aria-label="Thao tác với Hoàng Văn Việt"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><div class="cell-person"><span class="avatar dashed" aria-hidden="true">?</span><div><b class="muted">Chưa nhận lời mời</b><small>thanh.binh@gomanphu.vn</small></div></div></td>
+                <td><span class="badge badge-member">Nhân viên</span></td>
+                <td class="col-dept">Kinh doanh</td>
+                <td><div class="status-line"><span class="badge badge-warning badge-dot">Đã mời</span><small>Hết hạn sau 5 ngày</small></div></td>
+                <td class="col-seen muted">—</td>
+                <td><div class="row-actions" data-show="role:owner,admin"><button class="btn btn-outline" type="button" style="height:2rem;font-size:var(--text-xs)">Gửi lại</button><button class="btn btn-ghost btn-icon" type="button" aria-label="Huỷ lời mời thanh.binh@gomanphu.vn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div></td>
+              </tr>
+              <tr class="locked">
+                <td><div class="cell-person"><span class="avatar a4" aria-hidden="true">PQ</span><div><b>Phan Quang</b><small>quang.phan@gomanphu.vn</small></div></div></td>
+                <td><span class="badge badge-member">Nhân viên</span></td>
+                <td class="col-dept">Kinh doanh</td>
+                <td><div class="status-line"><span class="badge badge-muted badge-dot">Đã khoá</span><small>Nghỉ việc 12/11</small></div></td>
+                <td class="col-seen muted num">3 tuần trước</td>
+                <td><div class="row-actions" data-show="role:owner,admin"><button class="btn btn-outline" type="button" style="height:2rem;font-size:var(--text-xs)">Mở khoá</button></div></td>
+              </tr>
+              <tr>
+                <td><div class="cell-person"><span class="avatar a5" aria-hidden="true">KT</span><div><b>Kiều Trang</b><small>trang.kieu@gomanphu.vn</small></div></div></td>
+                <td><span class="badge badge-member">Nhân viên</span></td>
+                <td class="col-dept"><span class="badge badge-warning">Chưa có phòng ban</span></td>
+                <td><span class="badge badge-success badge-dot">Đang hoạt động</span></td>
+                <td class="col-seen muted num">1 tuần trước</td>
+                <td><div class="row-actions" data-show="role:owner,admin"><button class="btn btn-ghost btn-icon" type="button" aria-label="Thao tác với Kiều Trang"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="filtered-empty" data-show="state:none" hidden>
+          <b>Không có ai khớp "kế toán trưởng"</b>
+          <span>Thử tìm theo tên hoặc email, hoặc bỏ bớt bộ lọc.</span>
+          <button class="btn btn-outline" type="button">Xoá bộ lọc</button>
+        </div>
+      </section>
+
+      <details class="notes" open>
+        <summary>Ghi chú cho change add-tenancy-and-users</summary>
+        <h3>Yêu cầu</h3>
+        <ul>
+          <li><b>FR-01-02</b> + ma trận quyền: Owner / Admin mời người, đổi vai trò, chuyển phòng, khoá. <b>Chỉ Owner gán vai trò Admin</b> (mục 1: "gán Admin"). Admin không sửa được Owner.</li>
+          <li>Công ty luôn có ít nhất một Owner đang hoạt động: không hạ vai trò, không khoá Owner cuối cùng.</li>
+          <li>Lời mời theo email; hết hạn → gửi lại. Người đã khoá không đăng nhập được, không giao việc được cho worker; lịch sử vẫn giữ.</li>
+          <li>Bộ lọc (tìm, vai trò, phòng ban, trạng thái) đặt trên URL để gửi link được.</li>
+          <li><b>FR-01-03</b>: chỉ thấy người của công ty mình; API nhận id người của công ty khác → "không tìm thấy" + <code>AuditEvent</code>.</li>
+          <li>Mọi thay đổi vai trò / khoá / mời ghi <code>AuditEvent</code> (NFR-08).</li>
+        </ul>
+        <h3>Câu hỏi nghiệp vụ</h3>
+        <ul>
+          <li>Trưởng phòng có được vào trang này không? Thiết kế: <b>chỉ xem</b> người trong phòng mình. Hay ẩn hẳn?</li>
+          <li>Có cho mời thêm Owner không, hay chỉ "chuyển quyền Owner"? Thiết kế: mời được Admin / Trưởng phòng / Nhân viên; chuyển Owner làm sau.</li>
+          <li>"Khoá" thay cho "xoá" người dùng (giữ lịch sử, giải phóng chỗ trong gói) — đồng ý?</li>
+          <li>Nhân viên bắt buộc thuộc một phòng ban khi mời? Thiết kế: <b>bắt buộc</b> với Trưởng phòng và Nhân viên.</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+
+  <!-- INVITE DIALOG -->
+  <div class="scrim" data-show="role:owner,admin state:invite" hidden>
+    <section class="dialog wide" role="dialog" aria-modal="true" aria-labelledby="inv-title">
+      <header class="dialog-head">
+        <h2 id="inv-title">Mời người dùng</h2>
+        <p>Mỗi người nhận một email có link tham gia, dùng được trong 7 ngày.</p>
+      </header>
+      <div class="dialog-body">
+        <div class="field">
+          <span class="field-label" id="emails-label">Email</span>
+          <div class="emails" role="group" aria-labelledby="emails-label">
+            <span class="email-chip">ngoc.bui@gomanphu.vn<button type="button" aria-label="Bỏ ngoc.bui@gomanphu.vn">×</button></span>
+            <span class="email-chip">tam.vo@gomanphu.vn<button type="button" aria-label="Bỏ tam.vo@gomanphu.vn">×</button></span>
+            <span class="email-chip bad">thu@gomanphu<button type="button" aria-label="Bỏ thu@gomanphu">×</button></span>
+            <input aria-labelledby="emails-label" placeholder="Thêm email…">
+          </div>
+          <span class="error-text">"thu@gomanphu" chưa đúng định dạng email.</span>
+          <span class="hint">Dán nhiều email, cách nhau bằng dấu phẩy hoặc xuống dòng. Cùng vai trò và phòng ban.</span>
+        </div>
+
+        <fieldset class="field" style="border:0;margin:0;padding:0">
+          <legend class="field-label" style="margin-bottom:0.375rem">Vai trò</legend>
+          <div class="roles">
+            <label class="role-card" data-show="role:owner"><input type="radio" name="inv-role" value="admin"><b>Admin</b><small>Phụ trách AI: kiểm duyệt, kết nối kênh chat.</small></label>
+            <label class="role-card disabled" data-show="role:admin" hidden title="Chỉ Owner gán vai trò Admin"><input type="radio" name="inv-role" value="admin" disabled><b>Admin</b><small>Chỉ Owner gán vai trò này.</small></label>
+            <label class="role-card"><input type="radio" name="inv-role" value="manager"><b>Trưởng phòng</b><small>Tuyển, quản lý nhân viên số của phòng.</small></label>
+            <label class="role-card"><input type="radio" name="inv-role" value="member" checked><b>Nhân viên</b><small>Giao việc cho nhân viên số được phép.</small></label>
+          </div>
+        </fieldset>
+
+        <div class="can" aria-live="polite">
+          <b>Nhân viên làm được</b>
+          <ul>
+            <li>Giao việc cho nhân viên số được gán</li>
+            <li>Tạo, đề xuất kỹ năng (bản nháp)</li>
+            <li class="no">Tuyển nhân viên số</li>
+            <li class="no">Xem bảng lương</li>
+          </ul>
+        </div>
+
+        <div class="field">
+          <label for="inv-dept">Phòng ban</label>
+          <select class="select" id="inv-dept"><option>Kinh doanh</option><option>Kế toán</option><option selected>Chăm sóc khách hàng</option><option>Hành chính – Nhân sự</option></select>
+        </div>
+      </div>
+      <footer class="dialog-foot">
+        <button class="btn btn-ghost" type="button">Huỷ</button>
+        <button class="btn btn-primary" type="button" disabled title="Sửa email sai trước khi gửi">Gửi 2 lời mời</button>
+      </footer>
+    </section>
+  </div>
+
+  <!-- LAST OWNER -->
+  <div class="scrim" data-show="role:owner state:last-owner" hidden>
+    <section class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="lo-title" aria-describedby="lo-desc">
+      <header class="dialog-head">
+        <h2 id="lo-title">Không đổi được vai trò của bạn</h2>
+        <p id="lo-desc">Bạn là Owner duy nhất của Gốm An Phú. Công ty cần ít nhất một Owner để nạp credit và quản lý Admin.</p>
+      </header>
+      <div class="dialog-body">
+        <div class="callout callout-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <span>Muốn giao công ty cho người khác? Tính năng chuyển quyền Owner sẽ có sau MVP. Trong lúc chờ, liên hệ hỗ trợ.</span>
+        </div>
+      </div>
+      <footer class="dialog-foot"><button class="btn btn-primary" type="button">Đã hiểu</button></footer>
+    </section>
+  </div>
+  <div class="scrim" data-show="role:admin,manager state:last-owner" hidden>
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="lo2"><header class="dialog-head"><h2 id="lo2">Trạng thái này chỉ dành cho Owner</h2><p>Chọn vai trò "Owner" trên thanh thiết kế.</p></header></section>
+  </div>
+
+  <script src="_proto.js"></script>
+</body>
+</html>
