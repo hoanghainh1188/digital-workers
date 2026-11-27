@@ -109,6 +109,7 @@ Hiện không có đề xuất chờ chốt.
 
 | Hành động | Owner | Admin | Manager | Member |
 |---|:-:|:-:|:-:|:-:|
+| Đổi thông tin công ty (tên, số điện thoại) | ✓ | ✓ | — | — |
 | Quản lý phòng ban, người dùng | ✓ | ✓ | — | — |
 | Tạo worker (bản nháp) | ✓ | ✓ | ✓ (phòng mình) | — |
 | Chuyển worker sang thử việc | ✓ | ✓ | ✓ (phòng mình) | — |

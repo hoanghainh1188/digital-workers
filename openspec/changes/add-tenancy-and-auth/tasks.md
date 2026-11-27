@@ -9,9 +9,9 @@
 
 ## 2. Nền tảng dùng chung (`packages/core`, `packages/mail`)
 
-- [ ] 2.1 Viết ma trận quyền (`ACTIONS`, `ROLES`, `can()`) đủ mọi hàng ở docs/requirements.md mục 1; test dạng bảng: mỗi ô của ma trận đúng với từng vai trò
-- [ ] 2.2 Viết `isCommonPassword()` (danh sách trong repo, gồm mẫu tiếng Việt) và schema Zod `signupInput`, `companyInput` dùng chung api / web; unit test: 9 ký tự bị từ chối, `1234567890` bị từ chối, cụm từ dài không ký tự đặc biệt được chấp nhận, tên công ty rỗng bị từ chối
-- [ ] 2.3 Tạo `packages/mail` (`createMailer`, transport bộ nhớ cho test, mẫu email xác minh tiếng Việt); thêm Mailpit vào `compose.yaml`; kiểm tra unit test mẫu email và gửi thử tới Mailpit hiện trên `localhost:8025`
+- [x] 2.1 Viết ma trận quyền (`ACTIONS`, `ROLES`, `can()`) đủ mọi hàng ở docs/requirements.md mục 1; test dạng bảng: mỗi ô của ma trận đúng với từng vai trò
+- [x] 2.2 Viết `isCommonPassword()` (danh sách trong repo, gồm mẫu tiếng Việt) và schema Zod `signupInput`, `companyInput` dùng chung api / web; unit test: 9 ký tự bị từ chối, `1234567890` bị từ chối, cụm từ dài không ký tự đặc biệt được chấp nhận, tên công ty rỗng bị từ chối
+- [x] 2.3 Tạo `packages/mail` (`createMailer`, transport bộ nhớ cho test, mẫu email xác minh tiếng Việt); thêm Mailpit vào `compose.yaml`; kiểm tra unit test mẫu email và gửi thử tới Mailpit hiện trên `localhost:8025`
 
 ## 3. Xác thực (`apps/api/src/auth`)
 
