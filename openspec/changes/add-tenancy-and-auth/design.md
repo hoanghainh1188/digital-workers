@@ -80,8 +80,8 @@ view public.member_profiles (security_invoker) = members JOIN auth.users (name, 
 
 ### D6. Giới hạn thử đăng nhập sai
 
-- **Theo IP**: `rateLimit` có sẵn của Better Auth cho `/sign-in/email` và `/sign-up/email`.
-- **Theo email** (#044, spec: 10 lần sai / 15 phút → 429): đặt `@fastify/rate-limit` trên route `/api/auth/sign-in/email`, khoá theo email đã chuẩn hoá (lowercase, trim). Chỉ lần sai mới bị đếm: lần đúng thì xoá bộ đếm.
+- **Theo IP**: `rateLimit` có sẵn của Better Auth: `/sign-in/email` 30 lần / phút, `/sign-up/email` 10 lần / phút, `/send-verification-email` 5 lần / phút.
+- **Theo email** (#044, spec: 10 lần sai / 15 phút → 429): bộ đếm `createFailedLoginLimiter` trong `apps/api/src/auth/`, đặt trước Better Auth trên `/api/auth/sign-in/email`, khoá theo email đã chuẩn hoá (lowercase, trim). Chỉ lần sai (401) mới bị đếm; lần đúng thì xoá bộ đếm. *(Đổi khi apply: bản đầu định dùng `@fastify/rate-limit`, nhưng plugin này đếm mọi request, không có cách chỉ đếm lần sai hay xoá bộ đếm khi đúng. Bộ đếm tự viết ~40 dòng, có unit test; không thêm thư viện.)*
 - Bộ đếm để trong bộ nhớ: chỉ có một tiến trình api (NFR-10). Khởi động lại thì bộ đếm về 0, chấp nhận được với MVP.
 
 ### D7. Ma trận quyền ở `packages/core`
@@ -137,6 +137,18 @@ Thêm vào schema env của api:
   - `globalSetup` dựng Postgres bằng Testcontainers, chạy migration, khởi động api với mailer bộ nhớ, rồi chạy web qua `vite preview` có proxy.
   - Luồng kiểm: đăng ký → vào app → đăng xuất → đăng nhập lại; mật khẩu yếu bị báo lỗi.
   - Google OAuth không có e2e, vì cần tài khoản Google thật. Chỉ kiểm việc ẩn/hiện nút Google và luồng `/onboarding`, giả lập bằng một người dùng chưa có công ty.
+
+## Sai khác so với bản thiết kế (ghi khi apply)
+
+1. **D6 — giới hạn theo email**: không dùng `@fastify/rate-limit` (xem D6). Thư viện không được thêm vào dự án.
+2. **Link xác minh email dùng một lần**: token xác minh của Better Auth 1.7 là JWT không lưu DB, nên mở lại link vẫn trả "thành công". Để đúng spec ("link chỉ dùng một lần"), hook `before` trên `/verify-email` từ chối link khi email đã xác minh (`400 TOKEN_ALREADY_USED`, trạng thái không đổi). Hook chỉ đọc email trong token để quyết định *từ chối*, không bao giờ dùng nó để xác minh. Link trong email trỏ tới trang web `/verify-email?token=…`; trang này gọi `GET /api/auth/verify-email`. Hạn link: 24 giờ.
+3. **D3 — hàm `member_for_user`**: `FORCE ROW LEVEL SECURITY` áp cả cho owner bảng (`dw_owner`), nên hàm `SECURITY DEFINER` không thấy dòng nào. Thêm policy chỉ đọc `members_owner_lookup … FOR SELECT TO dw_owner USING (true)`; `dw_app` không bao giờ đăng nhập bằng `dw_owner` nên không rộng thêm quyền của ứng dụng. Thêm hàm `app.current_company_id()` (`NULLIF(current_setting(...), '')::uuid`) vì sau khi transaction kết thúc, `current_setting` trả chuỗi rỗng chứ không phải NULL.
+4. **D7 — phạm vi quyền**: `can()` trả thêm `'assigned'` cho ô "✓ (nếu được gán)" của Nhân viên ở "Giao việc cho worker". "Duyệt việc của worker" không phải quyền theo vai trò (theo quy tắc duyệt của từng worker) nên không có trong `ACTIONS`. Thêm hàng **"Đổi thông tin công ty (tên, số điện thoại)"** (Owner, Admin) vào ma trận docs/requirements.md mục 1 — spec `company-signup` đã quy định vậy nhưng ma trận chưa có hàng này. Test ma trận đọc thẳng bảng trong tài liệu.
+5. **D10 — cấu hình**: thêm `TRUST_PROXY` (mặc định `false`, `compose.prod.yaml` đặt `true`) thay vì luôn bật; prod dùng `PUBLIC_URL` cho cả `BETTER_AUTH_URL` và `WEB_ORIGIN`.
+6. **D4 — chi tiết Better Auth**: id dạng UUID (`advanced.database.generateId: 'uuid'`) để `members.user_id` là khoá ngoại `uuid`; tiền tố cookie `dw`; tắt telemetry. `POST /api/signup` trả `201 { companyId: null }` khi tạo công ty lỗi sau khi đã có tài khoản (người dùng đã đăng nhập, web đưa sang `/onboarding`).
+7. **D5 — thành viên bị khoá**: `requireCompany` trả `403 ACCOUNT_LOCKED` cho thành viên `status = locked` (1b mới tạo trạng thái này).
+8. **D11 — e2e**: api cho Playwright chạy từ `apps/api/test/e2e-server.ts` (mailer bộ nhớ + `GET /__e2e/emails` để lấy link), không phải `src/main.ts`.
+9. **#032 — danh sách mật khẩu phổ biến**: ~200 mục ≥ 10 ký tự (mục ngắn hơn đã bị luật độ dài chặn) gồm mẫu tiếng Việt, cộng luật chặn chuỗi một ký tự lặp lại và dãy liên tiếp (`0123456789`, `abcdefghij`), thay cho danh sách ~1.000 mục.
 
 ## Risks / Trade-offs
 

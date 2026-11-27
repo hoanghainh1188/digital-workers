@@ -36,8 +36,8 @@
 
 ## 6. Tài liệu và lộ trình
 
-- [ ] 6.1 Cập nhật `.env.example`, `.env.prod.example`, `compose.prod.yaml` (biến mới) và README (Mailpit, cách đăng ký thử); kiểm tra stack prod trên máy: `/api/auth` chạy qua Caddy, cookie có cờ Secure
-- [ ] 6.2 Cập nhật docs/architecture.md mục 7 (schema `auth`, hàm `member_for_user`, `withCompany`); kiểm tra `openspec validate --all --strict` qua
+- [x] 6.1 Cập nhật `.env.example`, `.env.prod.example`, `compose.prod.yaml` (biến mới) và README (Mailpit, cách đăng ký thử); kiểm tra stack prod trên máy: `/api/auth` chạy qua Caddy, cookie có cờ Secure
+- [x] 6.2 Cập nhật docs/architecture.md mục 7 (schema `auth`, hàm `member_for_user`, `withCompany`); kiểm tra `openspec validate --all --strict` qua
 
 ## Workflow follow-up
 
