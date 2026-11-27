@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sơ đồ nhân sự số — Digital Workers (thiết kế)</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    .summary { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1rem; margin-bottom: 1.75rem; }
+    .tally { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0; padding: 1.125rem 1.25rem; }
+    .tally .total { padding-right: 1.5rem; margin-right: 1.25rem; border-right: 1px solid var(--border); }
+    .tally .total b { display: block; font-size: 2.5rem; line-height: 1; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    .tally .total span { font-size: var(--text-sm); color: var(--muted-foreground); }
+    .tally ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, auto); gap: 0.5rem 1.5rem; align-content: center; }
+    .tally li { display: flex; align-items: center; gap: 0.5rem; font-size: var(--text-sm); }
+    .tally li b { font-variant-numeric: tabular-nums; min-width: 1ch; }
+    .spend { padding: 1.125rem 1.25rem; display: grid; gap: 0.625rem; align-content: center; }
+    .spend .top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; font-size: var(--text-sm); color: var(--muted-foreground); }
+    .spend .top b { font-size: var(--text-xl); color: var(--foreground); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    .spend small { font-size: var(--text-xs); color: var(--muted-foreground); }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 1.25rem; }
+    .filter { display: inline-flex; align-items: center; gap: 0.375rem; height: 2rem; padding: 0 0.75rem; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--background); font-size: var(--text-sm); font-weight: 500; color: var(--muted-foreground); cursor: pointer; }
+    .filter[aria-pressed='true'] { background: var(--foreground); border-color: var(--foreground); color: var(--background); }
+    .filter b { font-variant-numeric: tabular-nums; }
+
+    /* Org tree */
+    .org { position: relative; }
+    .root { display: flex; justify-content: center; margin-bottom: 2.25rem; position: relative; }
+    .root-card { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1rem 0.625rem 0.625rem; border-radius: 14px; background: var(--foreground); color: var(--background); box-shadow: var(--shadow-card); }
+    .root-card .avatar { background: oklch(100% 0 0 / 0.14); color: white; border-radius: 10px; }
+    .root-card small { display: block; font-size: var(--text-xs); opacity: 0.7; }
+    .root::after { content: ''; position: absolute; left: 50%; top: 100%; width: 1.5px; height: 1.125rem; background: var(--border-strong); }
+    .lanes { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; padding-top: 1.125rem; }
+    .lanes::before { content: ''; position: absolute; top: 0; left: calc(100% / 8); right: calc(100% / 8); height: 1.5px; background: var(--border-strong); }
+    .lane { position: relative; display: grid; gap: 0.625rem; align-content: start; }
+    .lane::before { content: ''; position: absolute; left: 50%; top: -1.125rem; width: 1.5px; height: 1.125rem; background: var(--border-strong); }
+    .lane-head { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.75rem; border-radius: 12px; background: var(--background); border: 1px solid var(--border); }
+    .lane-head b { font-size: var(--text-sm); }
+    .lane-head small { display: block; font-size: var(--text-xs); color: var(--muted-foreground); }
+    .lane-head .avatar { width: 1.75rem; height: 1.75rem; font-size: 0.6rem; margin-left: auto; }
+    .lane.readonly .lane-head { background: var(--canvas); }
+    .lane-body { position: relative; display: grid; gap: 0.5rem; padding-left: 1rem; }
+    .lane-body::before { content: ''; position: absolute; left: 0.35rem; top: -0.625rem; bottom: 1.6rem; width: 1.5px; background: var(--border); }
+
+    .wcard {
+      position: relative; display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.75rem; align-items: center;
+      padding: 0.75rem; border-radius: 12px; background: var(--background); border: 1px solid var(--border);
+      text-decoration: none; color: inherit; box-shadow: var(--shadow-sm);
+      transition: border-color var(--duration-fast), box-shadow var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo);
+    }
+    .wcard::before { content: ''; position: absolute; left: -0.65rem; top: 50%; width: 0.65rem; height: 1.5px; background: var(--border); }
+    .wcard:hover { border-color: oklch(82% 0.06 258); box-shadow: var(--shadow-card); transform: translateY(-1px); }
+    .wcard:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+    .wcard .worker-avatar { grid-row: span 2; }
+    .wcard .name { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 0.5rem; min-width: 0; }
+    .wcard .name b { font-size: var(--text-sm); line-height: 1.3; }
+    .wcard .job { font-size: var(--text-xs); color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wcard .foot { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 0.5rem; align-items: center; margin-top: 0.375rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); font-size: var(--text-xs); color: var(--muted-foreground); }
+    .wcard .foot .meter { grid-column: 1 / -1; }
+    .wcard.dim { opacity: 0.62; }
+    .lane-add { display: flex; align-items: center; justify-content: center; gap: 0.375rem; height: 2.5rem; border-radius: 12px; border: 1.5px dashed var(--border-strong); color: var(--muted-foreground); font-size: var(--text-sm); font-weight: 500; background: transparent; cursor: pointer; }
+    .lane-add:hover { border-color: var(--primary); color: var(--primary-ink); background: var(--primary-soft); }
+    .lane-collapsed { padding: 0.75rem; border-radius: 12px; border: 1px dashed var(--border); font-size: var(--text-sm); color: var(--muted-foreground); text-align: center; }
+
+    .gone { margin-top: 1.75rem; }
+    .gone summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; color: var(--muted-foreground); }
+    .gone .wcard { max-width: 22rem; margin-top: 0.75rem; }
+
+    /* Hire */
+    .templates { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.625rem; }
+    .tpl { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.75rem; padding: 0.875rem; border-radius: var(--radius); border: 1px solid var(--border-strong); cursor: pointer; text-align: left; background: var(--background); transition: border-color var(--duration-fast), background-color var(--duration-fast); }
+    .tpl input { position: absolute; opacity: 0; }
+    .tpl .worker-avatar { grid-row: span 2; width: 2.25rem; height: 2.25rem; font-size: 0.7rem; }
+    .tpl b { font-size: var(--text-sm); }
+    .tpl small { font-size: var(--text-xs); color: var(--muted-foreground); line-height: 1.45; }
+    .tpl:hover { border-color: oklch(76% 0.06 258); }
+    .tpl:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 1px var(--primary); }
+    .tpl.blank { border-style: dashed; }
+    .tpl.disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .empty-hire { display: grid; gap: 1.25rem; padding: clamp(1.5rem, 1rem + 3vw, 3rem); border-radius: calc(var(--radius) + 6px); background: var(--background); border: 1px solid var(--border); }
+    .empty-hire h2 { font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.01em; }
+    .empty-hire p { color: var(--muted-foreground); max-width: 56ch; }
+    .empty-hire .templates { grid-template-columns: repeat(3, 1fr); }
+
+    @media (max-width: 900px) {
+      .summary { grid-template-columns: 1fr; }
+      .lanes::before, .lane::before, .root::after { display: none; }
+      .lanes { padding-top: 0; }
+      .root { justify-content: flex-start; margin-bottom: 1.25rem; }
+      .empty-hire .templates, .templates { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="proto-bar" role="region" aria-label="Điều khiển bản thiết kế">
+    <strong>Thiết kế · Sơ đồ nhân sự số</strong>
+    <fieldset>
+      <legend>Xem với vai trò</legend>
+      <label><input type="radio" name="role" value="owner" checked><span>Owner / Admin</span></label>
+      <label><input type="radio" name="role" value="manager"><span>Trưởng phòng</span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Trạng thái</legend>
+      <label><input type="radio" name="state" value="list" checked><span>Có nhân viên số</span></label>
+      <label><input type="radio" name="state" value="empty"><span>Chưa tuyển ai</span></label>
+      <label><input type="radio" name="state" value="hire"><span>Tuyển mới</span></label>
+    </fieldset>
+    <a href="worker-profile.html">Hồ sơ worker →</a>
+  </div>
+
+  <div class="app">
+    <nav class="sidebar" aria-label="Điều hướng chính">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">DW</span> Digital Workers</div>
+      <div class="company-switch"><span class="avatar" aria-hidden="true">AP</span><div>Gốm An Phú<small>23 người · 7 nhân viên số</small></div></div>
+      <div class="nav-group">
+        <h2>Làm việc</h2>
+        <a class="nav-link" href="org-chart.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3h14v3"/></svg>Sơ đồ nhân sự số</a>
+        <a class="nav-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></svg>Hộp duyệt việc<span class="soon">SẮP CÓ</span></a>
+        <a class="nav-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/></svg>Thư viện kỹ năng<span class="soon">SẮP CÓ</span></a>
+      </div>
+      <div class="nav-group">
+        <h2>Công ty</h2>
+        <a class="nav-link" href="departments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg>Phòng ban</a>
+        <a class="nav-link" href="users.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Người dùng</a>
+      </div>
+      <div class="sidebar-footer">
+        <span class="avatar" aria-hidden="true" data-show="role:owner">MĐ</span><span data-show="role:owner">Trần Minh Đức<small>Owner</small></span>
+        <span class="avatar a2" aria-hidden="true" data-show="role:manager" hidden>NL</span><span data-show="role:manager" hidden>Nguyễn Thị Lan<small>Trưởng phòng · Kinh doanh</small></span>
+      </div>
+    </nav>
+
+    <main class="main" style="max-width: 84rem">
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Làm việc</p>
+          <h1>Sơ đồ nhân sự số</h1>
+          <p>Nhân viên số theo phòng ban: ai đang thử việc, ai đã chính thức, mỗi người tiêu bao nhiêu trong tháng.</p>
+        </div>
+        <button class="btn btn-primary" type="button" data-show="state:list,hire">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Tuyển nhân viên số
+        </button>
+      </header>
+
+      <!-- LIST -->
+      <div data-show="state:list,hire">
+        <section class="summary" aria-label="Tổng quan">
+          <div class="card tally">
+            <div class="total"><b>7</b><span>nhân viên số đang có</span></div>
+            <ul>
+              <li><span class="st st-active">Chính thức</span><b>3</b></li>
+              <li><span class="st st-probation">Thử việc</span><b>2</b></li>
+              <li><span class="st st-paused">Tạm nghỉ</span><b>1</b></li>
+              <li><span class="st st-draft">Nháp</span><b>1</b></li>
+            </ul>
+          </div>
+          <div class="card spend">
+            <div class="top"><span>Chi phí tháng 11 <span class="soon-tag">CHANGE 4</span></span><span><b>1.240.000đ</b> / 3.500.000đ</span></div>
+            <div class="meter"><i style="width: 35%"></i></div>
+            <small>Tổng ngân sách các nhân viên số đang làm việc. Cảnh báo khi một người dùng tới 80%.</small>
+          </div>
+        </section>
+
+        <div class="filters" role="group" aria-label="Lọc theo trạng thái">
+          <button class="filter" type="button" aria-pressed="true">Tất cả <b>7</b></button>
+          <button class="filter" type="button" aria-pressed="false">Chính thức <b>3</b></button>
+          <button class="filter" type="button" aria-pressed="false">Thử việc <b>2</b></button>
+          <button class="filter" type="button" aria-pressed="false">Tạm nghỉ <b>1</b></button>
+          <button class="filter" type="button" aria-pressed="false">Nháp <b>1</b></button>
+        </div>
+
+        <div class="org">
+          <div class="root"><div class="root-card"><span class="avatar" aria-hidden="true">AP</span><div><b>Gốm An Phú</b><small>4 phòng ban · 7 nhân viên số</small></div></div></div>
+
+          <div class="lanes">
+            <!-- Kinh doanh -->
+            <section class="lane" aria-labelledby="l1">
+              <div class="lane-head"><div><b id="l1">Kinh doanh</b><small>2 nhân viên số</small></div><span class="avatar a2" title="Trưởng phòng: Nguyễn Thị Lan">NL</span></div>
+              <div class="lane-body">
+                <a class="wcard" href="worker-profile.html?state=active">
+                  <span class="worker-avatar" aria-hidden="true">MB</span>
+                  <div class="name"><b>Minh · Báo giá</b><span class="st st-active">Chính thức</span></div>
+                  <span class="job">Lập báo giá gốm theo bảng giá đại lý</span>
+                  <div class="foot"><span>Quản lý: Nguyễn Thị Lan</span><span class="num">412k / 800k</span><div class="meter"><i style="width: 52%"></i></div></div>
+                </a>
+                <a class="wcard" href="worker-profile.html?state=probation">
+                  <span class="worker-avatar w2" aria-hidden="true">AĐ</span>
+                  <div class="name"><b>An · Chăm sóc đại lý</b><span class="st st-probation">Thử việc</span></div>
+                  <span class="job">Nhắc đơn, trả lời đại lý về tồn kho</span>
+                  <div class="foot"><span>Ngày thử việc 4 / 14</span><span class="num">38k / 300k</span><div class="meter"><i style="width: 13%"></i></div></div>
+                </a>
+                <button class="lane-add" type="button" data-show="role:owner,manager"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Tuyển cho Kinh doanh</button>
+              </div>
+            </section>
+
+            <!-- Kế toán -->
+            <section class="lane" aria-labelledby="l2" data-show="role:owner">
+              <div class="lane-head"><div><b id="l2">Kế toán</b><small>2 nhân viên số</small></div><span class="avatar a3" title="Trưởng phòng: Đỗ Thu Hà">ĐH</span></div>
+              <div class="lane-body">
+                <a class="wcard" href="worker-profile.html?state=active">
+                  <span class="worker-avatar w3" aria-hidden="true">TC</span>
+                  <div class="name"><b>Thu · Công nợ</b><span class="st st-active">Chính thức</span></div>
+                  <span class="job">Tổng hợp công nợ đại lý mỗi sáng thứ Hai</span>
+                  <div class="foot"><span>Quản lý: Đỗ Thu Hà</span><span class="num">655k / 800k</span><div class="meter warn"><i style="width: 82%"></i></div></div>
+                </a>
+                <a class="wcard" href="worker-profile.html?state=draft">
+                  <span class="worker-avatar w4" aria-hidden="true">BH</span>
+                  <div class="name"><b>Bảo · Hoá đơn</b><span class="st st-draft">Nháp</span></div>
+                  <span class="job">Đối chiếu hoá đơn đầu vào</span>
+                  <div class="foot"><span>Chưa giao việc</span><span class="num">— / 500k</span></div>
+                </a>
+                <button class="lane-add" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Tuyển cho Kế toán</button>
+              </div>
+            </section>
+
+            <!-- CSKH -->
+            <section class="lane" aria-labelledby="l3" data-show="role:owner">
+              <div class="lane-head"><div><b id="l3">Chăm sóc khách hàng</b><small>2 nhân viên số</small></div><span class="avatar dashed" title="Chưa có trưởng phòng">?</span></div>
+              <div class="lane-body">
+                <a class="wcard" href="worker-profile.html?state=active">
+                  <span class="worker-avatar w2" aria-hidden="true">VK</span>
+                  <div class="name"><b>Vy · CSKH nội bộ</b><span class="st st-active">Chính thức</span></div>
+                  <span class="job">Tra cứu chính sách đổi trả cho nhân viên</span>
+                  <div class="foot"><span>Quản lý: Trần Minh Đức</span><span class="num">135k / 600k</span><div class="meter"><i style="width: 22%"></i></div></div>
+                </a>
+                <a class="wcard dim" href="worker-profile.html?state=paused">
+                  <span class="worker-avatar" aria-hidden="true">HZ</span>
+                  <div class="name"><b>Hải · Trả lời Zalo</b><span class="st st-paused">Tạm nghỉ</span></div>
+                  <span class="job">Tạm nghỉ từ 20/11 — chờ sửa kỹ năng</span>
+                  <div class="foot"><span>Quản lý: Trần Minh Đức</span><span class="num">0 / 400k</span></div>
+                </a>
+                <button class="lane-add" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Tuyển cho CSKH</button>
+              </div>
+            </section>
+
+            <!-- HCNS -->
+            <section class="lane" aria-labelledby="l4" data-show="role:owner">
+              <div class="lane-head"><div><b id="l4">Hành chính – Nhân sự</b><small>1 nhân viên số</small></div><span class="avatar a5" title="Trưởng phòng: Phạm Gia Hưng">PG</span></div>
+              <div class="lane-body">
+                <a class="wcard" href="worker-profile.html?state=probation">
+                  <span class="worker-avatar w3" aria-hidden="true">TC</span>
+                  <div class="name"><b>Tâm · Chấm công</b><span class="st st-probation">Thử việc</span></div>
+                  <span class="job">Tổng hợp bảng chấm công từ Google Sheets</span>
+                  <div class="foot"><span>Ngày thử việc 9 / 14</span><span class="num">0 / 300k</span><div class="meter"><i style="width: 0%"></i></div></div>
+                </a>
+                <button class="lane-add" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Tuyển cho HC – NS</button>
+              </div>
+            </section>
+
+            <!-- Manager view: other departments collapsed -->
+            <section class="lane readonly" aria-labelledby="l5" data-show="role:manager" hidden>
+              <div class="lane-head"><div><b id="l5">Phòng khác</b><small>Chỉ xem</small></div></div>
+              <div class="lane-collapsed">Kế toán 2 · CSKH 2 · HC – NS 1<br>Trưởng phòng của từng phòng quản lý nhân viên số phòng đó.</div>
+            </section>
+          </div>
+
+          <details class="gone" data-show="role:owner">
+            <summary>Đã nghỉ việc (1)</summary>
+            <a class="wcard dim" href="worker-profile.html?state=off">
+              <span class="worker-avatar off" aria-hidden="true">QT</span>
+              <div class="name"><b>Quang · Tin nhắn Tết</b><span class="st st-off">Nghỉ việc</span></div>
+              <span class="job">Nghỉ từ 02/11 · lịch sử vẫn tra cứu được</span>
+            </a>
+          </details>
+        </div>
+      </div>
+
+      <!-- EMPTY -->
+      <section class="empty-hire" aria-labelledby="eh" data-show="state:empty" hidden>
+        <div>
+          <p class="eyebrow">Bắt đầu</p>
+          <h2 id="eh">Tuyển nhân viên số đầu tiên</h2>
+          <p>Chọn một mẫu có sẵn rồi chỉnh lại. Nhân viên số mới luôn bắt đầu ở <b>Nháp</b>, rồi <b>thử việc</b> trên web chat trước khi làm việc thật.</p>
+        </div>
+        <div class="templates">
+          <label class="tpl"><input type="radio" name="tpl-empty"><span class="worker-avatar" aria-hidden="true">BG</span><b>Trợ lý báo giá</b><small>Lập báo giá theo bảng giá, gửi bản nháp cho người phụ trách.</small></label>
+          <label class="tpl"><input type="radio" name="tpl-empty"><span class="worker-avatar w2" aria-hidden="true">CS</span><b>Trợ lý CSKH nội bộ</b><small>Trả lời nhân viên về chính sách, quy trình, sản phẩm.</small></label>
+          <label class="tpl"><input type="radio" name="tpl-empty"><span class="worker-avatar w3" aria-hidden="true">BC</span><b>Trợ lý tổng hợp báo cáo</b><small>Gom số liệu từ Sheets, viết báo cáo ngày / tuần.</small></label>
+        </div>
+        <div><button class="btn btn-outline" type="button">Hoặc bắt đầu từ hồ sơ trống</button></div>
+      </section>
+
+      <details class="notes" open>
+        <summary>Ghi chú cho change add-worker-profile</summary>
+        <h3>Yêu cầu</h3>
+        <ul>
+          <li><b>FR-02-01/02</b>: mỗi thẻ có tên, mô tả công việc ngắn, trạng thái vòng đời, người quản lý; nhóm theo phòng ban (worker luôn thuộc một phòng).</li>
+          <li><b>FR-02-07</b> (phần mẫu): tuyển từ 3 mẫu hoặc hồ sơ trống; luôn tạo ở trạng thái <b>Nháp</b>. Tạo từ mô tả bằng tiếng Việt (AI dựng hồ sơ) làm sau.</li>
+          <li>Ma trận quyền: Owner / Admin thấy và tuyển cho mọi phòng; Trưởng phòng tuyển và quản lý worker phòng mình.</li>
+          <li>Chi phí / ngân sách trên thẻ hiện số thật từ change 4 (<code>add-llm-gateway-and-credit</code>); change 2 chỉ lưu ngân sách tháng.</li>
+          <li>Bộ lọc trạng thái nằm trên URL. Worker nghỉ việc gom cuối trang, mở ra mới thấy.</li>
+          <li>Hình đại diện: người thật tròn, nhân viên số vuông bo góc có dấu lấp lánh.</li>
+        </ul>
+        <h3>Câu hỏi nghiệp vụ</h3>
+        <ul>
+          <li>Trưởng phòng có xem được nhân viên số của phòng khác không? Thiết kế: chỉ thấy số lượng, không mở hồ sơ.</li>
+          <li>Thời gian thử việc mặc định bao lâu (thiết kế: 14 ngày) và hết hạn thì sao — tự nhắc người quản lý?</li>
+          <li>Tên nhân viên số có phải duy nhất trong công ty không?</li>
+          <li>Ngân sách tháng mặc định khi tuyển (thiết kế: 300.000đ thử việc, 800.000đ chính thức)? Ai được đặt ngân sách — Trưởng phòng hay chỉ Owner / Admin?</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+
+  <!-- HIRE DIALOG -->
+  <div class="scrim" data-show="state:hire" hidden>
+    <section class="dialog" style="width: min(40rem, 100%)" role="dialog" aria-modal="true" aria-labelledby="hire-title">
+      <header class="dialog-head">
+        <h2 id="hire-title">Tuyển nhân viên số</h2>
+        <p>Chọn mẫu để bắt đầu. Bạn sẽ chỉnh hồ sơ trước khi cho thử việc.</p>
+      </header>
+      <div class="dialog-body">
+        <div class="templates">
+          <label class="tpl"><input type="radio" name="tpl" checked><span class="worker-avatar" aria-hidden="true">BG</span><b>Trợ lý báo giá</b><small>Lập báo giá theo bảng giá, gửi nháp cho người phụ trách.</small></label>
+          <label class="tpl"><input type="radio" name="tpl"><span class="worker-avatar w2" aria-hidden="true">CS</span><b>Trợ lý CSKH nội bộ</b><small>Trả lời nhân viên về chính sách, quy trình.</small></label>
+          <label class="tpl"><input type="radio" name="tpl"><span class="worker-avatar w3" aria-hidden="true">BC</span><b>Trợ lý tổng hợp báo cáo</b><small>Gom số liệu, viết báo cáo ngày / tuần.</small></label>
+          <label class="tpl blank"><input type="radio" name="tpl"><span class="worker-avatar off" aria-hidden="true">+</span><b>Hồ sơ trống</b><small>Tự viết mô tả công việc từ đầu.</small></label>
+          <label class="tpl blank disabled" style="grid-column: 1 / -1" title="Sắp có"><input type="radio" name="tpl" disabled><span class="worker-avatar w4" aria-hidden="true">AI</span><b>Kể việc bằng tiếng Việt <span class="soon-tag">SẮP CÓ</span></b><small>"Tôi cần một bạn nhắc công nợ đại lý mỗi thứ Hai…" — AI dựng hồ sơ nháp cho bạn.</small></label>
+        </div>
+        <div class="field">
+          <label for="hire-dept">Phòng ban</label>
+          <select class="select" id="hire-dept"><option selected>Kinh doanh</option><option>Kế toán</option><option>Chăm sóc khách hàng</option><option>Hành chính – Nhân sự</option></select>
+          <span class="hint" data-show="role:manager" hidden>Bạn chỉ tuyển được cho phòng Kinh doanh.</span>
+        </div>
+      </div>
+      <footer class="dialog-foot">
+        <button class="btn btn-ghost" type="button">Huỷ</button>
+        <a class="btn btn-primary" href="worker-profile.html?state=draft">Tạo bản nháp →</a>
+      </footer>
+    </section>
+  </div>
+
+  <script src="_proto.js"></script>
+</body>
+</html>
