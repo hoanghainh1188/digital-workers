@@ -16,7 +16,7 @@ Repo mới có tài liệu, chưa có code. Mọi change sau (từ `add-tenancy-
 - Docker Compose dev (PostgreSQL 16) và prod (`api`, `runner`, `web` qua Caddy, `postgres`, `caddy`), Dockerfile cho api / runner.
 - CI: GitHub Actions chạy kiểm tra nhẹ; `pnpm ci:runner` chạy đủ (kể cả test tích hợp, e2e) trên máy.
 - Sửa `openspec/config.yaml`: trường `rules` phải là object theo từng artifact. Dạng danh sách cũ bị CLI bỏ qua với lỗi `Invalid 'rules' field`.
-- Đề xuất nhà cung cấp cloud Việt Nam (so sánh trong design.md). Chọn chính thức ghi vào 0.2 khi được duyệt.
+- Đề xuất nhà cung cấp cloud Việt Nam (so sánh trong design.md): VNG Cloud, chốt khi có báo giá (0.2 #029). Thuê máy và triển khai thật làm ở change `deploy-staging` (0.2 #031).
 
 ## Capabilities
 
@@ -30,7 +30,7 @@ Repo mới có tài liệu, chưa có code. Mọi change sau (từ `add-tenancy-
 ## Impact
 
 - **Code mới**: toàn bộ khung `apps/`, `packages/core`, `packages/db`, file cấu hình gốc, `compose.yaml`, `compose.prod.yaml`, `Caddyfile`, `Dockerfile`, `.github/workflows/ci.yml`, `scripts/`.
-- **Thư viện ngoài danh sách CLAUDE.md** cần duyệt (chi tiết và lý do ở design.md, mục D9): `pg`, `@biomejs/biome`, cùng các gói đi kèm shadcn/ui (Tailwind CSS, Radix, `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority`).
-- **Phiên bản Node**: đề xuất **Node 24 LTS** thay cho Node 22 trong CLAUDE.md, vì Node 22 hết hỗ trợ tháng 4/2027 (design.md, D1). Được duyệt thì sửa CLAUDE.md trong chính PR này.
-- **Tài liệu**: README (cách chạy), CLAUDE.md (nếu đổi Node / thư viện), `docs/requirements.md` 0.2 (quyết định mới), `docs/architecture.md` mục 8 và 12 (nhà cung cấp cloud).
+- **Thư viện thêm vào danh sách CLAUDE.md** (đã duyệt, 0.2 #028; lý do ở design.md, mục D9): `pg`, `@biomejs/biome`, cùng các gói đi kèm shadcn/ui (Tailwind CSS, Radix, `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority`).
+- **Phiên bản Node**: **Node 24 LTS** thay cho Node 22 (đã duyệt, 0.2 #027; design.md, D1). CLAUDE.md đã sửa trong PR này.
+- **Tài liệu**: README (cách chạy). Đã sửa trong PR propose: CLAUDE.md (Node, thư viện), `docs/requirements.md` 0.2 #027–#031, `docs/architecture.md` mục 8 và 12, `docs/ROADMAP.md` (thêm change 5a `deploy-staging`).
 - Chưa có API nghiệp vụ, chưa có dữ liệu công ty → chưa áp dụng test tách công ty; khung test tích hợp (Testcontainers) dựng sẵn cho change 1.

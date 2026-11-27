@@ -29,7 +29,7 @@
 - **Lý do**: Node 22 (đang ghi trong CLAUDE.md) hết hỗ trợ tháng 4/2027, tức khoảng 5 tháng sau khi bắt đầu MVP. Node 24 được hỗ trợ tới tháng 4/2028, và máy Harry đã dùng Node 24. Type stripping giúp bỏ `tsx` / `ts-node`, bỏ thư mục `dist`, và stack trace trỏ đúng dòng.
 - **Ràng buộc kèm theo**: `tsconfig` bật `erasableSyntaxOnly`, `verbatimModuleSyntax`, `allowImportingTsExtensions` và `noEmit`. Import dùng đuôi `.ts`. Không dùng `enum`, `namespace` hay parameter property (dùng `as const` + union).
 - **Đã cân nhắc**: (a) `tsc` build ra `dist`: thêm bước build, dễ chạy nhầm bản cũ. (b) `tsx`: ngoài danh sách thư viện, và không cần nữa từ Node 22.18. (c) Ở lại Node 22: được, nhưng phải nâng cấp ngay giữa MVP.
-- **Cần duyệt**: đổi "Node.js 22 LTS" → "Node.js 24 LTS" trong CLAUDE.md.
+- **Đã duyệt** (0.2 #027): CLAUDE.md ghi Node.js 24 LTS.
 
 ### D2. Cấu trúc thư mục: chỉ tạo package khi có người dùng
 
@@ -87,13 +87,13 @@ scripts/ci-runner.sh   .github/workflows/ci.yml
 - **Đã cân nhắc**: ESLint + `typescript-eslint` + `eslint-plugin-react-hooks` + Prettier: 4+ gói và nhiều phụ thuộc con. Biome có sẵn luật cho React hooks và TypeScript đủ cho MVP.
 - `pnpm lint` = `biome check .`. `pnpm typecheck` = `tsc --noEmit` cho từng package (`pnpm -r typecheck`).
 
-### D8. CI
+### D8. CI (đã duyệt, 0.2 #030)
 
 - **GitHub Actions** (`ci.yml`, `ubuntu-latest`) chạy cho mỗi PR: `pnpm install --frozen-lockfile`, `lint`, `typecheck`, `test`, `openspec validate --all --strict`. Mất khoảng 2–3 phút, nằm trong hạn mức miễn phí của repo private.
 - **`pnpm ci:runner`** (`scripts/ci-runner.sh`) chạy trên máy Harry, trước khi merge: các bước trên + `test:int` + `e2e` + `docker compose -f compose.prod.yaml build`. Script dừng ở lỗi đầu tiên.
 - **Đã cân nhắc**: GitHub self-hosted runner gắn máy Harry. Để sau: máy tắt thì PR treo, và phải cài và giữ dịch vụ runner. Có thể bật khi test tích hợp nhiều lên.
 
-### D9. Thư viện ngoài danh sách CLAUDE.md (cần duyệt)
+### D9. Thư viện ngoài danh sách CLAUDE.md (đã duyệt, 0.2 #028)
 
 | Gói | License | Dùng cho | Không có thì sao |
 |---|---|---|---|
@@ -103,7 +103,7 @@ scripts/ci-runner.sh   .github/workflows/ci.yml
 | `radix-ui` / `@radix-ui/*`, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` | MIT / ISC | Phụ thuộc chuẩn của shadcn/ui | Như trên |
 | `react`, `react-dom`, `vite`, `@vitejs/plugin-react`, `typescript`, `vitest`, `@playwright/test`, `testcontainers`, `@testcontainers/postgresql`, `@types/node`, `drizzle-orm` | MIT / Apache-2.0 | Đã nằm trong stack | — |
 
-Đề xuất: ghi thêm vào "Thư viện được phép" của CLAUDE.md rằng các phụ thuộc chuẩn của shadcn/ui được coi là một phần của stack.
+CLAUDE.md, mục "Thư viện được phép", đã ghi các gói trên, kể cả phụ thuộc chuẩn của shadcn/ui.
 
 ### D10. Docker và triển khai
 
@@ -112,7 +112,7 @@ scripts/ci-runner.sh   .github/workflows/ci.yml
 - **`compose.prod.yaml`**: `postgres`, `api`, `runner`, `caddy`. Web được build (`vite build`) trong stage của Caddy và Caddy phục vụ file tĩnh. Caddy proxy `/api/*`, `/webhooks/*`, `/health*` sang `api:3000`. `api` khởi động khi `postgres` đã healthy. Migration chạy bằng service `migrate` một lần (`dw_owner`) trước `api`. Postgres không mở cổng ra ngoài.
 - `Caddyfile` dùng biến `{$SITE_ADDRESS}`: `localhost` khi thử trên máy, tên miền thật trên cloud (Caddy tự lấy chứng chỉ).
 
-### D11. Nhà cung cấp cloud Việt Nam (đề xuất, chờ duyệt)
+### D11. Nhà cung cấp cloud Việt Nam (đề xuất VNG Cloud, chốt khi có báo giá — 0.2 #029)
 
 Cần: 1 máy ảo 2–4 vCPU / 4–8 GB, ổ riêng cho PostgreSQL, **object storage tương thích S3 đặt ở Việt Nam** (sao lưu), hoá đơn VAT, trả bằng VNĐ.
 
@@ -138,7 +138,6 @@ Cần: 1 máy ảo 2–4 vCPU / 4–8 GB, ổ riêng cho PostgreSQL, **object st
 - [Biome thiếu một số luật mà ESLint có] → chấp nhận cho MVP; thêm ESLint sau nếu thấy thiếu.
 - [Giá cloud lấy từ nguồn bên thứ ba có thể sai] → chỉ là đề xuất; quyết định cuối dựa trên báo giá Harry tự kiểm tra.
 - [CI nặng chạy tay, có thể bị quên] → mẫu PR có ô "đã chạy `pnpm ci:runner`"; bật self-hosted runner khi cần.
-- [Đổi Node 22 → 24 trái với CLAUDE.md hiện tại] → nêu rõ trong PR; chưa được duyệt thì giữ 22.18+ (type stripping vẫn chạy), chỉ đổi `.nvmrc` / `engines` / ảnh Docker.
 
 ## Migration Plan
 
@@ -146,4 +145,4 @@ Không có hệ thống cũ. Rollback = revert PR.
 
 ## Open Questions
 
-- Nhà cung cấp cloud chính thức và kích thước máy: chốt sau khi Harry có báo giá. Không làm đổi spec hay task (D11). Việc thuê máy, tên miền và sao lưu thật nên là một change riêng (`deploy-staging`) đặt trước change 6, khi webhook Telegram cần HTTPS công khai.
+- Nhà cung cấp cloud chính thức và kích thước máy: chốt sau khi Harry có báo giá. Không làm đổi spec hay task (D11). Thuê máy, tên miền và sao lưu thật làm ở change 5a `deploy-staging` (#21, 0.2 #031).
