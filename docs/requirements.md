@@ -80,6 +80,11 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 053 | 2026-11-27 | Người quản lý worker: **bất kỳ ai trong phòng** hoặc Owner / Admin; mặc định là trưởng phòng. Người quản lý nhận cảnh báo và duyệt việc; chỉ trưởng phòng / Owner / Admin đổi trạng thái. (`add-worker-profile`) |
 | 054 | 2026-11-27 | **Bắt buộc lý do** khi cho nghỉ việc và khi trả lại đề nghị chính thức; tạm nghỉ không bắt buộc. (`add-worker-profile`) |
 | 055 | 2026-11-27 | Thêm **`@types/nodemailer`** (devDependency, MIT, chỉ khai báo kiểu cho `nodemailer`) vào danh sách thư viện được phép. Ma trận quyền mục 1 có thêm hàng **"Đổi thông tin công ty (tên, số điện thoại)"**: Owner và Admin được, Trưởng phòng và Nhân viên không. (`add-tenancy-and-auth`) |
+| 056 | 2026-11-27 | Mức rủi ro của kỹ năng (trước khi có quét tự động ở change 11): **hệ thống gợi ý**, người tạo chọn, **Owner / Admin chốt** khi duyệt. Kỹ năng có `scripts/` luôn rủi ro **cao**, không hạ được. (`add-skill-library`) |
+| 057 | 2026-11-27 | Giao kỹ năng cho nhân viên số từ **cả hai nơi**: màn kỹ năng ("Giao thêm") và tab Kỹ năng trong hồ sơ nhân viên số, cùng một luật quyền. (`add-skill-library`) |
+| 058 | 2026-11-27 | Giao kỹ năng cho worker **chính thức**: Owner / Admin giao thẳng; Trưởng phòng giao thì **chờ Owner / Admin duyệt**. Worker Nháp / Thử việc không cần duyệt. Kỹ năng có script luôn cần duyệt. (`add-skill-library`) |
+| 059 | 2026-11-27 | Nhập kỹ năng từ `.zip`: tối đa **25 MB**; chỉ nhận text / markdown / csv / xlsx / docx / pdf / ảnh; script chỉ `.py`. File khác bị từ chối kèm lý do. (`add-skill-library`) |
+| 060 | 2026-11-27 | **Không lưu trữ** kỹ năng còn nhân viên số đang dùng: phải gỡ khỏi các worker trước; nút Lưu trữ báo số worker còn dùng và dẫn tới danh sách. (`add-skill-library`) |
 
 ### 0.3. Đề xuất chờ chốt
 

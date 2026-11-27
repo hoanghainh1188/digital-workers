@@ -314,6 +314,7 @@ description: Lập báo giá gốm cho đại lý theo bảng giá
 
             <section class="card panel" aria-labelledby="as-h">
               <h2 id="as-h">Nhân viên số đang dùng <button class="btn btn-ghost" type="button" style="height:2rem">Giao thêm</button></h2>
+              <p class="hint" data-show="role:manager" hidden style="font-size:var(--text-xs); color:var(--muted-foreground); margin:-0.5rem 0 0.75rem">Giao cho nhân viên số chính thức sẽ chờ Owner / Admin duyệt.</p>
               <ul class="assigned">
                 <li><span class="worker-avatar" aria-hidden="true">MB</span><span>Minh · Báo giá<small>Chính thức · Kinh doanh</small></span><span class="ver">v2</span></li>
                 <li><span class="worker-avatar w2" aria-hidden="true">AĐ</span><span>An · Chăm sóc đại lý<small>Thử việc · Kinh doanh</small></span><span class="ver">v2</span></li>
@@ -336,13 +337,13 @@ description: Lập báo giá gốm cho đại lý theo bảng giá
           <li>Ma trận quyền: ai cũng tạo / sửa bản nháp; chỉ Owner / Admin duyệt (và quay lại version cũ).</li>
           <li>Mức rủi ro (FR-09-04) hiện bằng 3 vạch: thấp / trung bình / cao.</li>
         </ul>
-        <h3>Câu hỏi nghiệp vụ</h3>
+        <h3>Đã chốt (docs/requirements.md 0.2)</h3>
         <ul>
-          <li>Mức rủi ro do ai đặt ở change 3 (trước khi có quét tự động ở change 11)? Thiết kế: hệ thống gợi ý theo nội dung (có script → cao), người tạo chọn, Owner / Admin sửa được.</li>
-          <li>Giao kỹ năng cho worker ở đâu: từ màn kỹ năng ("Giao thêm"), từ tab Kỹ năng của hồ sơ worker, hay cả hai?</li>
-          <li>Giao kỹ năng cho worker đang chính thức có cần duyệt không (FR-09-01 nói "thêm skill" kích hoạt kiểm duyệt)? Thiết kế change 3: Owner / Admin giao thẳng; Trưởng phòng giao thì chờ duyệt.</li>
-          <li>Giới hạn kích thước file <code>.zip</code> và loại file được nhận? Đề xuất: ≤ 10 MB, chỉ text / markdown / csv / xlsx / docx / pdf / ảnh; script chỉ <code>.py</code>.</li>
-          <li>Lưu trữ kỹ năng không dùng nữa: được khi còn worker dùng không? Đề xuất: không, phải gỡ khỏi worker trước.</li>
+          <li><b>#056</b> Rủi ro: hệ thống gợi ý, người tạo chọn, Owner / Admin chốt; có script luôn cao.</li>
+          <li><b>#057</b> Giao kỹ năng từ cả màn kỹ năng lẫn hồ sơ nhân viên số.</li>
+          <li><b>#058</b> Worker chính thức: Owner / Admin giao thẳng, Trưởng phòng giao thì chờ duyệt; Nháp / Thử việc không cần duyệt; có script luôn cần duyệt.</li>
+          <li><b>#059</b> <code>.zip</code> tối đa 25 MB; chỉ text / markdown / csv / xlsx / docx / pdf / ảnh; script chỉ <code>.py</code>.</li>
+          <li><b>#060</b> Không lưu trữ kỹ năng còn worker dùng; gỡ khỏi worker trước.</li>
         </ul>
       </details>
     </main>
@@ -353,7 +354,7 @@ description: Lập báo giá gốm cho đại lý theo bảng giá
     <section class="dialog" style="width:min(36rem,100%)" role="dialog" aria-modal="true" aria-labelledby="imp">
       <header class="dialog-head">
         <h2 id="imp">Nhập kỹ năng từ .zip</h2>
-        <p>Gói phải có <code>SKILL.md</code> ở thư mục gốc. Kỹ năng nhập vào ở trạng thái Nháp.</p>
+        <p>Gói phải có <code>SKILL.md</code> ở thư mục gốc, tối đa 25 MB. Kỹ năng nhập vào ở trạng thái Nháp.</p>
       </header>
       <div class="dialog-body">
         <div class="drop">
