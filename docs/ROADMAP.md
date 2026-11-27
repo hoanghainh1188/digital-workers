@@ -363,7 +363,7 @@ Dừng lại sau khi propose để tôi duyệt.
 
 ## 8. `add-schedules`
 
-**Mục tiêu:** lịch chạy theo giờ Việt Nam (FR-06).
+**Mục tiêu:** lịch chạy theo giờ Việt Nam (FR-06). Kèm việc nền xoá `AuditEvent` quá 1 năm (0.2 #046) và hội thoại quá 90 ngày (#019).
 
 ```text
 /opsx:propose add-schedules

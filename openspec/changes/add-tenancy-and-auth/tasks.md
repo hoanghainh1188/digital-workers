@@ -30,14 +30,14 @@
 ## 5. Web
 
 - [ ] 5.1 Thêm `@tanstack/react-router`, `@tanstack/react-query`, `better-auth/react`; dựng các route `/signup`, `/login`, `/onboarding`, `/verify-email`, `/` và điều hướng theo `me` (chưa đăng nhập → `/login`, chưa có công ty → `/onboarding`); kiểm tra `pnpm --filter @dw/web build` và typecheck qua
-- [ ] 5.2 Chuyển component dùng chung từ `docs/design/screens/_shared.css` (Button, Field, Callout, Badge, khung sidebar) và làm trang đăng ký, đăng nhập theo `signup.html` (lỗi theo trường từ schema Zod, nút Google theo `googleEnabled`, chuỗi trong `vi.ts`); unit test hàm ánh xạ lỗi Zod → thông báo tiếng Việt
+- [ ] 5.2 Thêm `@fontsource/be-vietnam-pro` (4 độ đậm, subset vietnamese + latin) và chuyển component dùng chung từ `docs/design/screens/_shared.css` (Button, Field, Callout, Badge, khung sidebar) và làm trang đăng ký, đăng nhập theo `signup.html` (lỗi theo trường từ schema Zod, nút Google theo `googleEnabled`, chuỗi trong `vi.ts`); unit test hàm ánh xạ lỗi Zod → thông báo tiếng Việt
 - [ ] 5.3 Làm trang `/onboarding` (tạo công ty), `/verify-email`, banner "Xác minh email" + "Gửi lại" trong khung app, đăng xuất; kiểm tra bằng tay trên `pnpm dev` với Mailpit: đăng ký → nhận email → bấm link → banner biến mất
 - [ ] 5.4 Dựng `globalSetup` Playwright (Testcontainers + api + `vite preview`) và e2e: đăng ký → vào app → đăng xuất → đăng nhập lại; mật khẩu yếu báo lỗi đúng trường; không tràn ngang ở 320 và 1440 px; kiểm tra `pnpm e2e` qua
 
 ## 6. Tài liệu và lộ trình
 
 - [ ] 6.1 Cập nhật `.env.example`, `.env.prod.example`, `compose.prod.yaml` (biến mới) và README (Mailpit, cách đăng ký thử); kiểm tra stack prod trên máy: `/api/auth` chạy qua Caddy, cookie có cờ Secure
-- [ ] 6.2 Ghi câu trả lời các câu hỏi trong PR vào docs/requirements.md 0.2; cập nhật docs/architecture.md mục 7 (schema `auth`, hàm `member_for_user`, `withCompany`); kiểm tra `openspec validate --all --strict` qua
+- [ ] 6.2 Cập nhật docs/architecture.md mục 7 (schema `auth`, hàm `member_for_user`, `withCompany`); kiểm tra `openspec validate --all --strict` qua
 
 ## Workflow follow-up
 

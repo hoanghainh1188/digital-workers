@@ -20,6 +20,7 @@
 - Quên mật khẩu / đặt lại mật khẩu (đề xuất làm trong 1b, cùng luồng email).
 - Chặn hành động khi chưa xác minh email: làm cùng hành động đó (mời người ở 1b, nạp credit ở change 16). Change này chỉ cung cấp cờ `emailVerified` và guard dùng chung.
 - Đăng nhập Zalo, 2FA.
+- Xoá `AuditEvent` quá 1 năm (#046): làm khi runner có lịch (change `add-schedules`).
 
 ## Decisions
 
@@ -60,7 +61,7 @@ view public.member_profiles (security_invoker) = members JOIN auth.users (name, 
 
 ### D4. Better Auth trong Fastify
 
-- Cấu hình ở `apps/api/src/auth/auth.ts`: `drizzleAdapter(db, { provider: 'pg', schema })` với bảng trong `pgSchema('auth')`; `emailAndPassword` (`minPasswordLength: 10`, `requireEmailVerification: false` theo #033), `emailVerification.sendVerificationEmail` (gửi không chờ, theo khuyến cáo chống timing), `socialProviders.google` **chỉ khi** có `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`, `session.expiresIn = 30 ngày` + `updateAge = 1 ngày`, `advanced.useSecureCookies` khi `NODE_ENV=production`, `trustedOrigins = [WEB_ORIGIN]`.
+- Cấu hình ở `apps/api/src/auth/auth.ts`: `drizzleAdapter(db, { provider: 'pg', schema })` với bảng trong `pgSchema('auth')`; `emailAndPassword` (`minPasswordLength: 10`, `requireEmailVerification: false` theo #033), `emailVerification.sendVerificationEmail` (gửi không chờ, theo khuyến cáo chống timing), `socialProviders.google` **chỉ khi** có `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`, `session.expiresIn = 30 ngày` + `updateAge = 1 ngày` (#043), `advanced.useSecureCookies` khi `NODE_ENV=production`, `trustedOrigins = [WEB_ORIGIN]`.
 - Gắn route `GET|POST /api/auth/*` theo mẫu Fastify chính thức (better-auth 1.7 docs, `fromNodeHeaders`).
 - **Mật khẩu phổ biến** (#032): `hooks.before` của Better Auth chặn ở mọi đường đặt mật khẩu (`/sign-up/email`, sau này `/reset-password`), dùng `isCommonPassword()` trong `packages/core` (danh sách ~1.000 mật khẩu phổ biến nhất, kèm mẫu tiếng Việt như `matkhau123`, đặt trong repo, không thêm thư viện).
 - **Đăng ký công ty bằng email**: route riêng `POST /api/signup` {companyName, name, email, password, phone?}. Route kiểm tra bằng Zod (schema dùng chung với web, ở `packages/core`), gọi `auth.api.signUpEmail`, rồi tạo công ty. Nếu tạo công ty lỗi sau khi đã có tài khoản thì người dùng rơi vào bước "Tạo công ty", **giống hệt luồng Google**. Nhờ vậy chỉ có một đường "đã đăng nhập nhưng chưa có công ty", không cần giao dịch xuyên Better Auth.
@@ -80,7 +81,7 @@ view public.member_profiles (security_invoker) = members JOIN auth.users (name, 
 ### D6. Giới hạn thử đăng nhập sai
 
 - **Theo IP**: `rateLimit` có sẵn của Better Auth cho `/sign-in/email` và `/sign-up/email`.
-- **Theo email** (spec: 10 lần sai / 15 phút → 429): đặt `@fastify/rate-limit` trên route `/api/auth/sign-in/email`, khoá theo email đã chuẩn hoá (lowercase, trim). Chỉ lần sai mới bị đếm: lần đúng thì xoá bộ đếm.
+- **Theo email** (#044, spec: 10 lần sai / 15 phút → 429): đặt `@fastify/rate-limit` trên route `/api/auth/sign-in/email`, khoá theo email đã chuẩn hoá (lowercase, trim). Chỉ lần sai mới bị đếm: lần đúng thì xoá bộ đếm.
 - Bộ đếm để trong bộ nhớ: chỉ có một tiến trình api (NFR-10). Khởi động lại thì bộ đếm về 0, chấp nhận được với MVP.
 
 ### D7. Ma trận quyền ở `packages/core`
@@ -93,7 +94,7 @@ view public.member_profiles (security_invoker) = members JOIN auth.users (name, 
 
 - `createMailer({ smtpUrl, from })` bọc nodemailer. Test dùng transport ghi vào bộ nhớ.
 - Mẫu email đặt trong `packages/mail/src/templates/vi.ts` (tiếng Việt, cả bản text lẫn HTML đơn giản), không viết chuỗi cứng trong code gửi.
-- Dev: thêm `mailpit` (`axllent/mailpit`) vào `compose.yaml`, SMTP cổng 1025, giao diện 8025. Prod: nhà cung cấp SMTP chờ chốt (xem Open Questions).
+- Dev: thêm `mailpit` (`axllent/mailpit`) vào `compose.yaml`, SMTP cổng 1025, giao diện 8025. Prod: nhà cung cấp SMTP chọn ở change `deploy-staging` (#042); code chỉ đọc `SMTP_URL`.
 
 ### D9. Web
 
@@ -105,6 +106,7 @@ view public.member_profiles (security_invoker) = members JOIN auth.users (name, 
 - **Gọi API**: `@tanstack/react-query`. Truy vấn `me` quyết định điều hướng: chưa đăng nhập → `/login`; chưa có công ty → `/onboarding`.
 - **Client auth**: `better-auth/react` (`createAuthClient`), dùng cho đăng nhập email, Google và đăng xuất. Đăng ký công ty gọi `POST /api/signup`.
 - **Form**: tự viết. React Hook Form không có trong danh sách được phép, mà form ở đây chỉ có 3–5 trường. Kiểm tra bằng chính schema Zod ở `packages/core`, nên lỗi hiển thị khớp lỗi API.
+- **Font** (#045): `@fontsource/be-vietnam-pro`, chỉ nạp 4 độ đậm 400/500/600/700 (subset `vietnamese` + `latin`), `font-display: swap`; bỏ link Google Fonts.
 - **Giao diện**: chuyển phần dùng được của `_shared.css` vào component (Button, Field, Callout, Badge, khung sidebar). Mọi chuỗi đặt trong `src/i18n/vi.ts`.
 - **Banner xác minh email**: hiện trong khung app khi `emailVerified = false`, có nút "Gửi lại".
 - **Dev**: proxy của Vite chuyển `/api` sang api, nên cookie cùng origin; prod cùng origin qua Caddy.
@@ -151,7 +153,3 @@ Thêm vào schema env của api:
   1. Schema `auth` + bảng Better Auth.
   2. `companies`, `members`, `audit_events`, RLS, hàm `member_for_user`, view.
 - Hệ thống chưa có dữ liệu thật nên không cần chuyển dữ liệu. Rollback = revert PR + xoá DB dev.
-
-## Open Questions
-
-- Nhà cung cấp SMTP cho prod (dữ liệu email đi qua đâu). Không đổi code: chỉ là `SMTP_URL`. Cần chốt trước `deploy-staging`.

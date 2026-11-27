@@ -66,6 +66,11 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 039 | 2026-11-27 | Một công ty có **nhiều Owner** được. **Chỉ Owner** gán vai trò Owner hoặc Admin; Admin không sửa / khoá được Owner. Công ty luôn có **ít nhất một Owner đang hoạt động** (không hạ vai trò, không khoá Owner cuối cùng). (`add-tenancy-and-users`) |
 | 040 | 2026-11-27 | Người nghỉ việc bị **khoá**, không xoá: không đăng nhập, không giao việc được; tên vẫn hiện trong lịch sử; mở khoá được. (`add-tenancy-and-users`) |
 | 041 | 2026-11-27 | Số điện thoại khi đăng ký công ty: **không bắt buộc**. (`add-tenancy-and-users`) |
+| 042 | 2026-11-27 | Gửi email ở prod qua SMTP; **nhà cung cấp chọn ở change `deploy-staging`** (ưu tiên SMTP của nhà cung cấp cloud Việt Nam). Dev dùng Mailpit. (`add-tenancy-and-auth`) |
+| 043 | 2026-11-27 | Phiên đăng nhập web **30 ngày, tự gia hạn** khi người dùng còn dùng (gia hạn tối đa mỗi ngày một lần). (`add-tenancy-and-auth`) |
+| 044 | 2026-11-27 | Đăng nhập sai **10 lần trong 15 phút** (theo email) → tạm chặn tới hết 15 phút; ngoài ra có giới hạn theo IP. (`add-tenancy-and-auth`) |
+| 045 | 2026-11-27 | Font giao diện **Be Vietnam Pro, tự host** qua `@fontsource/be-vietnam-pro` (OFL); không gọi Google Fonts. (`add-tenancy-and-auth`) |
+| 046 | 2026-11-27 | `AuditEvent` giữ **1 năm**, như log việc (#019). Việc xoá bản quá hạn chạy nền, làm khi runner có lịch (change `add-schedules`). (`add-tenancy-and-auth`) |
 
 ### 0.3. Đề xuất chờ chốt
 
