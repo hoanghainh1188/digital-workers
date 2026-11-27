@@ -63,7 +63,7 @@ openspec validate --all --strict
 
 ## Thư viện được phép
 
-Ngoài stack trên, chỉ dùng thêm: `@fastify/websocket`, `@fastify/rate-limit`, `@fastify/cors`, `drizzle-kit`, `pg-boss`, `zod`, `pino`, `better-auth`, `ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai`, `grammy`, `gray-matter`, `googleapis`, `imapflow`, `nodemailer`, `@tanstack/react-query`, `@tanstack/react-router`, `date-fns`, `pg`, `@biomejs/biome`, và các phụ thuộc chuẩn của shadcn/ui (Tailwind CSS, Radix, `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority`) — 0.2 #028; `@fontsource/be-vietnam-pro` — 0.2 #045; `@types/nodemailer` — 0.2 #047.
+Ngoài stack trên, chỉ dùng thêm: `@fastify/websocket`, `@fastify/rate-limit`, `@fastify/cors`, `drizzle-kit`, `pg-boss`, `zod`, `pino`, `better-auth`, `ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai`, `grammy`, `gray-matter`, `googleapis`, `imapflow`, `nodemailer`, `@tanstack/react-query`, `@tanstack/react-router`, `date-fns`, `pg`, `@biomejs/biome`, và các phụ thuộc chuẩn của shadcn/ui (Tailwind CSS, Radix, `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority`) — 0.2 #028; `@fontsource/be-vietnam-pro` — 0.2 #045; `@types/nodemailer` — 0.2 #055.
 **Muốn thêm thư viện khác → hỏi trước trong mô tả PR.** License chỉ MIT / BSD / Apache / ISC.
 
 ## Luật bắt buộc
