@@ -84,6 +84,7 @@ export const vi = {
   'shell.nav.people': 'Người dùng',
   'shell.nav.soon': 'sắp có',
   'shell.signOut': 'Đăng xuất',
+  'shell.signOut.failed': 'Chưa đăng xuất được. Kiểm tra mạng rồi thử lại.',
 
   'role.owner': 'Owner',
   'role.admin': 'Admin',

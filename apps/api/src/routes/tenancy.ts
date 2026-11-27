@@ -4,6 +4,7 @@ import { eq } from '@dw/db/drizzle';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { type Auth, signUpWithEmail } from '../auth/index.ts';
+import { perIpLimit, type RequestLimit } from '../plugins/request-guards.ts';
 import type { ZodTypeProvider } from '../plugins/zod.ts';
 import {
   AlreadyInCompanyError,
@@ -16,6 +17,7 @@ import {
 } from '../tenancy/index.ts';
 
 export type TenancyRouteDeps = {
+  readonly signupLimit: RequestLimit;
   readonly auth: Auth;
   readonly database: Database;
   readonly guards: Guards;
@@ -53,6 +55,8 @@ const memberResponse = z.strictObject({
 export function registerTenancyRoutes(app: FastifyInstance, deps: TenancyRouteDeps): void {
   const routes = app.withTypeProvider<ZodTypeProvider>();
   const { guards, database } = deps;
+  // Sign-up bypasses Better Auth's router (and its IP limit), so it gets its own.
+  const ipLimit = perIpLimit(deps.signupLimit);
 
   routes.get(
     '/api/config/public',
@@ -84,45 +88,49 @@ export function registerTenancyRoutes(app: FastifyInstance, deps: TenancyRouteDe
 
   // Email signup = Better Auth account, then company + Owner (design D4). If the
   // second step fails the user is signed in without a company → /onboarding.
-  routes.post('/api/signup', { schema: { body: signupInput } }, async (request, reply) => {
-    const input = request.body;
-    const account = await signUpWithEmail(
-      deps.auth,
-      { name: input.name, email: input.email, password: input.password },
-      request.headers,
-    );
-    if (!account.ok) {
-      if (account.code === 'USER_ALREADY_EXISTS' || account.code.includes('ALREADY_EXISTS')) {
-        return sendError(reply, 409, 'EMAIL_TAKEN', 'Email already has an account');
+  routes.post(
+    '/api/signup',
+    { preHandler: ipLimit, schema: { body: signupInput } },
+    async (request, reply) => {
+      const input = request.body;
+      const account = await signUpWithEmail(
+        deps.auth,
+        { name: input.name, email: input.email, password: input.password },
+        request.headers,
+      );
+      if (!account.ok) {
+        if (account.code === 'USER_ALREADY_EXISTS' || account.code.includes('ALREADY_EXISTS')) {
+          return sendError(reply, 409, 'EMAIL_TAKEN', 'Email already has an account');
+        }
+        if (account.code === 'PASSWORD_COMMON') {
+          return reply.status(400).send({
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Invalid request',
+              details: [{ path: 'password', message: 'password_common' }],
+            },
+          });
+        }
+        return sendError(reply, Math.max(account.status, 400), account.code, 'Sign-up failed');
       }
-      if (account.code === 'PASSWORD_COMMON') {
-        return reply.status(400).send({
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid request',
-            details: [{ path: 'password', message: 'password_common' }],
-          },
+      reply.header('set-cookie', [...account.setCookies]);
+      try {
+        const created = await deps.createCompany({
+          userId: account.userId,
+          name: input.companyName,
+          contactPhone: input.phone ?? null,
         });
+        return reply.status(201).send({ companyId: created.companyId });
+      } catch (error) {
+        request.log.error({ error: describeError(error) }, 'company creation after sign-up failed');
+        return reply.status(201).send({ companyId: null });
       }
-      return sendError(reply, Math.max(account.status, 400), account.code, 'Sign-up failed');
-    }
-    reply.header('set-cookie', [...account.setCookies]);
-    try {
-      const created = await deps.createCompany({
-        userId: account.userId,
-        name: input.companyName,
-        contactPhone: input.phone ?? null,
-      });
-      return reply.status(201).send({ companyId: created.companyId });
-    } catch (error) {
-      request.log.error({ error: describeError(error) }, 'company creation after sign-up failed');
-      return reply.status(201).send({ companyId: null });
-    }
-  });
+    },
+  );
 
   routes.post(
     '/api/companies',
-    { preHandler: guards.requireAuth, schema: { body: companyInput } },
+    { preHandler: [ipLimit, guards.requireAuth], schema: { body: companyInput } },
     async (request, reply) => {
       const ctx = request.ctx;
       if (!ctx) throw new Error('requireAuth did not run');

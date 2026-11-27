@@ -161,6 +161,44 @@ describe('companies and members (specs company-signup, tenant-isolation, access-
     });
   });
 
+  describe('CSRF origin check and sign-up limit', () => {
+    it('state-changing requests without a trusted Origin are refused', async () => {
+      const noOrigin = await t.app.inject({
+        method: 'PATCH',
+        url: '/api/company',
+        headers: { cookie: a.ownerCookie },
+        payload: { name: 'CSRF' },
+      });
+      expect(noOrigin.statusCode).toBe(403);
+      expect(noOrigin.json().error.code).toBe('INVALID_ORIGIN');
+      const evil = await t.app.inject({
+        method: 'POST',
+        url: '/api/signup',
+        headers: { origin: 'https://evil.example' },
+        payload: { companyName: 'X', name: 'X', email: uniqueEmail(), password: STRONG_PASSWORD },
+      });
+      expect(evil.statusCode).toBe(403);
+      expect((await get(t.app, '/api/company', a.ownerCookie)).json().name).toBe('Công ty A');
+    });
+
+    it('POST /api/signup is limited per IP', async () => {
+      const limited = makeApp(harness, { signupLimit: { max: 2, windowMs: 60_000 } });
+      try {
+        await signUp(limited.app);
+        await signUp(limited.app);
+        const res = await limited.app.inject({
+          method: 'POST',
+          url: '/api/signup',
+          headers: { origin: WEB_ORIGIN },
+          payload: { companyName: 'X', name: 'X', email: uniqueEmail(), password: STRONG_PASSWORD },
+        });
+        expect(res.statusCode).toBe(429);
+      } finally {
+        await limited.app.close();
+      }
+    });
+  });
+
   describe('POST /api/companies (after Google sign-in)', () => {
     async function accountWithoutCompany() {
       const email = uniqueEmail('google');

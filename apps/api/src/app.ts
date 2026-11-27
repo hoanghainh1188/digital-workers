@@ -1,6 +1,7 @@
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
-import { type Auth, type FailedLoginLimiter, registerAuthRoutes } from './auth/index.ts';
+import { type Auth, registerAuthRoutes } from './auth/index.ts';
 import { registerErrorHandling } from './plugins/errors.ts';
+import { registerOriginCheck } from './plugins/request-guards.ts';
 import { zodSerializerCompiler, zodValidatorCompiler } from './plugins/zod.ts';
 import { type HealthDeps, registerHealthRoutes } from './routes/health.ts';
 import { registerTenancyRoutes, type TenancyRouteDeps } from './routes/tenancy.ts';
@@ -9,8 +10,9 @@ import { type ContextResolver, registerRequestContext } from './tenancy/index.ts
 /** Everything behind sign-in. Optional so health-only tests can build a bare app. */
 export type PlatformDeps = TenancyRouteDeps & {
   readonly auth: Auth;
-  readonly limiter: FailedLoginLimiter;
   readonly resolveContext: ContextResolver;
+  /** Origins allowed to send state-changing requests (CSRF). */
+  readonly trustedOrigins: readonly string[];
 };
 
 export type AppDeps = HealthDeps & {
@@ -28,6 +30,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   registerErrorHandling(app);
   registerHealthRoutes(app, deps);
   if (deps.platform) {
+    registerOriginCheck(app, deps.platform.trustedOrigins);
     registerRequestContext(app, deps.platform.resolveContext);
     registerAuthRoutes(app, deps.platform);
     registerTenancyRoutes(app, deps.platform);

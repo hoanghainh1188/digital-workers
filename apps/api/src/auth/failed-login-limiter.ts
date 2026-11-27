@@ -10,11 +10,17 @@ export type FailedLoginLimiter = {
 };
 
 export function createFailedLoginLimiter(
-  options: { maxFailures?: number; windowMs?: number; now?: () => number } = {},
+  options: {
+    maxFailures?: number;
+    windowMs?: number;
+    maxEntries?: number;
+    now?: () => number;
+  } = {},
 ): FailedLoginLimiter {
   const maxFailures = options.maxFailures ?? 10;
   const windowMs = options.windowMs ?? 15 * 60_000;
   const now = options.now ?? Date.now;
+  const maxEntries = options.maxEntries ?? 50_000;
   const entries = new Map<string, { failures: number; windowEndsAt: number }>();
 
   const current = (key: string) => {
@@ -26,9 +32,16 @@ export function createFailedLoginLimiter(
     return entry;
   };
 
+  /** Drops ended windows so a stream of distinct emails cannot grow the map forever. */
+  const sweep = () => {
+    const time = now();
+    for (const [key, entry] of entries) if (entry.windowEndsAt <= time) entries.delete(key);
+  };
+
   return Object.freeze({
     isBlocked: (email: string) => (current(normalizeEmail(email))?.failures ?? 0) >= maxFailures,
     recordFailure: (email: string) => {
+      if (entries.size >= maxEntries) sweep();
       const key = normalizeEmail(email);
       const entry = current(key);
       entries.set(key, {

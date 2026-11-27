@@ -1,3 +1,5 @@
+import { request as httpRequest } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createFailedLoginLimiter } from '../src/auth/index.ts';
 import {
@@ -110,6 +112,19 @@ describe('authentication (spec authentication)', () => {
     });
   });
 
+  it('the common-password rule also guards change-password', async () => {
+    const { email } = await signUp(t.app);
+    const cookie = cookieHeader(await signIn(t.app, email));
+    const res = await t.app.inject({
+      method: 'POST',
+      url: '/api/auth/change-password',
+      headers: { origin: WEB_ORIGIN, cookie },
+      payload: { currentPassword: STRONG_PASSWORD, newPassword: 'matkhau123' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().code).toBe('PASSWORD_COMMON');
+  });
+
   describe('email verification', () => {
     it('sign-up sends a link and /api/me reports unverified', async () => {
       const { email, cookie } = await signUp(t.app);
@@ -135,6 +150,17 @@ describe('authentication (spec authentication)', () => {
     it('a tampered token is refused', async () => {
       const res = await get(t.app, '/api/auth/verify-email?token=not-a-jwt');
       expect(res.statusCode).toBe(401);
+    });
+
+    it('a forged token for a verified email does not reveal that it is verified', async () => {
+      const { email } = await signUp(t.app);
+      const token = new URL(verificationLink(t.sent, email)).searchParams.get('token') ?? '';
+      await get(t.app, `/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+      const [header, payload] = token.split('.');
+      const forged = `${header}.${payload}.${'A'.repeat(43)}`;
+      const res = await get(t.app, `/api/auth/verify-email?token=${encodeURIComponent(forged)}`);
+      expect(res.statusCode).toBe(401);
+      expect(res.body).not.toContain('TOKEN_ALREADY_USED');
     });
 
     it('an unverified user can ask for a new link', async () => {
@@ -183,6 +209,47 @@ describe('failed sign-in limit per email (0.2 #044)', () => {
       // Another email is not affected.
       const other = await signUp(t.app);
       expect((await signIn(t.app, other.email)).statusCode).toBe(200);
+    } finally {
+      await t.app.close();
+    }
+  });
+
+  it('dot segments in the URL do not get around the counter', async () => {
+    const t = makeApp(harness);
+    try {
+      const { email } = await signUp(t.app);
+      await t.app.listen({ port: 0, host: '127.0.0.1' });
+      const { port } = t.app.server.address() as AddressInfo;
+      const post = (path: string, password: string) =>
+        new Promise<number>((resolve, reject) => {
+          const body = JSON.stringify({ email, password });
+          const req = httpRequest(
+            {
+              host: '127.0.0.1',
+              port,
+              method: 'POST',
+              path, // sent as-is: node:http does not normalise dot segments
+              headers: { 'content-type': 'application/json', origin: WEB_ORIGIN },
+            },
+            (res) => {
+              res.resume();
+              resolve(res.statusCode ?? 0);
+            },
+          );
+          req.on('error', reject);
+          req.end(body);
+        });
+      const paths = [
+        '/api/auth/./sign-in/email',
+        '/api/auth/%2e/sign-in/email',
+        '/api/auth/x/../sign-in/email',
+      ];
+      const statuses: number[] = [];
+      for (let i = 0; i < 10; i += 1)
+        statuses.push(await post(paths[i % paths.length] ?? '', `wrong ${i}`));
+      expect(statuses.every((status) => status === 401)).toBe(true);
+      expect(await post('/api/auth/./sign-in/email', STRONG_PASSWORD)).toBe(429);
+      expect((await signIn(t.app, email)).statusCode).toBe(429);
     } finally {
       await t.app.close();
     }

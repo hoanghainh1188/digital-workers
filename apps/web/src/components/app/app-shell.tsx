@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Bot, House, LogOut, Users } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { BrandMark } from '@/components/auth/auth-layout';
 import { RoleBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import { t } from '@/i18n/t';
 import { authClient } from '@/lib/auth-client';
 import type { Me } from '@/lib/queries';
@@ -32,8 +33,16 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const [signOutFailed, setSignOutFailed] = useState(false);
+
   async function signOut() {
-    await authClient.signOut().catch(() => undefined);
+    // The client returns { error } on 4xx/5xx instead of throwing: only leave when the
+    // server really ended the session.
+    const result = await authClient.signOut().catch(() => ({ error: true }));
+    if (result.error) {
+      setSignOutFailed(true);
+      return;
+    }
     queryClient.setQueryData(meQuery.queryKey, null);
     await navigate({ to: '/login' });
   }
@@ -104,6 +113,11 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
         </div>
       </aside>
       <div className="min-w-0">
+        {signOutFailed ? (
+          <Callout tone="danger" role="alert" className="rounded-none">
+            {t('shell.signOut.failed')}
+          </Callout>
+        ) : null}
         {me.user.emailVerified ? null : <VerifyEmailBanner email={me.user.email} />}
         <main className="w-full max-w-[76rem] px-[clamp(1rem,0.5rem+3vw,3rem)] pt-[clamp(1.25rem,1rem+2vw,2.5rem)] pb-16">
           {children}
