@@ -15,17 +15,17 @@
 
 ## 3. Xác thực (`apps/api/src/auth`)
 
-- [ ] 3.1 Cấu hình Better Auth (drizzle adapter, email + mật khẩu, Google có điều kiện, phiên 30 ngày, cookie an toàn, `trustedOrigins`, hook chặn mật khẩu phổ biến, gửi email xác minh) và route `GET|POST /api/auth/*`; thêm biến env vào schema (Google đủ cặp hoặc không có); test: thiếu `BETTER_AUTH_SECRET` → tiến trình dừng, chỉ có `GOOGLE_CLIENT_ID` → lỗi cấu hình
-- [ ] 3.2 Viết plugin `request-context` và guard `requireAuth`, `requireCompany`, `requirePermission`, `requireVerifiedEmail`, helper `notFound`; unit test từng guard với `app.inject` (401, 409 `NO_COMPANY`, 403 + `AuditEvent`, 403 `EMAIL_NOT_VERIFIED`, 404 + `AuditEvent`)
-- [ ] 3.3 Thêm giới hạn thử sai theo email trên `/api/auth/sign-in/email` (`@fastify/rate-limit`, chỉ đếm lần sai) và bật `trustProxy`; test tích hợp: 10 lần sai trong 15 phút → lần 11 nhận 429 dù mật khẩu đúng; lần đúng xoá bộ đếm
-- [ ] 3.4 Test tích hợp các kịch bản spec `authentication`: đăng nhập đúng / sai (sai email và sai mật khẩu cùng phản hồi), cookie httpOnly + SameSite=Lax, đăng xuất rồi dùng cookie cũ → 401, gọi API không phiên → 401, link xác minh dùng một lần, gửi lại link, mật khẩu không xuất hiện trong log
+- [x] 3.1 Cấu hình Better Auth (drizzle adapter, email + mật khẩu, Google có điều kiện, phiên 30 ngày, cookie an toàn, `trustedOrigins`, hook chặn mật khẩu phổ biến, gửi email xác minh) và route `GET|POST /api/auth/*`; thêm biến env vào schema (Google đủ cặp hoặc không có); test: thiếu `BETTER_AUTH_SECRET` → tiến trình dừng, chỉ có `GOOGLE_CLIENT_ID` → lỗi cấu hình
+- [x] 3.2 Viết plugin `request-context` và guard `requireAuth`, `requireCompany`, `requirePermission`, `requireVerifiedEmail`, helper `notFound`; unit test từng guard với `app.inject` (401, 409 `NO_COMPANY`, 403 + `AuditEvent`, 403 `EMAIL_NOT_VERIFIED`, 404 + `AuditEvent`)
+- [x] 3.3 Thêm giới hạn thử sai theo email trên `/api/auth/sign-in/email` (`@fastify/rate-limit`, chỉ đếm lần sai) và bật `trustProxy`; test tích hợp: 10 lần sai trong 15 phút → lần 11 nhận 429 dù mật khẩu đúng; lần đúng xoá bộ đếm
+- [x] 3.4 Test tích hợp các kịch bản spec `authentication`: đăng nhập đúng / sai (sai email và sai mật khẩu cùng phản hồi), cookie httpOnly + SameSite=Lax, đăng xuất rồi dùng cookie cũ → 401, gọi API không phiên → 401, link xác minh dùng một lần, gửi lại link, mật khẩu không xuất hiện trong log
 
 ## 4. Công ty và thành viên (API)
 
-- [ ] 4.1 Viết `POST /api/signup` (Zod, `signUpEmail`, tạo công ty + Owner + `AuditEvent` trong `withCompany`) và `POST /api/companies` (tạo công ty sau Google; đã có công ty → từ chối); test tích hợp mọi kịch bản spec `company-signup` về đăng ký, kể cả email trùng và lỗi giữa chừng → người dùng chưa có công ty nhận 409 `NO_COMPANY`
-- [ ] 4.2 Viết `GET /api/me`, `GET /api/config/public`, `GET|PATCH /api/company` (`requirePermission('company.update')`, nhật ký chỉ ghi tên trường); test tích hợp: Owner / Admin đổi được, Nhân viên → 403 + nhật ký, chèn id công ty B vào body không đổi được công ty B, nhật ký không chứa số điện thoại
-- [ ] 4.3 Viết `GET /api/members/:id` (đọc qua `member_profiles`, không tìm thấy → `notFound`); test tích hợp: đọc thành viên công ty mình → 200, id công ty B → 404 giống id không tồn tại + `AuditEvent access.not_found` ở công ty A
-- [ ] 4.4 Test chặn import: không file nào ngoài `apps/api/src/auth/` import bảng `auth.*`; kiểm tra test fail khi thêm một import thử
+- [x] 4.1 Viết `POST /api/signup` (Zod, `signUpEmail`, tạo công ty + Owner + `AuditEvent` trong `withCompany`) và `POST /api/companies` (tạo công ty sau Google; đã có công ty → từ chối); test tích hợp mọi kịch bản spec `company-signup` về đăng ký, kể cả email trùng và lỗi giữa chừng → người dùng chưa có công ty nhận 409 `NO_COMPANY`
+- [x] 4.2 Viết `GET /api/me`, `GET /api/config/public`, `GET|PATCH /api/company` (`requirePermission('company.update')`, nhật ký chỉ ghi tên trường); test tích hợp: Owner / Admin đổi được, Nhân viên → 403 + nhật ký, chèn id công ty B vào body không đổi được công ty B, nhật ký không chứa số điện thoại
+- [x] 4.3 Viết `GET /api/members/:id` (đọc qua `member_profiles`, không tìm thấy → `notFound`); test tích hợp: đọc thành viên công ty mình → 200, id công ty B → 404 giống id không tồn tại + `AuditEvent access.not_found` ở công ty A
+- [x] 4.4 Test chặn import: không file nào ngoài `apps/api/src/auth/` import bảng `auth.*`; kiểm tra test fail khi thêm một import thử
 
 ## 5. Web
 
