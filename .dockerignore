@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+.git
+.github
+.claude
+docs
+openspec
+coverage
+playwright-report
+test-results
+**/.env
+**/.env.*
+!.env.prod.example
+**/.pnpm-store

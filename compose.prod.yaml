@@ -1,0 +1,75 @@
+# Production / staging stack on one VM (docs/architecture.md §8).
+#   docker compose --env-file .env.prod -f compose.prod.yaml up -d --build
+name: digital-workers
+
+x-server-env: &server-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+
+services:
+  # Passwords are interpolated into connection URLs: use URL-safe values (openssl rand -hex 24).
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      DW_OWNER_PASSWORD: ${DW_OWNER_PASSWORD:?set DW_OWNER_PASSWORD}
+      DW_APP_PASSWORD: ${DW_APP_PASSWORD:?set DW_APP_PASSWORD}
+    # No published port: only reachable on the internal network.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/roles.sql:/dw/roles.sql:ro
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d dw"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build: { context: ., target: api }
+    command: ["node", "packages/db/src/migrate-cli.ts"]
+    environment:
+      MIGRATION_DATABASE_URL: postgres://dw_owner:${DW_OWNER_PASSWORD}@postgres:5432/dw
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    build: { context: ., target: api }
+    restart: unless-stopped
+    environment:
+      <<: *server-env
+      DATABASE_URL: postgres://dw_app:${DW_APP_PASSWORD}@postgres:5432/dw
+      PORT: "3000"
+      HOST: 0.0.0.0
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  runner:
+    build: { context: ., target: runner }
+    restart: unless-stopped
+    environment: *server-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  caddy:
+    build: { context: ., target: caddy }
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,32 @@
+/*
+ * Bright Blue Base — white surfaces, blue as the single brand colour.
+ * Semantic tokens only; components never use raw colour values.
+ */
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(100% 0 0);
+  --foreground: oklch(22% 0.03 262);
+  --muted: oklch(97% 0.008 255);
+  --muted-foreground: oklch(50% 0.03 260);
+  --border: oklch(91% 0.015 258);
+  --ring: oklch(62% 0.19 258);
+
+  --primary: oklch(55% 0.21 262);
+  --primary-foreground: oklch(99% 0.005 255);
+  --primary-soft: oklch(95% 0.035 258);
+
+  --card: oklch(100% 0 0);
+  --card-foreground: var(--foreground);
+
+  --success: oklch(62% 0.15 155);
+  --warning: oklch(76% 0.15 75);
+  --destructive: oklch(58% 0.22 27);
+
+  --font-sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+
+  --text-hero: clamp(2.25rem, 1.4rem + 3.6vw, 4.25rem);
+  --space-section: clamp(3rem, 2rem + 4vw, 6.5rem);
+  --duration-normal: 300ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
