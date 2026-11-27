@@ -1,0 +1,304 @@
+---
+type: requirements
+product: digital-workers (tên tạm)
+version: 0.1-draft
+last_updated: 2026-11-27
+status: draft
+source: docs/brief.md
+---
+
+# Yêu cầu — Nền tảng Quản lý Digital Workers cho SME
+
+> Đây là **tầng cao nhất** trong 3 tầng nguồn sự thật (yêu cầu → spec → code).
+> Mâu thuẫn với `docs/brief.md` → **file này thắng**. Brief chỉ giữ chiến lược (định vị, giá, đối thủ).
+> Mọi quyết định nghiệp vụ mới ghi vào **mục 0.2**, đánh số tiếp, có ngày.
+
+---
+
+## 0. Tổng quan
+
+### 0.1. Một câu
+
+Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý digital workers** (nhân viên số) như quản lý nhân viên thật. Worker làm việc qua **app chat** (Telegram, Zalo, …); chủ DN quản lý qua **web**.
+
+### 0.2. Sổ quyết định
+
+| # | Ngày | Quyết định |
+|---|---|---|
+| 001 | 2026-11-27 | Khách hàng: **SME Việt Nam**, khoảng 10–200 người, chưa có đội AI riêng. |
+| 002 | 2026-11-27 | Định vị: **nền tảng quản lý digital workers**, dùng ngôn ngữ nhân sự (tuyển, thử việc, kỹ năng, lương, KPI, nghỉ việc). |
+| 003 | 2026-11-27 | Platform **có nơi chạy riêng**: worker chạy trên platform, gọi mô hình AI (Claude / OpenAI) qua API. Đồng bộ ra công cụ ngoài để sau MVP. |
+| 004 | 2026-11-27 | Kho skill / worker **chỉ nội bộ từng công ty**. Nhân viên đề xuất, admin duyệt. Không làm chợ công khai trong MVP. |
+| 005 | 2026-11-27 | Worker có mặt qua **app chat SME đang dùng**. MVP: **Telegram (1:1 + nhóm), Zalo (1:1), web chat**. Web dùng để quản lý. |
+| 006 | 2026-11-27 | Worker mới **bắt buộc thử việc** trước khi chính thức. Admin có công cụ kiểm duyệt. |
+| 007 | 2026-11-27 | Kỹ năng theo chuẩn mở **Agent Skills (`SKILL.md`)**. Connector theo chuẩn **MCP**. |
+| 008 | 2026-11-27 | Chỉ dùng **API bot chính thức** của app chat. Không tự động hoá tài khoản cá nhân. |
+| 009 | 2026-11-27 | Worker **chỉ nhận việc từ người đã ghép tài khoản** và có quyền giao việc. Nội dung khác trong chat là **dữ liệu, không phải lệnh**. |
+| 010 | 2026-11-27 | Quyền mặc định của worker: **chỉ đọc / soạn nháp**. Ghi dữ liệu, gửi ra ngoài = **rủi ro cao**, bắt buộc có quy tắc duyệt. |
+| 011 | 2026-11-27 | Máy chủ và dữ liệu lưu trữ đặt ở **cloud Việt Nam**. Gọi mô hình AI (Claude / OpenAI) vẫn là chuyển dữ liệu ra nước ngoài → ghi rõ trong điều khoản, và cần tư vấn pháp lý trước khi bán. |
+| 012 | 2026-11-27 | Đăng nhập web MVP: **email + mật khẩu và Google**. Đăng nhập Zalo để sau MVP. |
+| 013 | 2026-11-27 | **Mỗi worker một bot riêng** trên mỗi kênh chat (tên, ảnh riêng). Admin tạo bot và dán token cho từng worker. (Chốt từ P-03.) |
+| 014 | 2026-11-27 | API: **Fastify**. Telegram: **grammY**. Zalo: client riêng, mỏng. Giao diện `ChannelAdapter` tự định nghĩa; **không dùng Chat SDK** trong MVP. |
+| 015 | 2026-11-27 | **Skill được chạy script ngay trong MVP** (không chọn P-01). Script luôn là **rủi ro cao**: bắt buộc quét và duyệt tay. Cách chạy: xem P-11. |
+| 016 | 2026-11-27 | **Bán credit ngay trong MVP** (không chọn P-02). Platform dùng API key của chính platform; khách trả bằng credit nạp trước. Không có BYOK trong MVP. |
+| 017 | 2026-11-27 | Trong nhóm chat, dữ liệu không phải ai cũng được xem → **gửi riêng (DM)** cho người giao việc, trong nhóm chỉ báo "đã gửi riêng". (P-04) |
+| 018 | 2026-11-27 | Hết ngân sách tháng → worker **ngừng nhận việc mới**, báo người quản lý; việc đang chạy làm nốt. (P-05) |
+| 019 | 2026-11-27 | Lưu nội dung hội thoại **90 ngày**; log việc (không có nội dung) lưu **1 năm**. (P-06) |
+| 020 | 2026-11-27 | Giao diện và skill mẫu **tiếng Việt**; code và tên kỹ thuật tiếng Anh. (P-07) |
+| 021 | 2026-11-27 | Duyệt trên **Zalo**: trả lời **mã ngắn** (`1` đồng ý / `2` từ chối, kèm mã việc) hoặc **link mở hộp duyệt web**. (P-08) |
+| 022 | 2026-11-27 | Cài bot: **hướng dẫn từng bước trong app**; 3–5 khách đầu **Harry làm hộ**. (P-09) |
+
+### 0.3. Đề xuất chờ chốt
+
+> Claude đề xuất. Harry duyệt → chuyển lên 0.2 với số tiếp theo.
+> P-01 … P-09 đã xử lý ngày 2026-11-27 (xem 0.2 #015 – #022).
+
+| Mã | Đề xuất | Lý do | Phương án khác |
+|---|---|---|---|
+| P-10 | Nạp credit trong MVP bằng **chuyển khoản VietQR**; platform xác nhận (bán tự động: đối soát theo nội dung chuyển khoản) rồi cộng credit. Cổng thanh toán tự động (PayOS / VNPay / MoMo) để sau MVP. | Ít tích hợp nhất cho một người; khách SME quen chuyển khoản. | Tích hợp cổng thanh toán ngay. |
+| P-11 | Script trong skill chạy trong **sandbox code execution của nhà cung cấp mô hình** (Claude / OpenAI): không có mạng, chỉ nhận file đầu vào, trả file kết quả. Không tự dựng sandbox trong MVP. | Không phải tự vận hành sandbox; an toàn hơn. | Tự dựng sandbox (container cách ly) trên cloud Việt Nam. |
+| P-12 | Credit tính và hiển thị bằng **VNĐ** (1 credit = 1 đồng). Giá bán = chi phí thật × hệ số (vd. 1,3), hiển thị rõ trong bảng lương. | Chủ DN hiểu ngay; không phải đổi đơn vị. | Đơn vị credit riêng. |
+| P-13 | Credit **không hết hạn** trong 12 tháng đầu; không hoàn tiền credit đã nạp, trừ khi platform ngừng dịch vụ. | Đơn giản, dễ ghi trong điều khoản. | Credit hết hạn sau 12 tháng. |
+
+### 0.4. Câu hỏi còn mở
+
+- Tên sản phẩm?
+- Mô hình thu tiền và mức giá? (Credit đã chốt ở #016; còn phí theo số worker và hệ số giá.)
+- Pháp nhân để nhận tiền và xuất hoá đơn: công ty hay hộ kinh doanh? Điều khoản của Anthropic / OpenAI có cho bán lại dưới dạng credit trong sản phẩm không — cần kiểm tra.
+- 3 khách đầu làm ngành gì? Worker đầu tiên họ muốn tuyển? Họ dùng app chat nào?
+- Nhà cung cấp cloud Việt Nam cụ thể (VNG Cloud, Viettel, FPT…)? Chọn ở change 0 theo giá và độ ổn định.
+- Nghĩa vụ theo Luật Bảo vệ dữ liệu cá nhân 2025 (đánh giá tác động, chuyển dữ liệu ra nước ngoài): platform là bên xử lý, khách là bên kiểm soát — cần tư vấn pháp lý xác nhận.
+
+### 0.5. Phạm vi MVP
+
+**Trong MVP:** mục 3.1 – 3.14.
+**Ngoài MVP:** xem mục 5.
+
+---
+
+## 1. Vai trò và quyền
+
+| Vai trò | Là ai | Việc chính |
+|---|---|---|
+| **Owner** | Chủ DN | Xem toàn bộ, bảng lương, cấu hình công ty, gán Admin |
+| **Admin** | Người phụ trách AI | Kiểm duyệt worker/skill, kết nối kênh chat & connector |
+| **Manager** | Trưởng phòng | Tuyển & quản lý worker của phòng mình, duyệt việc, đề xuất skill |
+| **Member** | Nhân viên | Giao việc cho worker được phép, xem kết quả, đề xuất skill |
+
+### Ma trận quyền (MVP)
+
+| Hành động | Owner | Admin | Manager | Member |
+|---|:-:|:-:|:-:|:-:|
+| Quản lý phòng ban, người dùng | ✓ | ✓ | — | — |
+| Tạo worker (bản nháp) | ✓ | ✓ | ✓ (phòng mình) | — |
+| Chuyển worker sang thử việc | ✓ | ✓ | ✓ (phòng mình) | — |
+| Duyệt worker lên chính thức | ✓ | ✓ | — | — |
+| Tạm nghỉ / nghỉ việc worker | ✓ | ✓ | ✓ (phòng mình) | — |
+| Tạo / sửa skill (bản nháp) | ✓ | ✓ | ✓ | ✓ |
+| Duyệt skill | ✓ | ✓ | — | — |
+| Giao việc cho worker | ✓ | ✓ | ✓ | ✓ (nếu được gán) |
+| Duyệt việc của worker | theo quy tắc duyệt của worker |||
+| Kết nối kênh chat, connector | ✓ | ✓ | — | — |
+| Nạp credit, xem sao kê | ✓ | ✓ (xem) | — | — |
+| Xem bảng lương | ✓ (cả công ty) | ✓ (cả công ty) | ✓ (phòng mình) | — |
+
+---
+
+## 2. Thực thể chính
+
+| Thực thể | Mô tả ngắn |
+|---|---|
+| `Company` | Một khách hàng (tenant). Mọi dữ liệu thuộc đúng một công ty. |
+| `Department` | Phòng ban. |
+| `User` | Người thật, có vai trò, thuộc phòng ban. |
+| `ChannelIdentity` | Tài khoản chat của người dùng (Telegram id, Zalo id) đã ghép với `User`. |
+| `Worker` | Digital worker: hồ sơ, trạng thái, người quản lý, ngân sách. |
+| `WorkerChannel` | Bot của worker trên một kênh (token, kênh, nhóm được vào). |
+| `Skill` / `SkillVersion` | Kỹ năng theo `SKILL.md`; mỗi lần sửa là một version. |
+| `WorkerSkill` | Worker được giao skill nào, version nào. |
+| `Connector` / `WorkerGrant` | Kết nối ngoài (Google Sheets, email) và quyền của worker trên đó (đọc / nháp / ghi). |
+| `Schedule` | Lịch chạy của worker. |
+| `Task` | Một việc worker nhận: từ chat, từ lịch. Có trạng thái, kết quả. |
+| `Approval` | Yêu cầu duyệt cho một hành động rủi ro. |
+| `Review` | Một lần kiểm duyệt worker / skill: kết quả quét, người duyệt, ghi chú. |
+| `CostEntry` | Chi phí AI của một lần gọi mô hình: worker, task, token, tiền. |
+| `AuditEvent` | Nhật ký hành động (ai, làm gì, khi nào), không chứa nội dung nhạy cảm. |
+| `ProviderKey` | API key mô hình AI **của platform** (mã hoá, cấp hệ thống, không thuộc công ty nào). |
+| `CreditAccount` | Số dư credit của một công ty (VNĐ). |
+| `CreditTransaction` | Mỗi lần cộng / trừ credit: nạp tiền, trừ theo `CostEntry`, điều chỉnh tay. Không sửa, không xoá. |
+| `TopUp` | Một lần nạp tiền: số tiền, mã chuyển khoản, trạng thái (chờ / đã xác nhận / huỷ). |
+| `SkillRun` | Một lần chạy script của skill trong sandbox: file vào, file ra, thời gian, chi phí. |
+
+---
+
+## 3. Yêu cầu chức năng
+
+> Mỗi yêu cầu có mã `FR-xx-yy`. Kịch bản viết dạng **KHI … THÌ …** để chuyển thẳng sang spec OpenSpec.
+
+### 3.1. Công ty, phòng ban, người dùng (`FR-01`)
+
+- **FR-01-01** Owner đăng ký công ty, trở thành Owner đầu tiên.
+- **FR-01-02** Owner / Admin tạo phòng ban, mời người dùng, gán vai trò.
+- **FR-01-03** Mọi truy vấn dữ liệu đều lọc theo `Company`.
+  - KHI người dùng công ty A gọi API với id của dữ liệu công ty B, THÌ hệ thống trả "không tìm thấy" và ghi `AuditEvent`.
+
+### 3.2. Hồ sơ worker và vòng đời (`FR-02`)
+
+- **FR-02-01** Hồ sơ gồm: tên, ảnh, vai trò (mô tả công việc), phòng ban, người quản lý, ngân sách tháng, mô tả tính cách / giọng văn.
+- **FR-02-02** Vòng đời:
+
+```
+Nháp ──► Thử việc ──► Chính thức ◄──► Tạm nghỉ
+  │          │             │              │
+  └──────────┴─────────────┴──────────────┴──► Nghỉ việc (không quay lại)
+```
+
+- **FR-02-03** Ở **Thử việc**: worker chỉ làm việc qua web chat với người được chỉ định; **mọi việc** đều cần duyệt; không vào nhóm chat thật.
+- **FR-02-04** Lên **Chính thức** cần một `Review` được Admin / Owner duyệt (xem 3.9).
+  - KHI Manager bấm "Chính thức hoá" một worker, THÌ hệ thống tạo yêu cầu kiểm duyệt và worker vẫn ở Thử việc cho tới khi Admin duyệt.
+- **FR-02-05** **Tạm nghỉ**: worker ngừng nhận việc mới, lịch chạy dừng, bot trả lời "đang tạm nghỉ".
+- **FR-02-06** **Nghỉ việc**: thu hồi mọi quyền connector, gỡ bot khỏi mọi kênh, giữ lịch sử để tra cứu.
+  - KHI worker chuyển sang Nghỉ việc, THÌ mọi `WorkerGrant` bị thu hồi và mọi tin nhắn tới bot nhận câu trả lời cố định "đã nghỉ việc".
+- **FR-02-07** Tạo worker **từ mẫu** (3–5 mẫu có sẵn) hoặc **mô tả công việc bằng tiếng Việt** để AI dựng bản nháp hồ sơ.
+
+### 3.3. Thư viện kỹ năng (`FR-03`)
+
+- **FR-03-01** Skill lưu theo chuẩn Agent Skills: `SKILL.md` (frontmatter `name`, `description` + nội dung) và file đính kèm (mẫu, bảng tham chiếu).
+- **FR-03-02** Mỗi lần sửa tạo `SkillVersion` mới. Skill đang dùng chỉ đổi version khi được duyệt.
+  - KHI một skill đang được 3 worker dùng có bản sửa mới, THÌ 3 worker vẫn dùng version cũ cho tới khi bản mới được duyệt.
+- **FR-03-03** Quay lại version cũ bằng một thao tác.
+- **FR-03-04** Có 10 skill mẫu tiếng Việt (vd. lập báo giá, soạn hợp đồng từ mẫu, tóm tắt email, tổng hợp báo cáo ngày).
+- **FR-03-05** Nhập skill từ file `.zip` / thư mục; xuất skill ra `.zip`.
+- **FR-03-06** (Theo #015) Skill được có thư mục `scripts/`. Skill có script luôn ở mức rủi ro **cao** và chỉ giao được cho worker sau khi qua kiểm duyệt (FR-09).
+  - KHI một skill có script được sửa, THÌ version mới bắt buộc qua kiểm duyệt lại trước khi worker dùng.
+
+### 3.4. Chạy worker (`FR-04`)
+
+- **FR-04-01** Một `Task` được tạo khi: người dùng nhắn bot, lịch chạy tới giờ.
+- **FR-04-02** Worker nạp skill theo cách **tiết lộ dần**: luôn biết tên + mô tả của mọi skill được giao; chỉ nạp nội dung skill khi cần.
+- **FR-04-03** Worker chỉ gọi được connector có `WorkerGrant`, đúng mức quyền.
+  - KHI worker có quyền "đọc" Google Sheets mà cố ghi, THÌ thao tác bị chặn, `Task` ghi lỗi quyền, người quản lý được báo.
+- **FR-04-04** Hành động có quy tắc duyệt → tạo `Approval`, `Task` chờ, không thực hiện cho tới khi được duyệt.
+- **FR-04-05** Mỗi lần gọi mô hình (và mỗi lần chạy script) ghi `CostEntry` và trừ credit của công ty (FR-13).
+- **FR-04-06** Giới hạn mỗi `Task`: số bước tối đa, thời gian tối đa, chi phí tối đa. Vượt → dừng và báo.
+- **FR-04-07** Gom tin nhắn ngắn liên tiếp (vd. trong 5 giây) của cùng một người thành một `Task`.
+
+### 3.5. Kênh chat (`FR-05`)
+
+- **FR-05-01** Lớp **channel adapter** chung. Mỗi adapter: nhận tin, gửi tin (tự chia tin dài), gửi file, nút bấm, nhận diện người gửi, phân biệt 1:1 / nhóm.
+- **FR-05-02** Adapter MVP: **Telegram** (1:1 + nhóm), **Zalo Bot** (1:1), **web chat**.
+- **FR-05-03** **Ghép tài khoản**: người lạ nhắn bot lần đầu → nhận mã ghép; người dùng nhập mã trên web để ghép `ChannelIdentity`.
+  - KHI người chưa ghép tài khoản nhắn bot, THÌ bot chỉ trả hướng dẫn ghép tài khoản và không tạo `Task`.
+- **FR-05-04** Trong nhóm: worker chỉ phản hồi khi được gọi tên (mention) hoặc trả lời tin của worker.
+- **FR-05-05** Nhóm được vào phải được Admin đăng ký trước.
+  - KHI bot của worker bị thêm vào một nhóm chưa đăng ký, THÌ bot báo Admin và không xử lý tin trong nhóm đó.
+- **FR-05-06** (Theo #017) Dữ liệu không phải ai trong nhóm cũng được xem → gửi DM cho người giao việc.
+- **FR-05-07** Tin của người khác trong nhóm, file gửi vào nhóm, nội dung email đọc được… luôn đánh dấu là **dữ liệu** khi đưa cho mô hình.
+
+### 3.6. Lịch chạy (`FR-06`)
+
+- **FR-06-01** Đặt lịch theo giờ / ngày / thứ trong tuần, theo giờ Việt Nam.
+- **FR-06-02** Mỗi lịch gắn với một chỉ dẫn ("8h sáng: đọc email hỏi giá mới, soạn báo giá nháp, gửi nhóm Kinh doanh").
+- **FR-06-03** Lỗi khi chạy theo lịch → báo người quản lý worker.
+
+### 3.7. Connector (`FR-07`)
+
+- **FR-07-01** **Google Sheets**: đọc dải ô, thêm dòng, sửa ô. Quyền theo từng file.
+- **FR-07-02** **Email** (IMAP/SMTP hoặc Gmail): đọc thư theo bộ lọc, tạo thư nháp, gửi thư.
+- **FR-07-03** Mức quyền: `read` / `draft` / `write`. `write` luôn là rủi ro cao.
+- **FR-07-04** Thông tin đăng nhập connector mã hoá, chỉ Admin thấy là "đã cấu hình", không xem lại được giá trị.
+- **FR-07-05** Connector viết theo giao diện MCP để thêm connector mới không sửa lõi.
+
+### 3.8. Duyệt việc (`FR-08`)
+
+- **FR-08-01** Quy tắc duyệt gắn với worker: hành động nào, điều kiện nào (vd. "gửi email ra ngoài", "báo giá > 50 triệu"), ai duyệt.
+- **FR-08-02** Duyệt được **ngay trong app chat** (Telegram: nút Đồng ý / Từ chối / Sửa; Zalo: theo #021) và trên **hộp duyệt** web.
+- **FR-08-03** Quá hạn duyệt (mặc định 24 giờ) → nhắc lại; quá 72 giờ → hủy việc.
+- **FR-08-04** Mỗi lần duyệt ghi `AuditEvent`.
+  - KHI người không có quyền duyệt bấm nút "Đồng ý", THÌ hệ thống từ chối và báo "bạn không có quyền duyệt việc này".
+
+### 3.9. Kiểm duyệt (`FR-09`)
+
+- **FR-09-01** Kích hoạt khi: worker lên chính thức, thêm skill, sửa skill, mở rộng quyền connector, thêm kênh / nhóm.
+- **FR-09-02** **Quét tự động** nội dung skill và cấu hình:
+  - câu lệnh lừa AI (prompt injection), ký tự ẩn (zero-width, bidi);
+  - URL lạ, địa chỉ gửi dữ liệu ra ngoài;
+  - mật khẩu / API key lộ trong file;
+  - script trong skill: lệnh hệ thống nguy hiểm, cố truy cập mạng, đọc biến môi trường, ghi ngoài thư mục được phép, thư viện lạ.
+- **FR-09-02b** Skill có script: Admin **phải xem nội dung script** (hiển thị trong màn kiểm duyệt) và chạy thử trong sandbox với file giả trước khi duyệt.
+- **FR-09-03** **Kiểm tra quyền**: so quyền worker xin với mô tả công việc; cảnh báo quyền thừa (vd. worker "tóm tắt email" xin quyền `write` Sheets).
+- **FR-09-04** Phân mức rủi ro: `thấp` (chỉ soạn thảo) / `trung bình` (đọc dữ liệu) / `cao` (ghi, gửi ra ngoài).
+- **FR-09-05** Admin xem kết quả, ghi chú, chọn Duyệt / Từ chối. Rủi ro cao không có nút "duyệt nhanh".
+- **FR-09-06** **Theo dõi sau chính thức**: cảnh báo khi chi phí ngày tăng vọt, lỗi lặp lại, gọi connector bất thường, người lạ nhắn bot nhiều lần.
+
+### 3.10. Chi phí và bảng lương (`FR-10`)
+
+- **FR-10-01** Tính tiền mỗi lần gọi mô hình theo bảng giá mô hình (cập nhật được), quy ra VNĐ theo tỉ giá cấu hình.
+- **FR-10-02** Bảng lương: chi phí theo worker / phòng ban / tháng; số việc hoàn thành; tỉ lệ phải duyệt.
+- **FR-10-03** Ngân sách tháng cho từng worker; cảnh báo ở 80%; hết ngân sách → theo #018.
+- **FR-10-04** "Giờ công tiết kiệm" = số việc × thời gian ước tính cho mỗi loại việc (người quản lý nhập). Ghi rõ là ước tính.
+
+### 3.11. Báo cáo sáng (`FR-11`)
+
+- **FR-11-01** Gửi cho Owner (và Manager, nếu bật) qua app chat lúc giờ cấu hình.
+- **FR-11-02** Nội dung: việc đã làm hôm qua theo worker, chi phí, việc chờ duyệt (có nút duyệt), cảnh báo.
+
+### 3.12. Trình tạo skill tiếng Việt (`FR-12`)
+
+- **FR-12-01** Người dùng kể quy trình bằng tiếng Việt (gõ hoặc dán) → AI hỏi lại chỗ thiếu → sinh `SKILL.md` nháp.
+- **FR-12-02** Cho chạy thử skill nháp trên web chat với dữ liệu giả trước khi gửi duyệt.
+
+### 3.13. Credit và nạp tiền (`FR-13`)
+
+- **FR-13-01** Mỗi công ty có một `CreditAccount` (VNĐ, theo P-12). Mọi thay đổi số dư đi qua `CreditTransaction`, không sửa trực tiếp.
+- **FR-13-02** Trừ credit theo từng `CostEntry` = chi phí thật × hệ số giá (cấu hình được, theo P-12).
+- **FR-13-03** Nạp tiền theo P-10: tạo `TopUp` → hiện mã VietQR + nội dung chuyển khoản riêng → xác nhận → cộng credit → gửi biên nhận.
+  - KHI một `TopUp` được xác nhận hai lần, THÌ credit chỉ được cộng một lần.
+- **FR-13-04** Số dư dưới ngưỡng (vd. 20%) → báo Owner; số dư bằng 0 → mọi worker ngừng nhận việc mới, báo Owner và Manager.
+  - KHI số dư bằng 0, THÌ worker trả lời "công ty đã hết credit" và không gọi mô hình.
+- **FR-13-05** Owner xem lịch sử nạp / trừ, tải sao kê theo tháng.
+- **FR-13-06** Có **hoá đơn điện tử** cho mỗi lần nạp (MVP: xuất qua phần mềm hoá đơn bên ngoài, ghi số hoá đơn vào `TopUp`).
+- **FR-13-07** Màn quản trị cho platform (chỉ Harry): xác nhận / huỷ `TopUp`, điều chỉnh credit có ghi lý do.
+
+### 3.14. Chạy script của skill (`FR-14`)
+
+- **FR-14-01** Theo P-11: script chạy trong sandbox của nhà cung cấp mô hình; không có mạng.
+- **FR-14-02** Dữ liệu vào sandbox chỉ là file / nội dung worker được phép đọc; kết quả trả về là file, worker gửi qua kênh chat hoặc ghi qua connector (theo quyền).
+- **FR-14-03** Mỗi lần chạy ghi `SkillRun`: thời gian, kích thước file, chi phí; giới hạn thời gian và dung lượng.
+  - KHI script chạy quá thời gian giới hạn, THÌ bị dừng, `Task` ghi lỗi, credit chỉ trừ phần đã dùng.
+- **FR-14-04** Worker ở Thử việc chỉ chạy script với dữ liệu giả.
+
+---
+
+## 4. Yêu cầu phi chức năng
+
+| Mã | Nhóm | Yêu cầu |
+|---|---|---|
+| NFR-01 | Tách dữ liệu | Mọi bảng nghiệp vụ có `company_id`; bật Row-Level Security ở PostgreSQL làm lớp bảo vệ thứ hai. |
+| NFR-02 | Bí mật | API key của platform (`ProviderKey`), token bot, mật khẩu connector mã hoá khi lưu (AES-256-GCM, khoá ngoài DB). Không ghi vào log. |
+| NFR-03 | Quyền riêng tư | Che dữ liệu cá nhân (CCCD, số điện thoại, số tài khoản) trong log và `AuditEvent`. Thời gian lưu theo #019. |
+| NFR-04 | Pháp lý | Tuân thủ Luật Bảo vệ dữ liệu cá nhân 2025 (Luật 91/2025/QH15) và Nghị định hướng dẫn; dữ liệu lưu ở Việt Nam (#011); trang điều khoản nêu rõ việc gửi nội dung tới nhà cung cấp mô hình AI ở nước ngoài; hợp đồng xử lý dữ liệu với khách. |
+| NFR-05 | Độ tin cậy | Việc chạy nền qua hàng đợi; thử lại khi lỗi mạng; không chạy trùng một `Task`. |
+| NFR-06 | Phản hồi | Bot báo "đang làm…" trong vòng 3 giây sau khi nhận việc. |
+| NFR-07 | Ngôn ngữ | Giao diện tiếng Việt (theo #020). |
+| NFR-08 | Truy vết | Mọi hành động quản trị và mọi hành động rủi ro của worker có `AuditEvent`. |
+| NFR-09 | Phụ thuộc | Không khoá vào một hãng mô hình: lớp gọi mô hình đổi được nhà cung cấp. |
+| NFR-10 | Chi phí vận hành | MVP chạy được trên 1 máy chủ + 1 PostgreSQL. |
+
+---
+
+## 5. Ngoài phạm vi MVP
+
+| Hạng mục | Dự kiến |
+|---|---|
+| Zalo nhóm | v0.2, khi API ổn định |
+| Nhận việc theo sự kiện (email đến, dòng mới trong Sheet) | v0.2 |
+| KPI chi tiết, đánh giá hàng tháng tự động | v0.2 |
+| Kênh Messenger, Lark, Slack, Teams | v0.3, theo yêu cầu khách |
+| Connector phần mềm kế toán, CRM | v0.3 |
+| Worker phối hợp với nhau | v0.3 |
+| Đồng bộ skill ra Claude Code / Codex / ChatGPT | Sau v0.3 |
+| Worker nói chuyện với khách hàng bên ngoài (Zalo OA, Facebook Page) | Sau v0.3 |
+| Cổng thanh toán tự động (PayOS / VNPay / MoMo), xuất hoá đơn tự động | Sau MVP |
+| Khách dùng API key của mình (BYOK) | Chưa quyết (#016) |
+| Chợ worker / skill công khai | Chưa quyết |

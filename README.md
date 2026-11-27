@@ -1,0 +1,3 @@
+# digital-workers (working name)
+
+A platform for Vietnamese SMEs to hire and manage digital workers: AI agents with HR-style profiles (probation → full-time → paused → offboarded), skills (`SKILL.md`), connector permissions, approval rules and budgets, working through Telegram, Zalo and web chat. This repo currently holds requirements, architecture and the change roadmap only; application code arrives change by change via OpenSpec. See [`docs/`](docs/) — start with [`docs/requirements.md`](docs/requirements.md), [`docs/architecture.md`](docs/architecture.md) and [`docs/ROADMAP.md`](docs/ROADMAP.md) — and [`CLAUDE.md`](CLAUDE.md) for working rules.
