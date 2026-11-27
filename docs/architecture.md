@@ -120,12 +120,12 @@ interface ChannelAdapter {
 - API key là **của platform** (#016), cấp hệ thống. Một key cho mỗi nhà cung cấp, đặt giới hạn chi tiêu ở trang nhà cung cấp làm lớp chặn cuối.
 
 ### Credit (#016)
-- Trừ credit **sau** mỗi lần gọi mô hình, theo `CostEntry` × hệ số giá (P-12).
+- Trừ credit **sau** mỗi lần gọi mô hình, theo `CostEntry` × hệ số giá (#025).
 - Trước mỗi bước của vòng lặp: kiểm tra số dư > ngưỡng an toàn (ước tính chi phí 1 bước). Không đủ → dừng `Task`.
 - `CreditTransaction` chỉ thêm, không sửa. Số dư = tổng giao dịch (có bảng số dư lưu sẵn, cập nhật trong cùng transaction DB).
-- Nạp tiền (P-10): `TopUp` sinh nội dung chuyển khoản duy nhất → VietQR → Harry xác nhận trên màn quản trị platform (FR-13-07). Tự động đối soát qua webhook ngân hàng / cổng thanh toán để sau MVP.
+- Nạp tiền (#023): `TopUp` sinh nội dung chuyển khoản duy nhất → VietQR → Harry xác nhận trên màn quản trị platform (FR-13-07). Tự động đối soát qua webhook ngân hàng / cổng thanh toán để sau MVP.
 
-### Chạy script của skill (#015, P-11)
+### Chạy script của skill (#015, #024)
 - Skill có `scripts/` → khi worker cần chạy, `packages/llm` gửi skill + file đầu vào tới **code execution của nhà cung cấp** (Claude: Skills + code execution; OpenAI: công cụ tương đương), lấy file kết quả về.
 - Sandbox của nhà cung cấp **không có mạng** → script không tự gọi được Sheets / email. Muốn ghi dữ liệu thật: worker nhận file kết quả rồi gọi connector (đúng quyền, đúng quy tắc duyệt).
 - Chi phí chạy (thời gian container nếu có) ghi vào `SkillRun` + `CostEntry`.
@@ -177,8 +177,8 @@ interface ChannelAdapter {
 | A7 | ORM | **Drizzle** | Kiểu chặt, SQL rõ ràng, hợp RLS | Prisma |
 | A8 | Gọi mô hình | **Vercel AI SDK** + bảng giá trong DB | Một giao diện nhiều hãng, tool calling | LiteLLM proxy (thêm dịch vụ Python) |
 | A9 | Web | **React + Vite + shadcn/ui** | API tách riêng, không cần SSR | Next.js |
-| A10 | Script trong skill | **Có trong MVP** (#015), chạy trong sandbox code execution của nhà cung cấp (P-11, chờ duyệt) | Không tự vận hành sandbox; không có mạng | Tự dựng container cách ly trên cloud VN |
-| A11 | Thu tiền AI | **Credit nạp trước, VNĐ** (#016, P-12); nạp bằng VietQR (P-10) | Chủ DN quen chuyển khoản; ít tích hợp | BYOK; cổng thanh toán ngay |
+| A10 | Script trong skill | **Có trong MVP** (#015), chạy trong sandbox code execution của nhà cung cấp (#024) | Không tự vận hành sandbox; không có mạng | Tự dựng container cách ly trên cloud VN |
+| A11 | Thu tiền AI | **Credit nạp trước, VNĐ** (#016, #025); nạp bằng VietQR (#023) | Chủ DN quen chuyển khoản; ít tích hợp | BYOK; cổng thanh toán ngay |
 
 ## 12. Còn mở
 

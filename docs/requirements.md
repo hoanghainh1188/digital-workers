@@ -47,18 +47,18 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 020 | 2026-11-27 | Giao diện và skill mẫu **tiếng Việt**; code và tên kỹ thuật tiếng Anh. (P-07) |
 | 021 | 2026-11-27 | Duyệt trên **Zalo**: trả lời **mã ngắn** (`1` đồng ý / `2` từ chối, kèm mã việc) hoặc **link mở hộp duyệt web**. (P-08) |
 | 022 | 2026-11-27 | Cài bot: **hướng dẫn từng bước trong app**; 3–5 khách đầu **Harry làm hộ**. (P-09) |
+| 023 | 2026-11-27 | Nạp credit trong MVP bằng **chuyển khoản VietQR** với nội dung chuyển khoản duy nhất; platform admin đối soát và **xác nhận tay** rồi cộng credit. Cổng thanh toán tự động (PayOS / VNPay / MoMo) để sau MVP. (P-10) |
+| 024 | 2026-11-27 | Script trong skill chạy trong **sandbox code execution của nhà cung cấp mô hình** (Claude / OpenAI): không có mạng, chỉ nhận file đầu vào, trả file kết quả. Không tự dựng sandbox trong MVP. (P-11) |
+| 025 | 2026-11-27 | Credit tính và hiển thị bằng **VNĐ** (1 credit = 1 đồng). Giá bán = chi phí thật × **hệ số giá** (vd. 1,3; cấu hình được), hiển thị rõ trong bảng lương. (P-12) |
+| 026 | 2026-11-27 | Credit **không hết hạn** trong 12 tháng đầu; **không hoàn tiền** credit đã nạp, trừ khi platform ngừng dịch vụ. (P-13) |
 
 ### 0.3. Đề xuất chờ chốt
 
 > Claude đề xuất. Harry duyệt → chuyển lên 0.2 với số tiếp theo.
 > P-01 … P-09 đã xử lý ngày 2026-11-27 (xem 0.2 #015 – #022).
+> P-10 … P-13 đã xử lý ngày 2026-11-27 (xem 0.2 #023 – #026).
 
-| Mã | Đề xuất | Lý do | Phương án khác |
-|---|---|---|---|
-| P-10 | Nạp credit trong MVP bằng **chuyển khoản VietQR**; platform xác nhận (bán tự động: đối soát theo nội dung chuyển khoản) rồi cộng credit. Cổng thanh toán tự động (PayOS / VNPay / MoMo) để sau MVP. | Ít tích hợp nhất cho một người; khách SME quen chuyển khoản. | Tích hợp cổng thanh toán ngay. |
-| P-11 | Script trong skill chạy trong **sandbox code execution của nhà cung cấp mô hình** (Claude / OpenAI): không có mạng, chỉ nhận file đầu vào, trả file kết quả. Không tự dựng sandbox trong MVP. | Không phải tự vận hành sandbox; an toàn hơn. | Tự dựng sandbox (container cách ly) trên cloud Việt Nam. |
-| P-12 | Credit tính và hiển thị bằng **VNĐ** (1 credit = 1 đồng). Giá bán = chi phí thật × hệ số (vd. 1,3), hiển thị rõ trong bảng lương. | Chủ DN hiểu ngay; không phải đổi đơn vị. | Đơn vị credit riêng. |
-| P-13 | Credit **không hết hạn** trong 12 tháng đầu; không hoàn tiền credit đã nạp, trừ khi platform ngừng dịch vụ. | Đơn giản, dễ ghi trong điều khoản. | Credit hết hạn sau 12 tháng. |
+Hiện không có đề xuất chờ chốt.
 
 ### 0.4. Câu hỏi còn mở
 
@@ -250,9 +250,9 @@ Nháp ──► Thử việc ──► Chính thức ◄──► Tạm nghỉ
 
 ### 3.13. Credit và nạp tiền (`FR-13`)
 
-- **FR-13-01** Mỗi công ty có một `CreditAccount` (VNĐ, theo P-12). Mọi thay đổi số dư đi qua `CreditTransaction`, không sửa trực tiếp.
-- **FR-13-02** Trừ credit theo từng `CostEntry` = chi phí thật × hệ số giá (cấu hình được, theo P-12).
-- **FR-13-03** Nạp tiền theo P-10: tạo `TopUp` → hiện mã VietQR + nội dung chuyển khoản riêng → xác nhận → cộng credit → gửi biên nhận.
+- **FR-13-01** Mỗi công ty có một `CreditAccount` (VNĐ, theo #025). Mọi thay đổi số dư đi qua `CreditTransaction`, không sửa trực tiếp.
+- **FR-13-02** Trừ credit theo từng `CostEntry` = chi phí thật × hệ số giá (cấu hình được, theo #025).
+- **FR-13-03** Nạp tiền theo #023: tạo `TopUp` → hiện mã VietQR + nội dung chuyển khoản riêng → xác nhận → cộng credit → gửi biên nhận.
   - KHI một `TopUp` được xác nhận hai lần, THÌ credit chỉ được cộng một lần.
 - **FR-13-04** Số dư dưới ngưỡng (vd. 20%) → báo Owner; số dư bằng 0 → mọi worker ngừng nhận việc mới, báo Owner và Manager.
   - KHI số dư bằng 0, THÌ worker trả lời "công ty đã hết credit" và không gọi mô hình.
@@ -262,7 +262,7 @@ Nháp ──► Thử việc ──► Chính thức ◄──► Tạm nghỉ
 
 ### 3.14. Chạy script của skill (`FR-14`)
 
-- **FR-14-01** Theo P-11: script chạy trong sandbox của nhà cung cấp mô hình; không có mạng.
+- **FR-14-01** Theo #024: script chạy trong sandbox của nhà cung cấp mô hình; không có mạng.
 - **FR-14-02** Dữ liệu vào sandbox chỉ là file / nội dung worker được phép đọc; kết quả trả về là file, worker gửi qua kênh chat hoặc ghi qua connector (theo quyền).
 - **FR-14-03** Mỗi lần chạy ghi `SkillRun`: thời gian, kích thước file, chi phí; giới hạn thời gian và dung lượng.
   - KHI script chạy quá thời gian giới hạn, THÌ bị dừng, `Task` ghi lỗi, credit chỉ trừ phần đã dùng.
