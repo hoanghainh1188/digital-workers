@@ -40,7 +40,7 @@
 
 - [x] 7.1 Thêm `pnpm dev` (api + runner với `node --watch --env-file-if-exists=.env`, web với Vite, chạy song song); kiểm tra sau `docker compose up -d`, `curl localhost:3000/health/ready` trả 200 và web mở được
 - [x] 7.2 Viết `scripts/ci-runner.sh` (`pnpm ci:runner`: lint, typecheck, test, test:int, e2e, `openspec validate --all --strict`, `docker compose -f compose.prod.yaml build`; dừng ở lỗi đầu tiên); kiểm tra chạy hết trên máy
-- [ ] 7.3 Viết `.github/workflows/ci.yml` (ubuntu-latest: install frozen lockfile, lint, typecheck, test, openspec validate) và mẫu PR có ô "đã chạy `pnpm ci:runner`"; kiểm tra workflow xanh trên PR này
+- [x] 7.3 Viết `.github/workflows/ci.yml` (ubuntu-latest: install frozen lockfile, lint, typecheck, test, openspec validate) và mẫu PR có ô "đã chạy `pnpm ci:runner`"; kiểm tra workflow xanh trên PR này
 
 ## 8. Đóng gói prod
 

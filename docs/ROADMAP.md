@@ -25,7 +25,7 @@ last_updated: 2026-11-27
 
 | # | Issue | Change | Phụ thuộc | Màn hình | Trạng thái |
 |---|---|---|---|---|---|
-| 0 | #1 | `setup-monorepo` | — | — | ⏳ |
+| 0 | #1 | `setup-monorepo` | — | — | ✅ |
 | 1 | #2 | `add-tenancy-and-users` | 0 | Đăng ký, phòng ban, người dùng | ⏳ |
 | 2 | #3 | `add-worker-profile` | 1 | Sơ đồ nhân sự số, hồ sơ worker | ⏳ |
 | 3 | #4 | `add-skill-library` | 1 | Thư viện kỹ năng | ⏳ |
