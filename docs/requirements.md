@@ -80,6 +80,16 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 053 | 2026-11-27 | Người quản lý worker: **bất kỳ ai trong phòng** hoặc Owner / Admin; mặc định là trưởng phòng. Người quản lý nhận cảnh báo và duyệt việc; chỉ trưởng phòng / Owner / Admin đổi trạng thái. (`add-worker-profile`) |
 | 054 | 2026-11-27 | **Bắt buộc lý do** khi cho nghỉ việc và khi trả lại đề nghị chính thức; tạm nghỉ không bắt buộc. (`add-worker-profile`) |
 | 055 | 2026-11-27 | Thêm **`@types/nodemailer`** (devDependency, MIT, chỉ khai báo kiểu cho `nodemailer`) vào danh sách thư viện được phép. Ma trận quyền mục 1 có thêm hàng **"Đổi thông tin công ty (tên, số điện thoại)"**: Owner và Admin được, Trưởng phòng và Nhân viên không. (`add-tenancy-and-auth`) |
+| 056 | 2026-11-27 | Trưởng phòng là người có **vai trò Trưởng phòng** trong phòng đó; Owner / Admin **không làm trưởng phòng** trong MVP. Chọn trưởng phòng mới cho phòng đã có trưởng phòng → người cũ thành **Nhân viên của cùng phòng**; bỏ trưởng phòng cũng vậy (báo trước khi lưu). (`add-departments-and-invites`) |
+| 057 | 2026-11-27 | Chuyển một Trưởng phòng sang phòng khác → người đó thành **Nhân viên của phòng mới**, phòng cũ không còn trưởng phòng (báo trước khi lưu). (`add-departments-and-invites`) |
+| 058 | 2026-11-27 | **Chỉ Owner** đổi vai trò, chuyển phòng, khoá / mở khoá **Owner và Admin** (kể cả gửi lại / huỷ lời mời Owner / Admin); Admin không quản lý Admin khác. (`add-departments-and-invites`) |
+| 059 | 2026-11-27 | Lưu trữ phòng ban chỉ khi phòng **không còn ai, kể cả người đã khoá**, và không còn lời mời còn hạn vào phòng đó. Phòng đã lưu trữ không khôi phục trong MVP. (`add-departments-and-invites`) |
+| 060 | 2026-11-27 | Mời email đã có tài khoản ở công ty khác: lúc mời **không báo** (không lộ email giữa các công ty); người được mời thấy lỗi khi nhận lời mời. (`add-departments-and-invites`) |
+| 061 | 2026-11-27 | Người đã có tài khoản nhưng **chưa có công ty** (Google, đăng ký dở) **nhận được lời mời** khi đăng nhập bằng đúng email trong lời mời. (`add-departments-and-invites`) |
+| 062 | 2026-11-27 | Đặt lại mật khẩu xong: **coi như đã xác minh email** và **huỷ mọi phiên cũ** (đường lấy lại email bị người khác đăng ký trước). Link đặt lại có hạn **1 giờ**; giới hạn 3 lần / 15 phút / email và 5 lần / phút / IP. (`add-departments-and-invites`) |
+| 063 | 2026-11-27 | Ma trận quyền mục 1 thêm hàng **"Xem danh sách người dùng"** (ghi vào bảng cùng code khi apply, task 1.1): Owner, Admin cả công ty; Trưởng phòng phòng mình; Nhân viên không (khớp #038). Mọi thành viên xem được danh sách phòng ban. (`add-departments-and-invites`) |
+| 064 | 2026-11-27 | Trang **Quên mật khẩu / Đặt lại mật khẩu** dựng theo phong cách trang đăng nhập, **không vẽ màn riêng**. (`add-departments-and-invites`) |
+| 065 | 2026-11-27 | Khoá tài khoản **không ghi lý do** trong MVP: chỉ lưu ngày khoá, hiện "Đã khoá · dd/mm". (`add-departments-and-invites`) |
 
 ### 0.3. Đề xuất chờ chốt
 

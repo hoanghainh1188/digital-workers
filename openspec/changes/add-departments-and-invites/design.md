@@ -48,7 +48,7 @@ public.invitations  id uuid PK, company_id FK, email (lowercase), role, departme
 ```
 
 - **Trưởng phòng là suy ra, không lưu riêng**: trưởng phòng của phòng X = thành viên `role = 'manager'` có `department_id = X`. Không có cột `head_member_id`, nên không có hai nguồn sự thật phải giữ khớp; index unique một phần thực thi "tối đa một trưởng phòng" (#036) ngay trong DB.
-  - *Đã cân nhắc*: cột `departments.head_member_id`. Cho phép Owner / Admin làm trưởng phòng, nhưng vai trò Trưởng phòng và "là trưởng phòng" có thể lệch nhau, cần thêm trigger. Không chọn (xem câu hỏi Q2 trong PR).
+  - *Đã cân nhắc*: cột `departments.head_member_id`. Cho phép Owner / Admin làm trưởng phòng, nhưng vai trò Trưởng phòng và "là trưởng phòng" có thể lệch nhau, cần thêm trigger. Không chọn (0.2 #056).
 - **FK ghép `(company_id, department_id)`**: một thành viên / lời mời không thể trỏ tới phòng ban của công ty khác, kể cả khi code sai — RLS chặn đọc, FK ghép chặn ghi.
 - **Trạng thái "hết hạn" của lời mời là suy ra** từ `expires_at < now()` khi `status = 'pending'`; không có job đổi trạng thái. Danh sách trả `state: 'pending' | 'expired'`.
 - `invitations.email` chỉ là dữ liệu nghiệp vụ trong RLS; `AuditEvent` chỉ ghi id lời mời (spec audit-log).
@@ -105,7 +105,7 @@ Khoá theo thứ tự id nên hai yêu cầu đồng thời xếp hàng thay vì
 
 ### D6. Thành viên: danh sách, sửa, khoá
 
-- **Quyền xem**: thêm action `member.list` vào ma trận: Owner / Admin `all`, Trưởng phòng `own-department`, Nhân viên `false` (#038). Sửa docs/requirements.md mục 1 (hàng "Xem danh sách người dùng") trước, test ma trận sau, code sau cùng.
+- **Quyền xem**: thêm action `member.list` vào ma trận: Owner / Admin `all`, Trưởng phòng `own-department`, Nhân viên `false` (#038, #063). Sửa docs/requirements.md mục 1 (hàng "Xem danh sách người dùng") trước, test ma trận sau, code sau cùng.
 - `GET /api/members?q=&role=&department=<id|none>&status=<active|locked>`: đọc `member_profiles` (view thêm `department_id`, `locked_at`, `last_seen_at`). Trưởng phòng: server ép `department = phòng mình`, bỏ qua tham số.
 - **Cột "Hoạt động"**: `members.last_seen_at`, cập nhật trong plugin request-context tối đa mỗi giờ một lần (`UPDATE … WHERE last_seen_at IS NULL OR last_seen_at < now() - interval '1 hour'`). *Đã cân nhắc*: lấy `max(auth.sessions.updated_at)` qua view — không chọn vì `dw_app` không có quyền trên `auth.sessions` (1a D2) và phiên bị xoá khi khoá / đăng xuất.
 - `GET /api/invitations?state=` (Owner / Admin) — web ghép với danh sách thành viên khi lọc trạng thái "Đã mời" hoặc "mọi trạng thái".
@@ -129,7 +129,7 @@ Khoá theo thứ tự id nên hai yêu cầu đồng thời xếp hàng thay vì
 - **Trang Phòng ban**: thẻ phòng (tên, mô tả, trưởng phòng, avatar thành viên, số người), dialog thêm / sửa với ô trưởng phòng chỉ liệt kê Nhân viên + Trưởng phòng đang hoạt động, dòng báo "sẽ được đổi vai trò…" khi chọn Nhân viên; dialog "Chưa xoá được phòng …" khi `409 DEPARTMENT_NOT_EMPTY`; trạng thái trống có 4 gợi ý. Trưởng phòng / Nhân viên thấy callout "Bạn đang xem…".
 - **Trang Người dùng**: bảng thành viên + lời mời, bộ lọc trên URL, menu thao tác theo `canManageMember`, dialog mời nhiều email (tách theo dấu phẩy / xuống dòng, báo lỗi từng email), dialog "Không đổi được vai trò của bạn" cho Owner cuối. Nút mời bị khoá kèm hướng dẫn khi chưa xác minh email.
 - **Nhận lời mời**: dùng `auth-layout` của 1a với panel "Tham gia công ty" (signup.html); nút Google hiện email lời mời; màn "Lời mời đã hết hạn".
-- **Quên / đặt lại mật khẩu**: chưa có màn vẽ; dựng bằng `auth-layout` + `Field` + `Callout` sẵn có, cùng phong cách trang đăng nhập (xem câu hỏi trong PR).
+- **Quên / đặt lại mật khẩu**: chưa có màn vẽ; dựng bằng `auth-layout` + `Field` + `Callout` sẵn có, cùng phong cách trang đăng nhập (0.2 #064).
 - Mọi chuỗi trong `src/i18n/vi.ts`.
 
 ### D9. API tóm tắt
@@ -165,7 +165,7 @@ Mọi route theo id dùng `guards.notFound` (id sai định dạng cũng 404 + `
 ## Risks / Trade-offs
 
 - [Hàm `SECURITY DEFINER` thứ hai đi vòng RLS] → chỉ trả một dòng theo hash 256 bit; không có tham số tìm theo email / công ty; test xác nhận không liệt kê được.
-- [Trưởng phòng suy ra từ vai trò] → Owner / Admin không làm trưởng phòng được. Nếu khách cần, thêm cột ở change sau (Q2).
+- [Trưởng phòng suy ra từ vai trò] → Owner / Admin không làm trưởng phòng được. Nếu khách cần, thêm cột ở change sau (0.2 #056).
 - [Không kiểm "email đã thuộc công ty khác" lúc mời] → Owner có thể thấy lời mời treo; người được mời thấy lỗi rõ. Đổi lại không lộ email giữa các công ty.
 - [`last_seen_at` cập nhật mỗi giờ] → cột "Hoạt động" sai lệch tối đa 1 giờ; đổi lại không ghi DB mỗi request.
 - [Xoá phiên sau commit có thể lỗi] → `requireCompany` đọc `status` mỗi request nên phiên còn sót vẫn bị chặn (403 `ACCOUNT_LOCKED`).

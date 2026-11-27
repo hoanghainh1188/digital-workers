@@ -2,7 +2,7 @@
 
 ## 1. Tài liệu và luật dùng chung (`packages/core`)
 
-- [ ] 1.1 Thêm hàng "Xem danh sách người dùng" (Owner ✓, Admin ✓, Trưởng phòng ✓ phòng mình, Nhân viên —) vào ma trận docs/requirements.md mục 1, rồi action `member.list` trong `permissions.ts`; test ma trận đọc tài liệu vẫn xanh (`pnpm test`).
+- [ ] 1.1 Thêm hàng "Xem danh sách người dùng" (Owner ✓, Admin ✓, Trưởng phòng ✓ phòng mình, Nhân viên —) vào ma trận docs/requirements.md mục 1 (0.2 #063), rồi action `member.list` trong `permissions.ts`; test ma trận đọc tài liệu vẫn xanh (`pnpm test`).
 - [ ] 1.2 `access/member-rules.ts`: `canManageMember`, `canAssignRole`, `validateMembership`, mã lỗi (design D2); unit test dạng bảng actor × target × hành động.
 - [ ] 1.3 Schema Zod dùng chung: phòng ban (tạo / sửa), lời mời (danh sách email ≤ 50, tách theo dấu phẩy / xuống dòng, báo lỗi từng email), sửa thành viên, preview / accept, quên / đặt lại mật khẩu; unit test.
 
