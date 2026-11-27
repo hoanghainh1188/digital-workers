@@ -71,6 +71,7 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 044 | 2026-11-27 | Đăng nhập sai **10 lần trong 15 phút** (theo email) → tạm chặn tới hết 15 phút; ngoài ra có giới hạn theo IP. (`add-tenancy-and-auth`) |
 | 045 | 2026-11-27 | Font giao diện **Be Vietnam Pro, tự host** qua `@fontsource/be-vietnam-pro` (OFL); không gọi Google Fonts. (`add-tenancy-and-auth`) |
 | 046 | 2026-11-27 | `AuditEvent` giữ **1 năm**, như log việc (#019). Việc xoá bản quá hạn chạy nền, làm khi runner có lịch (change `add-schedules`). (`add-tenancy-and-auth`) |
+| 047 | 2026-11-27 | Thêm **`@types/nodemailer`** (devDependency, MIT, chỉ khai báo kiểu cho `nodemailer`) vào danh sách thư viện được phép. Ma trận quyền mục 1 có thêm hàng **"Đổi thông tin công ty (tên, số điện thoại)"**: Owner và Admin được, Trưởng phòng và Nhân viên không. (`add-tenancy-and-auth`) |
 
 ### 0.3. Đề xuất chờ chốt
 
