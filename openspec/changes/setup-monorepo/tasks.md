@@ -49,7 +49,7 @@
 
 ## 9. Tài liệu
 
-- [ ] 9.1 Cập nhật README: yêu cầu (Node 24, pnpm, Docker), các bước chạy dev, bảng lệnh; kiểm tra làm theo README từ một bản clone mới chạy được tới `/health/ready` 200
+- [x] 9.1 Cập nhật README: yêu cầu (Node 24, pnpm, Docker), các bước chạy dev, bảng lệnh; kiểm tra làm theo README từ một bản clone mới chạy được tới `/health/ready` 200
 - [x] 9.2 Ghi câu trả lời của PR propose: CLAUDE.md (Node 24, thư viện được phép), `docs/requirements.md` 0.2 #027–#031, `docs/architecture.md` mục 8 và 12, `docs/ROADMAP.md` + issue #21 (`deploy-staging`); `openspec validate --all --strict` qua
 
 ## Workflow follow-up
