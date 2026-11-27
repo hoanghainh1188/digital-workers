@@ -26,10 +26,11 @@ last_updated: 2026-11-27
 | # | Issue | Change | Phụ thuộc | Màn hình | Trạng thái |
 |---|---|---|---|---|---|
 | 0 | #1 | `setup-monorepo` | — | — | ✅ |
-| 1 | #2 | `add-tenancy-and-users` | 0 | Đăng ký, phòng ban, người dùng | ⏳ |
-| 2 | #3 | `add-worker-profile` | 1 | Sơ đồ nhân sự số, hồ sơ worker | ⏳ |
-| 3 | #4 | `add-skill-library` | 1 | Thư viện kỹ năng | ⏳ |
-| 4 | #5 | `add-llm-gateway-and-credit` | 1 | Số dư credit (đơn giản) | ⏳ |
+| 1a | #2 | `add-tenancy-and-auth` | 0 | Đăng ký, đăng nhập | ⏳ |
+| 1b | #26 | `add-departments-and-invites` | 1a | Phòng ban, người dùng, nhận lời mời | ⏳ |
+| 2 | #3 | `add-worker-profile` | 1b | Sơ đồ nhân sự số, hồ sơ worker | ⏳ |
+| 3 | #4 | `add-skill-library` | 1a | Thư viện kỹ năng | ⏳ |
+| 4 | #5 | `add-llm-gateway-and-credit` | 1a | Số dư credit (đơn giản) | ⏳ |
 | 5 | #6 | `add-worker-runtime-webchat` | 2, 3, 4 | Web chat | ⏳ |
 | 5a | #21 | `deploy-staging` | 0 | — | ⏳ |
 | 6 | #7 | `add-channel-telegram` | 5, 5a | Kết nối kênh | ⏳ |
@@ -80,34 +81,59 @@ Tạo nhánh setup-monorepo, commit, mở PR (Refs #<issue>). Chưa code.
 Dừng lại sau khi propose để tôi duyệt.
 ```
 
-## 1. `add-tenancy-and-users`
+## 1a. `add-tenancy-and-auth`
 
-**Mục tiêu:** công ty, phòng ban, người dùng, vai trò, đăng nhập, RLS (FR-01, mục 1, NFR-01).
+**Mục tiêu:** công ty, thành viên, vai trò + ma trận quyền, RLS, đăng ký / đăng nhập (email + Google), xác minh email, AuditEvent (FR-01-01, FR-01-03, mục 1, NFR-01, NFR-08). Tách từ change 1 cũ (`add-tenancy-and-users`) vì quá lớn cho 1–2 buổi.
 
 ```text
-/opsx:propose add-tenancy-and-users
+/opsx:propose add-tenancy-and-auth
 
-Thêm công ty (tenant), phòng ban, người dùng, 4 vai trò và đăng nhập web, theo FR-01 và mục 1 (ma trận quyền).
+Thêm công ty, thành viên, 4 vai trò + ma trận quyền, tách dữ liệu bằng RLS, đăng ký / đăng nhập (email + mật khẩu, Google),
+xác minh email, giới hạn thử sai, AuditEvent. Phòng ban, lời mời, đổi vai trò, khoá làm ở change 1b.
 
 Đọc trước:
-- docs/requirements.md 0.2, 0.4, mục 1, 2, FR-01, NFR-01
-- docs/design/screens/signup.html, departments.html, users.html
+- docs/requirements.md 0.2 #012 #032–#035 #039 #041, mục 1, 2, FR-01, NFR-01, NFR-08
+- docs/design/screens/signup.html (luồng Owner đăng ký)
 - docs/architecture.md mục 7
 - CLAUDE.md mục "Dữ liệu nhiều công ty"
 
+Test bắt buộc:
+- Người công ty A không đọc / sửa được dữ liệu công ty B (API + truy vấn thô bị RLS chặn).
+- Nhân viên gọi thẳng API quản trị → 403 + AuditEvent.
+
+Tạo nhánh add-tenancy-and-auth, commit, mở PR (Refs #<issue>). Chưa code.
+Dừng lại sau khi propose để tôi duyệt.
+```
+
+## 1b. `add-departments-and-invites`
+
+**Mục tiêu:** phòng ban, mời người dùng, nhận lời mời, đổi vai trò, chuyển phòng, khoá / mở khoá, quên mật khẩu (FR-01-02, 0.2 #033–#040).
+
+```text
+/opsx:propose add-departments-and-invites
+
+Thêm phòng ban (trưởng phòng, lưu trữ), mời người dùng qua email, nhận lời mời, đổi vai trò, chuyển phòng, khoá / mở khoá,
+quên mật khẩu, trang Phòng ban và Người dùng theo FR-01-02 và ma trận quyền.
+
+Đọc trước:
+- docs/requirements.md 0.2 #033 #034 #036–#040, mục 1, FR-01
+- docs/design/screens/departments.html, users.html, signup.html (luồng nhận lời mời)
+- openspec/specs/tenant-isolation, access-control, audit-log (từ change 1a)
+
 Design.md cần chốt rõ:
-1. Schema Company, Department, User; RLS và helper đặt app.company_id.
-2. Ma trận quyền nằm ở packages/core, kiểm tra ở API.
-3. Đăng nhập Better Auth: email + mật khẩu và Google (0.2 #012).
-4. Luồng mời người dùng.
+1. Bảng departments, invitations; thêm department_id vào members.
+2. Luật vai trò: chỉ Owner gán Owner / Admin; luôn ≥ 1 Owner hoạt động; chọn Nhân viên làm trưởng phòng → tự đổi vai trò.
+3. Lời mời 7 ngày, gửi lại, huỷ; chưa xác minh email thì không mời được (#033).
+4. Khoá tài khoản: huỷ phiên đang có, chặn đăng nhập, giữ lịch sử.
 
 Test bắt buộc:
-- Người công ty A không đọc/sửa được dữ liệu công ty B (API + truy vấn thô bị RLS chặn).
-- Member không tạo được phòng ban.
+- Người công ty A không đọc / sửa được phòng ban, lời mời, thành viên công ty B.
+- Trưởng phòng / Nhân viên không tạo được phòng ban, không mời được người.
+- Admin không gán được Owner / Admin; không hạ vai trò Owner cuối cùng.
 
-Quyết định cần chốt: nêu trong mô tả PR propose; ghi câu trả lời vào 0.2 trong chính PR này.
+Quyết định cần chốt: nêu trong mô tả PR propose; ghi vào 0.2 trong chính PR này.
 
-Tạo nhánh add-tenancy-and-users, commit, mở PR (Refs #<issue>). Chưa code.
+Tạo nhánh add-departments-and-invites, commit, mở PR (Refs #<issue>). Chưa code.
 Dừng lại sau khi propose để tôi duyệt.
 ```
 
@@ -337,7 +363,7 @@ Dừng lại sau khi propose để tôi duyệt.
 
 ## 8. `add-schedules`
 
-**Mục tiêu:** lịch chạy theo giờ Việt Nam (FR-06).
+**Mục tiêu:** lịch chạy theo giờ Việt Nam (FR-06). Kèm việc nền xoá `AuditEvent` quá 1 năm (0.2 #046) và hội thoại quá 90 ngày (#019).
 
 ```text
 /opsx:propose add-schedules
