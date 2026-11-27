@@ -27,7 +27,8 @@ rules:
     - Change phải xong trong 1–2 buổi; lớn hơn thì chia.
     - Câu hỏi nghiệp vụ nêu trong mô tả PR; câu trả lời ghi vào docs/requirements.md mục 0.2.
   specs:
-    - Viết spec và kịch bản bằng tiếng Việt, dạng "KHI … THÌ …"; tên requirement ngắn.
+    - Viết spec và kịch bản bằng tiếng Việt; tên requirement ngắn.
+    - Mỗi bước kịch bản giữ từ khoá tiếng Anh mà CLI đòi ("- **WHEN** …", "- **THEN** …"), nội dung sau từ khoá viết tiếng Việt.
     - Mỗi requirement có ít nhất một kịch bản; requirement dài thì tách nhỏ để qua --strict.
     - Mọi requirement chạm dữ liệu phải có kịch bản tách công ty (công ty A không thấy dữ liệu công ty B).
     - Mọi requirement về hành động của worker phải có kịch bản thiếu quyền và kịch bản cần duyệt.

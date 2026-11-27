@@ -25,11 +25,8 @@ step "e2e (Playwright)"
 pnpm e2e
 
 step "openspec validate"
-if command -v openspec >/dev/null; then
-  openspec validate --all --strict
-else
-  npx --yes @fission-ai/openspec@1 validate --all --strict
-fi
+# Pinned to the same version as .github/workflows/ci.yml so local and CI agree.
+npx --yes @fission-ai/openspec@1.17.0 validate --all --strict
 
 step "build production images"
 docker compose --env-file .env.prod.example -f compose.prod.yaml build
