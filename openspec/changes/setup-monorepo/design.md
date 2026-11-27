@@ -39,10 +39,10 @@ apps/
   runner/     src/main.ts (khởi động, tắt êm), src/config.ts
   web/        Vite + React + shadcn/ui: src/i18n/vi.ts, src/routes/, e2e/
 packages/
-  core/       src/config/ (đọc + kiểm tra env bằng Zod, dùng chung cho api và runner)
+  core/       src/config/ (đọc + kiểm tra env bằng Zod), src/logging/ (pino có che), src/process/ (tắt êm) — dùng chung cho api và runner
   db/         src/client.ts (pool pg + Drizzle), drizzle.config.ts, migrations/, test/ (Testcontainers)
 tsconfig.base.json  biome.json  vitest.config.ts  pnpm-workspace.yaml
-compose.yaml  compose.prod.yaml  Caddyfile  Dockerfile  docker/postgres/init.sql
+compose.yaml  compose.prod.yaml  Caddyfile  Dockerfile  docker/postgres/{roles.sql,init/01-roles.sh}
 scripts/ci-runner.sh   .github/workflows/ci.yml
 ```
 
@@ -63,11 +63,13 @@ scripts/ci-runner.sh   .github/workflows/ci.yml
 - **Lỗi**: một error handler trả envelope `{ error: { code, message } }`. Lỗi 5xx chỉ trả message chung; chi tiết ghi log.
 - **Log**: dùng logger pino có sẵn của Fastify, `redact` các đường dẫn `req.headers.authorization`, `req.headers.cookie`, `*.password`, `*.token`, `*.apiKey`, `*.secret`, `DATABASE_URL`. `pino-pretty` không dùng (ngoài danh sách); dev đọc log JSON.
 - **Route sức khoẻ**: `/health` không chạm DB. `/health/ready` chạy `SELECT 1` với `statement_timeout`, tổng thời gian chờ 2 giây (`AbortSignal.timeout`). Lỗi → log `warn` (đã che) + 503.
+- **Ra ngoài qua Caddy chỉ có `/health`**. `/health/ready` chạy truy vấn DB nên chỉ dùng trong mạng nội bộ (healthcheck của Docker); gọi từ ngoài thì Caddy trả 404, để không ai dùng nó dồn tải lên DB đang lỗi.
+- **Log request** chỉ ghi method + path (bỏ query string, bỏ header), vì query có thể mang token của webhook / OAuth.
 - **Tắt êm**: SIGTERM/SIGINT → `app.close()` → đóng pool DB → thoát. Áp dụng cả cho runner.
 
 ### D5. Cơ sở dữ liệu: hai vai trò từ ngày đầu
 
-- `docker/postgres/init.sql` (dev và prod) tạo:
+- `docker/postgres/roles.sql` (dev, prod và Testcontainers dùng chung) tạo hai vai trò và database `dw`. `init/01-roles.sh` chạy nó lúc khởi tạo volume, lấy mật khẩu từ biến môi trường (`DW_OWNER_PASSWORD`, `DW_APP_PASSWORD`) để không có mật khẩu prod nào nằm trong repo:
   - `dw_owner`: sở hữu schema, chạy migration (`MIGRATION_DATABASE_URL`).
   - `dw_app`: vai trò ứng dụng, **không** phải owner bảng, **không** có `BYPASSRLS` (`DATABASE_URL`).
 - **Lý do**: PostgreSQL bỏ qua RLS với superuser và với chủ bảng (trừ khi `FORCE ROW LEVEL SECURITY`). Nếu ứng dụng kết nối bằng `postgres`, test RLS ở change 1 sẽ qua giả. Tách ngay để change 1 không phải đổi chuỗi kết nối ở mọi nơi.
@@ -76,7 +78,7 @@ scripts/ci-runner.sh   .github/workflows/ci.yml
 
 ### D6. Test
 
-- **Unit** (`pnpm test`): Vitest, một `vitest.config.ts` ở gốc với `test.projects` trỏ từng package. File `*.test.ts`. Không cần Docker.
+- **Unit** (`pnpm test`): Vitest, một `vitest.config.ts` ở gốc với hai `test.projects` theo loại test (`unit`, `int`) thay vì theo package: lệnh `test` / `test:int` chỉ cần chọn project. File `*.test.ts`. Không cần Docker.
 - **Tích hợp** (`pnpm test:int`): file `*.int.test.ts`. `packages/db/test/pg.ts` dùng Testcontainers dựng `postgres:16-alpine`, chạy `init.sql` + migration, trả về hai pool (`owner`, `app`). Test mẫu: `dw_app` không tạo được bảng trong schema `public`; `/health/ready` trả 200 khi DB chạy, 503 khi DB dừng.
 - **E2E** (`pnpm e2e`): Playwright, chỉ Chromium ở change này, chạy `vite preview`. Test mẫu: trang chủ hiện tiêu đề tiếng Việt lấy từ `vi.ts`. Thêm Firefox / WebKit khi có màn hình thật (change 1).
 - Mô hình giả, adapter giả: chưa cần ở change này.
@@ -108,7 +110,7 @@ CLAUDE.md, mục "Thư viện được phép", đã ghi các gói trên, kể c�
 ### D10. Docker và triển khai
 
 - **`compose.yaml` (dev)**: chỉ `postgres:16-alpine`, cổng 5432, volume tên, healthcheck `pg_isready`, mount `init.sql`. Api / runner / web chạy bằng `pnpm dev` trên máy để có watch nhanh.
-- **`Dockerfile`**: một file nhiều stage, `node:24-alpine`, `pnpm deploy --prod` cho từng app (`--target api` / `--target runner`), chạy bằng user không phải root, `HEALTHCHECK` gọi `/health`.
+- **`Dockerfile`**: một file nhiều stage, `node:24-alpine`, target `api` / `runner` / `caddy`, chạy bằng user không phải root, `HEALTHCHECK` gọi `/health`. **Không dùng `pnpm deploy`**: nó chép package nội bộ vào `node_modules`, và Node từ chối strip type cho file trong `node_modules`. Thay vào đó cài phụ thuộc prod (`pnpm install --prod --filter`) và giữ nguyên cây workspace, để `@dw/*` vẫn là symlink tới `packages/*`.
 - **`compose.prod.yaml`**: `postgres`, `api`, `runner`, `caddy`. Web được build (`vite build`) trong stage của Caddy và Caddy phục vụ file tĩnh. Caddy proxy `/api/*`, `/webhooks/*`, `/health*` sang `api:3000`. `api` khởi động khi `postgres` đã healthy. Migration chạy bằng service `migrate` một lần (`dw_owner`) trước `api`. Postgres không mở cổng ra ngoài.
 - `Caddyfile` dùng biến `{$SITE_ADDRESS}`: `localhost` khi thử trên máy, tên miền thật trên cloud (Caddy tự lấy chứng chỉ).
 

@@ -1,0 +1,26 @@
+{
+  "name": "digital-workers",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "pnpm -r --no-bail typecheck",
+    "test": "vitest run --project unit",
+    "test:int": "vitest run --project int",
+    "e2e": "pnpm --filter @dw/web e2e",
+    "db:migrate": "pnpm --filter @dw/db migrate",
+    "ci:runner": "bash scripts/ci-runner.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.9",
+    "@types/node": "^24",
+    "typescript": "^7",
+    "vitest": "^5.1.2"
+  }
+}

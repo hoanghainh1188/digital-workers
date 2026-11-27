@@ -1,0 +1,31 @@
+# SITE_ADDRESS: "localhost" to try on this machine, the real domain on the server
+# (Caddy then obtains and renews the TLS certificate itself).
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	# /health/ready queries the database: keep it on the internal network (Docker healthchecks).
+	@api path /api/* /webhooks/* /health
+	handle @api {
+		reverse_proxy api:3000
+	}
+
+	handle /health/* {
+		respond 404
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		-Server
+	}
+}
