@@ -227,10 +227,10 @@
           </fieldset>
           <div class="form-grid" data-show="role:owner,manager">
             <div class="field"><label for="f-name">Tên hiển thị</label><input class="input" id="f-name" value="An · Chăm sóc đại lý"><span class="hint">Tên này hiện trong app chat.</span></div>
-            <div class="field"><label for="f-dept">Phòng ban</label><select class="select" id="f-dept"><option selected>Kinh doanh</option><option>Kế toán</option></select></div>
+            <div class="field"><label for="f-dept">Phòng ban</label><select class="select" id="f-dept" data-show="role:owner"><option selected>Kinh doanh</option><option>Kế toán</option></select><input class="input" id="f-dept-ro" value="Kinh doanh" readonly data-show="role:manager" hidden style="background:var(--canvas)"><span class="hint" data-show="role:manager" hidden>Chỉ Owner / Admin đổi phòng ban.</span></div>
             <div class="field wide"><label for="f-job">Mô tả công việc</label><textarea class="textarea" id="f-job" rows="4">Nhắc đại lý về đơn đặt hàng định kỳ, trả lời câu hỏi tồn kho và lịch giao dựa trên bảng tồn kho. Mọi tin nhắn gửi đại lý phải để trưởng phòng duyệt trước.</textarea><span class="hint">Viết như giao việc cho nhân viên mới. Nhân viên số đọc phần này mỗi khi nhận việc.</span></div>
-            <div class="field"><label for="f-mgr">Người quản lý</label><select class="select" id="f-mgr"><option selected>Nguyễn Thị Lan — Trưởng phòng</option><option>Hoàng Văn Việt — Nhân viên</option></select><span class="hint">Nhận cảnh báo ngân sách, lỗi và yêu cầu duyệt.</span></div>
-            <div class="field"><label for="f-budget">Ngân sách tháng</label><div class="money"><input class="input" id="f-budget" inputmode="numeric" value="300.000"></div><span class="hint">Cảnh báo ở 80%. Hết ngân sách thì ngừng nhận việc mới.</span></div>
+            <div class="field"><label for="f-mgr">Người quản lý</label><select class="select" id="f-mgr"><option selected>Nguyễn Thị Lan — Trưởng phòng</option><option>Hoàng Văn Việt — Nhân viên</option></select><span class="hint">Ai trong phòng cũng được (mặc định: trưởng phòng). Nhận cảnh báo ngân sách, lỗi và yêu cầu duyệt.</span></div>
+            <div class="field"><label for="f-budget">Ngân sách tháng</label><div class="money"><input class="input" id="f-budget" inputmode="numeric" value="300.000"></div><span class="hint" data-show="role:owner">Cảnh báo ở 80%. Hết ngân sách thì ngừng nhận việc mới.</span><span class="hint" data-show="role:manager" hidden>Trưởng phòng đặt được tới 2.000.000đ; cao hơn cần Owner / Admin.</span></div>
             <fieldset class="field wide" style="border:0;margin:0;padding:0">
               <legend class="field-label" style="margin-bottom:0.375rem">Giọng văn</legend>
               <div class="voices">
@@ -279,17 +279,19 @@
           <li><b>FR-02-01</b>: hồ sơ gồm tên, ảnh (MVP: ảnh sinh từ chữ cái + màu), mô tả công việc, phòng ban, người quản lý, ngân sách tháng (VNĐ, số nguyên), giọng văn.</li>
           <li><b>FR-02-02</b>: Nháp → Thử việc → Chính thức ⇄ Tạm nghỉ; từ mọi trạng thái sang Nghỉ việc, không quay lại. Không có đường lùi khác.</li>
           <li><b>FR-02-03</b>: thử việc chỉ qua web chat với người được giao thử; mọi việc cần duyệt (thực thi ở change 5, 7).</li>
-          <li><b>FR-02-04</b> (bản đơn giản của change 2): Trưởng phòng <b>đề nghị</b>, Owner / Admin <b>duyệt</b> hoặc <b>trả lại</b> kèm lý do. Kiểm duyệt đầy đủ ở change 11.</li>
+          <li><b>FR-02-04</b> (bản đơn giản của change 2): Trưởng phòng <b>đề nghị</b>, Owner / Admin <b>duyệt</b> hoặc <b>trả lại</b> kèm lý do; Owner / Admin cũng tự cho chính thức được. Kiểm duyệt đầy đủ ở change 11.</li>
           <li><b>FR-02-05/06</b>: Tạm nghỉ / Nghỉ việc ghi người, thời điểm, lý do. Nghỉ việc cần gõ lại tên để xác nhận; thu hồi quyền, gỡ bot (thực thi khi các phần đó có).</li>
           <li>Mỗi lần chuyển trạng thái có <code>AuditEvent</code>; Nhân viên chỉ xem hồ sơ, không có nút.</li>
           <li>Các tab Kỹ năng / Kênh chat / Quyền dữ liệu / Lịch / Quy tắc duyệt / Việc đã làm ghi số change sẽ làm.</li>
         </ul>
-        <h3>Câu hỏi nghiệp vụ</h3>
+        <h3>Đã chốt (docs/requirements.md 0.2)</h3>
         <ul>
-          <li>Owner / Admin có được bỏ qua bước "đề nghị" và tự cho chính thức không? Thiết kế: có, nhưng vẫn ghi lịch sử.</li>
-          <li>Đổi phòng ban của worker đang chính thức: cho phép, hay phải tạm nghỉ trước?</li>
-          <li>Người quản lý của worker phải là trưởng phòng của phòng đó, hay ai trong phòng cũng được?</li>
-          <li>Lý do khi tạm nghỉ / nghỉ việc / trả lại: bắt buộc hay không bắt buộc?</li>
+          <li><b>#048</b> Thử việc 14 ngày; hết hạn thì nhắc người quản lý, worker vẫn ở thử việc tới khi có người quyết.</li>
+          <li><b>#050</b> Ngân sách mặc định 300.000đ (thử việc) / 800.000đ (chính thức); Trưởng phòng đặt tới 2.000.000đ.</li>
+          <li><b>#051</b> Owner / Admin cho chính thức không cần đề nghị; lịch sử ghi người duyệt.</li>
+          <li><b>#052</b> Chỉ Owner / Admin đổi phòng ban; giữ trạng thái, chọn lại người quản lý.</li>
+          <li><b>#053</b> Người quản lý: ai trong phòng cũng được, mặc định trưởng phòng; chỉ trưởng phòng / Owner / Admin đổi trạng thái.</li>
+          <li><b>#054</b> Lý do bắt buộc khi nghỉ việc và khi trả lại; tạm nghỉ không bắt buộc.</li>
         </ul>
       </details>
     </main>
@@ -310,7 +312,7 @@
           <li style="color:var(--muted-foreground)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color:var(--success-ink)"><path d="M20 6 9 17l-5-5"/></svg>Giữ hồ sơ, lịch sử việc và chi phí để tra cứu.</li>
         </ul>
         <div class="field">
-          <label for="ob-reason">Lý do</label>
+          <label for="ob-reason">Lý do <span class="hint">(bắt buộc)</span></label>
           <input class="input" id="ob-reason" value="Đổi sang dùng Zalo OA">
         </div>
         <div class="field">

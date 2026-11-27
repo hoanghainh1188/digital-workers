@@ -71,6 +71,14 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 044 | 2026-11-27 | Đăng nhập sai **10 lần trong 15 phút** (theo email) → tạm chặn tới hết 15 phút; ngoài ra có giới hạn theo IP. (`add-tenancy-and-auth`) |
 | 045 | 2026-11-27 | Font giao diện **Be Vietnam Pro, tự host** qua `@fontsource/be-vietnam-pro` (OFL); không gọi Google Fonts. (`add-tenancy-and-auth`) |
 | 046 | 2026-11-27 | `AuditEvent` giữ **1 năm**, như log việc (#019). Việc xoá bản quá hạn chạy nền, làm khi runner có lịch (change `add-schedules`). (`add-tenancy-and-auth`) |
+| 047 | 2026-11-27 | Trưởng phòng chỉ thấy **số lượng** nhân viên số của phòng khác; không mở được hồ sơ của phòng khác. (`add-worker-profile`) |
+| 048 | 2026-11-27 | Thử việc mặc định **14 ngày**; hết hạn thì **nhắc người quản lý** đề nghị chính thức hoặc gia hạn; worker vẫn ở thử việc tới khi có người quyết. (`add-worker-profile`) |
+| 049 | 2026-11-27 | Tên nhân viên số **duy nhất trong công ty** (không tính worker đã nghỉ việc). (`add-worker-profile`) |
+| 050 | 2026-11-27 | Ngân sách tháng mặc định **300.000đ** khi thử việc, **800.000đ** khi chính thức. Trưởng phòng đặt được tới **2.000.000đ**; cao hơn do Owner / Admin đặt. Trần này chỉnh được trong cài đặt công ty sau. (`add-worker-profile`) |
+| 051 | 2026-11-27 | Owner / Admin cho chính thức được **mà không cần đề nghị**; lịch sử ghi người duyệt. Trưởng phòng chỉ đề nghị. (`add-worker-profile`) |
+| 052 | 2026-11-27 | Đổi phòng ban của worker (kể cả đang chính thức): **chỉ Owner / Admin**; giữ nguyên trạng thái, chọn lại người quản lý theo phòng mới, có `AuditEvent`. (`add-worker-profile`) |
+| 053 | 2026-11-27 | Người quản lý worker: **bất kỳ ai trong phòng** hoặc Owner / Admin; mặc định là trưởng phòng. Người quản lý nhận cảnh báo và duyệt việc; chỉ trưởng phòng / Owner / Admin đổi trạng thái. (`add-worker-profile`) |
+| 054 | 2026-11-27 | **Bắt buộc lý do** khi cho nghỉ việc và khi trả lại đề nghị chính thức; tạm nghỉ không bắt buộc. (`add-worker-profile`) |
 
 ### 0.3. Đề xuất chờ chốt
 
