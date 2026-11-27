@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đăng ký công ty — Digital Workers (thiết kế)</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    body { background: var(--background); }
+    .auth { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); min-height: calc(100dvh - 2.25rem); }
+
+    /* Left: brand panel */
+    .story {
+      position: relative; overflow: hidden; isolation: isolate;
+      display: flex; flex-direction: column; justify-content: space-between; gap: 2.5rem;
+      padding: clamp(1.5rem, 1rem + 3vw, 3.5rem);
+      color: oklch(97% 0.01 258);
+      background:
+        radial-gradient(120% 80% at 100% 0%, oklch(62% 0.2 255 / 0.9), transparent 60%),
+        linear-gradient(160deg, oklch(46% 0.2 264), oklch(32% 0.14 268));
+    }
+    .story::before { /* faint grid: org-chart paper */
+      content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0.18;
+      background-image: linear-gradient(oklch(100% 0 0 / 0.5) 1px, transparent 1px), linear-gradient(90deg, oklch(100% 0 0 / 0.5) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: radial-gradient(80% 70% at 30% 40%, black, transparent);
+    }
+    .story .brand { padding: 0; color: white; }
+    .story .brand-mark { background: white; color: var(--primary-ink); }
+    .story h1 { font-size: var(--text-hero); line-height: 1.05; letter-spacing: -0.03em; font-weight: 700; max-width: 15ch; text-wrap: balance; }
+    .story h1 em { font-style: normal; color: oklch(86% 0.09 230); }
+    .story .lead { margin-top: 1rem; max-width: 44ch; color: oklch(90% 0.03 258); font-size: var(--text-lg); line-height: 1.5; }
+
+    .lifecycle { display: grid; gap: 0.625rem; max-width: 28rem; }
+    .lifecycle li {
+      display: grid; grid-template-columns: 2rem 1fr; gap: 0.875rem; align-items: start;
+      padding: 0.875rem 1rem; border-radius: 12px;
+      background: oklch(100% 0 0 / 0.08); border: 1px solid oklch(100% 0 0 / 0.14);
+      backdrop-filter: blur(6px);
+    }
+    .lifecycle li:nth-child(2) { margin-left: 1.5rem; }
+    .lifecycle li:nth-child(3) { margin-left: 3rem; }
+    .lifecycle .step { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 9px; background: oklch(100% 0 0 / 0.14); font-weight: 700; font-size: var(--text-sm); }
+    .lifecycle li.now .step { background: white; color: var(--primary-ink); }
+    .lifecycle b { display: block; font-weight: 600; }
+    .lifecycle small { color: oklch(88% 0.03 258); font-size: var(--text-sm); }
+    .lifecycle ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.625rem; }
+    .trust { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; font-size: var(--text-sm); color: oklch(88% 0.03 258); }
+    .trust span { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .trust svg { width: 1rem; height: 1rem; }
+
+    /* Right: form */
+    .form-side { display: grid; place-items: center; padding: clamp(1.5rem, 1rem + 3vw, 3.5rem) clamp(1rem, 0.5rem + 3vw, 3rem); }
+    .form-card { width: min(27rem, 100%); display: grid; gap: 1.5rem; }
+    .form-card header h2 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; }
+    .form-card header p { margin-top: 0.375rem; color: var(--muted-foreground); }
+    form { display: grid; gap: 1rem; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .divider { display: flex; align-items: center; gap: 0.75rem; color: var(--muted-foreground); font-size: var(--text-xs); }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .btn-google { background: var(--background); border: 1px solid var(--border-strong); min-height: 2.75rem; height: auto; padding-block: 0.5rem; font-weight: 600; white-space: normal; text-align: center; }
+    .btn-google:hover { background: var(--canvas); }
+    .strength { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; margin-top: 0.125rem; }
+    .strength i { height: 4px; border-radius: 2px; background: var(--border); }
+    .strength.s3 i:nth-child(-n+3) { background: var(--success); }
+    .strength.s1 i:nth-child(1) { background: var(--destructive); }
+    .check { display: grid; grid-template-columns: 1.125rem 1fr; gap: 0.625rem; font-size: var(--text-sm); color: var(--muted-foreground); }
+    .check input { width: 1.125rem; height: 1.125rem; margin: 0.15rem 0 0; accent-color: var(--primary); }
+    .check strong { color: var(--foreground); font-weight: 500; }
+    .data-note { margin-top: 0.375rem; display: block; font-size: var(--text-xs); }
+    .switch-link { text-align: center; font-size: var(--text-sm); color: var(--muted-foreground); }
+    .spinner { width: 1rem; height: 1rem; border-radius: 50%; border: 2px solid oklch(100% 0 0 / 0.4); border-top-color: white; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .invite-card { display: grid; grid-template-columns: auto 1fr; gap: 0.875rem; align-items: center; padding: 1rem; border-radius: var(--radius); background: var(--canvas); border: 1px solid var(--border); }
+    .invite-card .avatar { width: 2.75rem; height: 2.75rem; border-radius: 12px; font-size: 0.9rem; }
+    .invite-card b { display: block; }
+    .invite-card small { color: var(--muted-foreground); font-size: var(--text-sm); }
+    .invite-meta { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.5rem; }
+    .expired { display: grid; gap: 1rem; text-align: center; justify-items: center; padding: 1rem 0; }
+    .expired .icon-wrap { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 16px; background: var(--warning-soft); color: var(--warning-ink); }
+    .expired .icon-wrap svg { width: 1.5rem; height: 1.5rem; }
+    .expired p { color: var(--muted-foreground); max-width: 34ch; }
+
+    @media (max-width: 900px) {
+      .auth { grid-template-columns: 1fr; }
+      .story { gap: 1.5rem; }
+      .story .lead, .lifecycle, .trust { display: none; }
+      .story h1 { font-size: var(--text-2xl); }
+    }
+    @media (max-width: 420px) { .row-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <!-- Prototype controls: not part of the product UI -->
+  <div class="proto-bar" role="region" aria-label="Điều khiển bản thiết kế">
+    <strong>Thiết kế · Đăng ký</strong>
+    <fieldset>
+      <legend>Luồng</legend>
+      <label><input type="radio" name="flow" value="signup" checked><span>Owner đăng ký công ty</span></label>
+      <label><input type="radio" name="flow" value="invite"><span>Nhận lời mời</span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Trạng thái</legend>
+      <label><input type="radio" name="status" value="default" checked><span>Mặc định</span></label>
+      <label><input type="radio" name="status" value="error"><span>Lỗi</span></label>
+      <label><input type="radio" name="status" value="submitting"><span>Đang gửi</span></label>
+      <label><input type="radio" name="status" value="expired"><span>Lời mời hết hạn</span></label>
+    </fieldset>
+    <a href="departments.html">Phòng ban →</a>
+    <a href="users.html">Người dùng →</a>
+  </div>
+
+  <div class="auth">
+    <!-- Brand story -->
+    <section class="story" aria-labelledby="story-title">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">DW</span> Digital Workers</div>
+
+      <div>
+        <h1 id="story-title" data-show="flow:signup">Đội ngũ của bạn, thêm <em>nhân viên số</em>.</h1>
+        <h1 data-show="flow:invite" hidden>Công ty đang chờ bạn <em>vào làm</em>.</h1>
+        <p class="lead">Tuyển, cho thử việc và giao việc cho nhân viên số qua Telegram, Zalo — quản lý như nhân viên thật.</p>
+      </div>
+
+      <ol class="lifecycle" aria-label="Ba bước đầu tiên">
+        <li class="now"><span class="step">1</span><span><b>Tạo công ty</b><small>Bạn là chủ (Owner) đầu tiên.</small></span></li>
+        <li><span class="step">2</span><span><b>Thêm phòng ban, mời đồng nghiệp</b><small>Gán vai trò: Admin, trưởng phòng, nhân viên.</small></span></li>
+        <li><span class="step">3</span><span><b>Tuyển nhân viên số đầu tiên</b><small>Thử việc trên web chat trước khi lên chính thức.</small></span></li>
+      </ol>
+
+      <div class="trust">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Dữ liệu lưu tại Việt Nam</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Không cần thẻ thanh toán</span>
+      </div>
+    </section>
+
+    <!-- Form -->
+    <main class="form-side">
+      <div class="form-card">
+
+        <!-- ============ FLOW: SIGNUP ============ -->
+        <header data-show="flow:signup">
+          <p class="eyebrow">Bắt đầu miễn phí</p>
+          <h2>Đăng ký công ty</h2>
+          <p>Tài khoản đầu tiên là chủ doanh nghiệp (Owner).</p>
+        </header>
+
+        <div class="callout callout-danger" role="alert" data-show="flow:signup status:error" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <span>Chưa tạo được công ty. Sửa 2 mục bên dưới rồi thử lại.</span>
+        </div>
+
+        <button class="btn btn-google btn-block" type="button" data-show="flow:signup">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.5-.2-2.3H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.8h3.6c2.1-1.9 3.3-4.8 3.3-8.1z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.8c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1V17A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8l3.7-2.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>
+          Tiếp tục với Google
+        </button>
+        <div class="divider" data-show="flow:signup">hoặc dùng email</div>
+
+        <form data-show="flow:signup" novalidate>
+          <div class="field">
+            <label for="company">Tên công ty</label>
+            <input class="input" id="company" name="company" autocomplete="organization" value="Công ty TNHH Gốm An Phú">
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="name">Họ và tên</label>
+              <input class="input" id="name" name="name" autocomplete="name" value="Trần Minh Đức">
+            </div>
+            <div class="field">
+              <label for="phone">Số điện thoại <span class="hint">(không bắt buộc)</span></label>
+              <input class="input" id="phone" name="phone" autocomplete="tel" inputmode="tel" placeholder="09…">
+            </div>
+          </div>
+          <div class="field">
+            <label for="email">Email công việc</label>
+            <input class="input" id="email" type="email" autocomplete="email" value="duc@gomanphu.vn" data-show="status:default,submitting">
+            <input class="input" id="email-err" type="email" value="duc@gomanphu.vn" aria-invalid="true" aria-describedby="email-error" data-show="status:error" hidden>
+            <span class="error-text" id="email-error" data-show="status:error" hidden>Email này đã có tài khoản. <a href="#">Đăng nhập</a> hoặc dùng email khác.</span>
+          </div>
+          <div class="field">
+            <label for="password">Mật khẩu</label>
+            <div class="input-group">
+              <input class="input" id="password" type="password" autocomplete="new-password" value="gom-an-phu-2026" aria-describedby="pw-hint" data-show="status:default,submitting">
+              <input class="input" id="password-err" type="password" value="1234" aria-invalid="true" aria-describedby="pw-error" data-show="status:error" hidden>
+              <button class="btn btn-ghost btn-icon" type="button" aria-label="Hiện mật khẩu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+            <div class="strength s3" aria-hidden="true" data-show="status:default,submitting"><i></i><i></i><i></i><i></i></div>
+            <div class="strength s1" aria-hidden="true" data-show="status:error" hidden><i></i><i></i><i></i><i></i></div>
+            <span class="hint" id="pw-hint" data-show="status:default,submitting">Ít nhất 10 ký tự. Cụm từ dễ nhớ an toàn hơn ký tự lạ.</span>
+            <span class="error-text" id="pw-error" data-show="status:error" hidden>Mật khẩu cần ít nhất 10 ký tự.</span>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" checked>
+            <span>Tôi đồng ý <a href="#">Điều khoản sử dụng</a> và <a href="#">Chính sách dữ liệu</a>.
+              <span class="data-note">Dữ liệu lưu tại Việt Nam. Nội dung nhân viên số xử lý được gửi tới nhà cung cấp AI ở nước ngoài (Anthropic, OpenAI) để trả lời.</span>
+            </span>
+          </label>
+
+          <button class="btn btn-primary btn-lg btn-block" type="submit" data-show="status:default,error">Tạo công ty</button>
+          <button class="btn btn-primary btn-lg btn-block" type="submit" disabled aria-busy="true" data-show="status:submitting" hidden><span class="spinner" aria-hidden="true"></span>Đang tạo công ty…</button>
+        </form>
+        <p class="switch-link" data-show="flow:signup">Đã có tài khoản? <a href="#">Đăng nhập</a></p>
+
+        <!-- ============ FLOW: INVITE ============ -->
+        <header data-show="flow:invite status:default,error,submitting" hidden>
+          <p class="eyebrow">Lời mời</p>
+          <h2>Tham gia công ty</h2>
+          <p>Tạo mật khẩu để vào làm cùng đồng nghiệp.</p>
+        </header>
+
+        <div class="invite-card" data-show="flow:invite status:default,error,submitting" hidden>
+          <span class="avatar" aria-hidden="true">AP</span>
+          <div>
+            <b>Công ty TNHH Gốm An Phú</b>
+            <small>Trần Minh Đức (Owner) mời bạn</small>
+            <div class="invite-meta">
+              <span class="badge badge-manager">Trưởng phòng</span>
+              <span class="badge badge-muted">Phòng Kinh doanh</span>
+            </div>
+          </div>
+        </div>
+
+        <form data-show="flow:invite status:default,error,submitting" hidden novalidate>
+          <div class="field">
+            <label for="inv-email">Email</label>
+            <input class="input" id="inv-email" type="email" value="lan.nguyen@gomanphu.vn" readonly aria-describedby="inv-email-hint">
+            <span class="hint" id="inv-email-hint">Lời mời gắn với email này, không đổi được.</span>
+          </div>
+          <div class="field">
+            <label for="inv-name">Họ và tên</label>
+            <input class="input" id="inv-name" autocomplete="name" value="Nguyễn Thị Lan">
+          </div>
+          <div class="field">
+            <label for="inv-pw">Mật khẩu</label>
+            <input class="input" id="inv-pw" type="password" autocomplete="new-password" value="gom-an-phu-2026" data-show="status:default,submitting">
+            <input class="input" id="inv-pw-err" type="password" value="1234" aria-invalid="true" aria-describedby="inv-pw-error" data-show="status:error" hidden>
+            <span class="error-text" id="inv-pw-error" data-show="status:error" hidden>Mật khẩu cần ít nhất 10 ký tự.</span>
+          </div>
+          <button class="btn btn-primary btn-lg btn-block" type="submit" data-show="status:default,error">Nhận lời mời</button>
+          <button class="btn btn-primary btn-lg btn-block" type="submit" disabled aria-busy="true" data-show="status:submitting" hidden><span class="spinner" aria-hidden="true"></span>Đang vào công ty…</button>
+          <div class="divider">hoặc</div>
+          <button class="btn btn-google btn-block" type="button">Tiếp tục với Google (lan.nguyen@gomanphu.vn)</button>
+        </form>
+
+        <div class="expired" data-show="flow:invite status:expired" hidden>
+          <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+          <h2>Lời mời đã hết hạn</h2>
+          <p>Lời mời vào <b>Công ty TNHH Gốm An Phú</b> chỉ dùng được trong 7 ngày. Nhờ người mời gửi lại lời mời mới.</p>
+          <a class="btn btn-outline" href="#">Về trang đăng nhập</a>
+        </div>
+        <div class="expired" data-show="flow:signup status:expired" hidden>
+          <p>Trạng thái "hết hạn" chỉ áp dụng cho luồng nhận lời mời.</p>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <div class="main" style="max-width: 60rem; margin-inline: auto;">
+    <details class="notes" open>
+      <summary>Ghi chú cho change add-tenancy-and-users</summary>
+      <h3>Yêu cầu</h3>
+      <ul>
+        <li><b>FR-01-01</b>: người đăng ký tạo công ty và thành Owner đầu tiên. Đăng ký bằng email + mật khẩu hoặc Google (0.2 #012).</li>
+        <li><b>FR-01-02</b>: người được mời chỉ đặt tên + mật khẩu; email, vai trò, phòng ban do người mời chọn sẵn.</li>
+        <li>Ô đồng ý điều khoản nêu rõ việc gửi nội dung tới nhà cung cấp AI ở nước ngoài (NFR-04, 0.2 #011).</li>
+        <li>Đăng ký Google: sau khi Google trả về, vẫn phải hỏi <b>tên công ty</b> trước khi tạo.</li>
+      </ul>
+      <h3>Đã chốt (docs/requirements.md 0.2)</h3>
+      <ul>
+        <li><b>#032</b> Mật khẩu tối thiểu 10 ký tự, không ép ký tự đặc biệt; chặn mật khẩu quá phổ biến.</li>
+        <li><b>#033</b> Đăng ký xong dùng ngay; xác minh email trước khi nạp credit hoặc mời người. Người vào bằng lời mời coi như đã xác minh.</li>
+        <li><b>#034</b> Lời mời hết hạn sau 7 ngày, gửi lại được.</li>
+        <li><b>#035</b> Mỗi email thuộc đúng một công ty trong MVP.</li>
+        <li><b>#041</b> Số điện thoại không bắt buộc.</li>
+      </ul>
+    </details>
+  </div>
+
+  <script src="_proto.js"></script>
+</body>
+</html>

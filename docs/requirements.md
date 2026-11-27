@@ -56,6 +56,16 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 029 | 2026-11-27 | Cloud Việt Nam: đề xuất **VNG Cloud**, Viettel Cloud làm dự phòng. **Chốt chính thức khi có báo giá** máy ảo + object storage (Harry kiểm tra); ghi thành quyết định mới lúc đó. (`setup-monorepo`) |
 | 030 | 2026-11-27 | CI: **GitHub Actions** chạy kiểm tra nhẹ (lint, typecheck, unit, `openspec validate`) cho mỗi PR; test tích hợp + e2e chạy tay bằng `pnpm ci:runner` trên máy trước khi merge. Self-hosted runner để sau. (`setup-monorepo`) |
 | 031 | 2026-11-27 | Thêm change **`deploy-staging`** (thuê máy, tên miền, HTTPS, sao lưu thật) vào lộ trình, làm **trước** `add-channel-telegram` vì webhook cần HTTPS công khai. (`setup-monorepo`) |
+| 032 | 2026-11-27 | Mật khẩu đăng nhập web: **tối thiểu 10 ký tự**, không bắt buộc ký tự đặc biệt; chặn các mật khẩu quá phổ biến. (`add-tenancy-and-users`) |
+| 033 | 2026-11-27 | Đăng ký xong **dùng được ngay**; phải **xác minh email trước khi nạp credit hoặc mời người khác**. Người vào bằng lời mời coi như đã xác minh email. (`add-tenancy-and-users`) |
+| 034 | 2026-11-27 | Lời mời tham gia công ty **hết hạn sau 7 ngày**; Owner / Admin gửi lại được. (`add-tenancy-and-users`) |
+| 035 | 2026-11-27 | MVP: **mỗi email thuộc đúng một công ty**. Một tài khoản nhiều công ty để sau. (`add-tenancy-and-users`) |
+| 036 | 2026-11-27 | Mỗi phòng ban có **tối đa một trưởng phòng**; mỗi người thuộc **tối đa một phòng**. Trưởng phòng và Nhân viên **bắt buộc** có phòng; Owner / Admin không bắt buộc. Chọn một Nhân viên làm trưởng phòng thì **tự đổi vai trò** sang Trưởng phòng (báo rõ trước khi lưu). (`add-tenancy-and-users`) |
+| 037 | 2026-11-27 | Xoá phòng ban = **lưu trữ** (ẩn khỏi danh sách, giữ lịch sử), chỉ làm được khi phòng **không còn người**. (`add-tenancy-and-users`) |
+| 038 | 2026-11-27 | Trưởng phòng **xem được** (không sửa) danh sách người trong phòng mình. Nhân viên không vào trang Người dùng. (`add-tenancy-and-users`) |
+| 039 | 2026-11-27 | Một công ty có **nhiều Owner** được. **Chỉ Owner** gán vai trò Owner hoặc Admin; Admin không sửa / khoá được Owner. Công ty luôn có **ít nhất một Owner đang hoạt động** (không hạ vai trò, không khoá Owner cuối cùng). (`add-tenancy-and-users`) |
+| 040 | 2026-11-27 | Người nghỉ việc bị **khoá**, không xoá: không đăng nhập, không giao việc được; tên vẫn hiện trong lịch sử; mở khoá được. (`add-tenancy-and-users`) |
+| 041 | 2026-11-27 | Số điện thoại khi đăng ký công ty: **không bắt buộc**. (`add-tenancy-and-users`) |
 
 ### 0.3. Đề xuất chờ chốt
 
