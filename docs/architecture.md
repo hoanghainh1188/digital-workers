@@ -142,7 +142,7 @@ interface ChannelAdapter {
 
 ## 8. Triển khai MVP
 
-- **Cloud Việt Nam** (#011): 1 máy ảo (khởi đầu 2–4 vCPU, 4–8 GB RAM) + ổ đĩa riêng cho PostgreSQL. Nhà cung cấp cụ thể chọn ở change 0 (VNG Cloud, Viettel, FPT…).
+- **Cloud Việt Nam** (#011): 1 máy ảo (khởi đầu 2–4 vCPU, 4–8 GB RAM) + ổ đĩa riêng cho PostgreSQL. Đề xuất **VNG Cloud**, Viettel Cloud dự phòng (#029); chốt khi có báo giá. Thuê máy, tên miền, sao lưu làm ở change `deploy-staging` (#031).
 - Docker Compose: `api`, `runner`, `web` (file tĩnh qua Caddy), `postgres`, `caddy` (HTTPS tự động — bắt buộc cho webhook Telegram / Zalo).
 - Sao lưu PostgreSQL hằng ngày ra object storage **cùng nhà cung cấp, đặt ở Việt Nam**; giữ 14 bản.
 - Môi trường: `dev` (máy Harry), `staging` + `prod` trên cùng máy ảo khác cổng / khác DB ở giai đoạn đầu.
@@ -182,7 +182,7 @@ interface ChannelAdapter {
 
 ## 12. Còn mở
 
-- Nhà cung cấp cloud Việt Nam cụ thể (chọn ở change 0).
+- Nhà cung cấp cloud Việt Nam: đề xuất VNG Cloud (#029), chờ báo giá máy ảo + object storage.
 - Duyệt trên Zalo (#021) — cần thử thực tế khả năng của Zalo Bot API.
 - Code execution của từng nhà cung cấp: giới hạn thời gian, dung lượng file, cách tính phí — kiểm tra ở change `add-skill-scripts`.
 - Điều khoản Anthropic / OpenAI về việc tính phí lại cho khách dưới dạng credit — kiểm tra trước change `add-credit-topup`.

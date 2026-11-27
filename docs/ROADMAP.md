@@ -18,6 +18,7 @@ last_updated: 2026-11-27
 - [ ] Trả lời được các câu hỏi ở `docs/requirements.md` mục 0.4 có ảnh hưởng tới MVP (máy chủ, đăng nhập).
 - [x] Duyệt P-01 … P-09 (2026-11-27 → 0.2 #015 – #022).
 - [x] Duyệt P-10 … P-13 (2026-11-27 → 0.2 #023 – #026).
+- [ ] Báo giá cloud Việt Nam (máy ảo + object storage) để chốt nhà cung cấp (#029) — cần trước change 5a.
 - [ ] Kiểm tra điều khoản Anthropic / OpenAI về tính phí lại dưới dạng credit; chuẩn bị pháp nhân xuất hoá đơn.
 
 ## Tổng quan
@@ -30,7 +31,8 @@ last_updated: 2026-11-27
 | 3 | #4 | `add-skill-library` | 1 | Thư viện kỹ năng | ⏳ |
 | 4 | #5 | `add-llm-gateway-and-credit` | 1 | Số dư credit (đơn giản) | ⏳ |
 | 5 | #6 | `add-worker-runtime-webchat` | 2, 3, 4 | Web chat | ⏳ |
-| 6 | #7 | `add-channel-telegram` | 5 | Kết nối kênh | ⏳ |
+| 5a | #21 | `deploy-staging` | 0 | — | ⏳ |
+| 6 | #7 | `add-channel-telegram` | 5, 5a | Kết nối kênh | ⏳ |
 | 7 | #8 | `add-approval-inbox` | 5, 6 | Hộp duyệt việc | ⏳ |
 | 8 | #9 | `add-schedules` | 5 | Tab lịch trong hồ sơ worker | ⏳ |
 | 9 | #10 | `add-connector-google-sheets` | 5 | Kết nối connector | ⏳ |
@@ -235,6 +237,39 @@ Test bắt buộc (dùng mô hình giả):
 Quyết định cần chốt: nêu trong mô tả PR propose; ghi vào 0.2 trong chính PR này.
 
 Tạo nhánh add-worker-runtime-webchat, commit, mở PR (Refs #<issue>). Chưa code.
+Dừng lại sau khi propose để tôi duyệt.
+```
+
+## 5a. `deploy-staging`
+
+**Mục tiêu:** staging trên cloud Việt Nam: máy ảo, tên miền, HTTPS, sao lưu PostgreSQL ra object storage trong nước (0.2 #011, #029, #031). Làm trước change 6 vì webhook Telegram cần HTTPS công khai. Làm song song được với change 1–5.
+
+```text
+/opsx:propose deploy-staging
+
+Đưa staging lên cloud Việt Nam: thuê máy ảo, gắn tên miền, HTTPS qua Caddy, chạy compose.prod.yaml,
+sao lưu PostgreSQL hằng ngày ra object storage ở Việt Nam (giữ 14 bản), có cách khôi phục đã thử.
+
+Đọc trước:
+- docs/requirements.md 0.2 #011 #019 #027 #029 #030 #031, NFR-04, NFR-10
+- docs/architecture.md mục 8
+- compose.prod.yaml, Caddyfile, Dockerfile (từ change 0)
+
+Design.md cần chốt rõ:
+1. Nhà cung cấp và kích thước máy theo báo giá (#029); ghi quyết định cloud chính thức vào 0.2.
+2. Cách đưa bản mới lên máy (build ảnh ở đâu, kéo về thế nào, chạy migration) và cách quay lại bản cũ.
+3. Bí mật trên máy chủ (file .env quyền 600, ai giữ khoá ENCRYPTION_KEY) — không commit.
+4. Sao lưu: lịch, mã hoá, giữ 14 bản, thử khôi phục.
+5. Tường lửa: chỉ mở 80/443 (và SSH giới hạn IP).
+
+Test bắt buộc:
+- https://<staging>/health/ready trả 200 với chứng chỉ hợp lệ.
+- Khôi phục bản sao lưu mới nhất vào DB trống chạy được.
+- Cổng PostgreSQL không truy cập được từ ngoài.
+
+Quyết định cần chốt: nêu trong mô tả PR propose; ghi vào 0.2 trong chính PR này.
+
+Tạo nhánh deploy-staging, commit, mở PR (Refs #<issue>). Chưa code.
 Dừng lại sau khi propose để tôi duyệt.
 ```
 

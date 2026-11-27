@@ -24,7 +24,7 @@ Mâu thuẫn → tầng trên thắng. Không sửa im lặng: nêu trong mô t�
 
 ## Stack
 
-- TypeScript (strict), Node.js 22 LTS, pnpm workspaces.
+- TypeScript (strict), Node.js 24 LTS (chạy TypeScript bằng type stripping, không build — 0.2 #027), pnpm workspaces.
 - `apps/web`: React + Vite + shadcn/ui (design system Bright Blue Base: nền trắng, màu chính xanh dương).
 - `apps/api`: Fastify + Zod (`@fastify/websocket` cho web chat).
 - Kênh chat: `grammY` (Telegram); Zalo dùng client riêng trong `packages/channels/zalo` (fetch). Không dùng Chat SDK.
@@ -63,7 +63,7 @@ openspec validate --all --strict
 
 ## Thư viện được phép
 
-Ngoài stack trên, chỉ dùng thêm: `@fastify/websocket`, `@fastify/rate-limit`, `@fastify/cors`, `drizzle-kit`, `pg-boss`, `zod`, `pino`, `better-auth`, `ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai`, `grammy`, `gray-matter`, `googleapis`, `imapflow`, `nodemailer`, `@tanstack/react-query`, `@tanstack/react-router`, `date-fns`.
+Ngoài stack trên, chỉ dùng thêm: `@fastify/websocket`, `@fastify/rate-limit`, `@fastify/cors`, `drizzle-kit`, `pg-boss`, `zod`, `pino`, `better-auth`, `ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai`, `grammy`, `gray-matter`, `googleapis`, `imapflow`, `nodemailer`, `@tanstack/react-query`, `@tanstack/react-router`, `date-fns`, `pg`, `@biomejs/biome`, và các phụ thuộc chuẩn của shadcn/ui (Tailwind CSS, Radix, `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority`) — 0.2 #028.
 **Muốn thêm thư viện khác → hỏi trước trong mô tả PR.** License chỉ MIT / BSD / Apache / ISC.
 
 ## Luật bắt buộc

@@ -51,6 +51,11 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 024 | 2026-11-27 | Script trong skill chạy trong **sandbox code execution của nhà cung cấp mô hình** (Claude / OpenAI): không có mạng, chỉ nhận file đầu vào, trả file kết quả. Không tự dựng sandbox trong MVP. (P-11) |
 | 025 | 2026-11-27 | Credit tính và hiển thị bằng **VNĐ** (1 credit = 1 đồng). Giá bán = chi phí thật × **hệ số giá** (vd. 1,3; cấu hình được), hiển thị rõ trong bảng lương. (P-12) |
 | 026 | 2026-11-27 | Credit **không hết hạn** trong 12 tháng đầu; **không hoàn tiền** credit đã nạp, trừ khi platform ngừng dịch vụ. (P-13) |
+| 027 | 2026-11-27 | Chạy trên **Node.js 24 LTS** (không dùng Node 22, vì Node 22 hết hỗ trợ tháng 4/2027). API và runner chạy thẳng file TypeScript bằng type stripping của Node, không có bước build. (`setup-monorepo`) |
+| 028 | 2026-11-27 | Thêm vào danh sách thư viện được phép: **`pg`** (driver PostgreSQL), **`@biomejs/biome`** (lint + format) và **các phụ thuộc chuẩn của shadcn/ui** (Tailwind CSS, Radix, `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority`). (`setup-monorepo`) |
+| 029 | 2026-11-27 | Cloud Việt Nam: đề xuất **VNG Cloud**, Viettel Cloud làm dự phòng. **Chốt chính thức khi có báo giá** máy ảo + object storage (Harry kiểm tra); ghi thành quyết định mới lúc đó. (`setup-monorepo`) |
+| 030 | 2026-11-27 | CI: **GitHub Actions** chạy kiểm tra nhẹ (lint, typecheck, unit, `openspec validate`) cho mỗi PR; test tích hợp + e2e chạy tay bằng `pnpm ci:runner` trên máy trước khi merge. Self-hosted runner để sau. (`setup-monorepo`) |
+| 031 | 2026-11-27 | Thêm change **`deploy-staging`** (thuê máy, tên miền, HTTPS, sao lưu thật) vào lộ trình, làm **trước** `add-channel-telegram` vì webhook cần HTTPS công khai. (`setup-monorepo`) |
 
 ### 0.3. Đề xuất chờ chốt
 
@@ -66,7 +71,7 @@ Hiện không có đề xuất chờ chốt.
 - Mô hình thu tiền và mức giá? (Credit đã chốt ở #016; còn phí theo số worker và hệ số giá.)
 - Pháp nhân để nhận tiền và xuất hoá đơn: công ty hay hộ kinh doanh? Điều khoản của Anthropic / OpenAI có cho bán lại dưới dạng credit trong sản phẩm không — cần kiểm tra.
 - 3 khách đầu làm ngành gì? Worker đầu tiên họ muốn tuyển? Họ dùng app chat nào?
-- Nhà cung cấp cloud Việt Nam cụ thể (VNG Cloud, Viettel, FPT…)? Chọn ở change 0 theo giá và độ ổn định.
+- Nhà cung cấp cloud Việt Nam: đề xuất VNG Cloud (#029); chờ báo giá máy ảo + object storage để chốt.
 - Nghĩa vụ theo Luật Bảo vệ dữ liệu cá nhân 2025 (đánh giá tác động, chuyển dữ liệu ra nước ngoài): platform là bên xử lý, khách là bên kiểm soát — cần tư vấn pháp lý xác nhận.
 
 ### 0.5. Phạm vi MVP
