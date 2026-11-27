@@ -8,6 +8,7 @@ last_updated: 2026-11-27
 # ROADMAP — MVP
 
 > Nguồn sự thật cho **thứ tự công việc**. Mỗi change = 1 GitHub issue (nhãn `change`) theo mẫu trong quy trình OpenSpec.
+> Issue lộ trình: #18.
 > Đi theo dòng chảy dữ liệu: nền → worker → kỹ năng → chạy → kênh → duyệt → tự động → quản lý.
 > Mỗi change xong trong 1–2 buổi. To hơn thì chia.
 
@@ -21,25 +22,25 @@ last_updated: 2026-11-27
 
 ## Tổng quan
 
-| # | Change | Phụ thuộc | Màn hình | Trạng thái |
-|---|---|---|---|---|
-| 0 | `setup-monorepo` | — | — | ⏳ |
-| 1 | `add-tenancy-and-users` | 0 | Đăng ký, phòng ban, người dùng | ⏳ |
-| 2 | `add-worker-profile` | 1 | Sơ đồ nhân sự số, hồ sơ worker | ⏳ |
-| 3 | `add-skill-library` | 1 | Thư viện kỹ năng | ⏳ |
-| 4 | `add-llm-gateway-and-credit` | 1 | Số dư credit (đơn giản) | ⏳ |
-| 5 | `add-worker-runtime-webchat` | 2, 3, 4 | Web chat | ⏳ |
-| 6 | `add-channel-telegram` | 5 | Kết nối kênh | ⏳ |
-| 7 | `add-approval-inbox` | 5, 6 | Hộp duyệt việc | ⏳ |
-| 8 | `add-schedules` | 5 | Tab lịch trong hồ sơ worker | ⏳ |
-| 9 | `add-connector-google-sheets` | 5 | Kết nối connector | ⏳ |
-| 10 | `add-connector-email` | 9 | (dùng lại màn connector) | ⏳ |
-| 11 | `add-review-and-scanner` | 2, 3, 9 | Kiểm duyệt | ⏳ |
-| 12 | `add-channel-zalo-dm` | 6 | (dùng lại màn kết nối kênh) | ⏳ |
-| 13 | `add-payroll-and-morning-report` | 4, 7 | Bảng lương | ⏳ |
-| 14 | `add-skill-builder-vi` | 3, 5 | Trình tạo skill | ⏳ |
-| 15 | `add-skill-scripts` | 5, 11 | Kiểm duyệt (xem script, chạy thử) | ⏳ |
-| 16 | `add-credit-topup` | 4 | Nạp credit, sao kê, quản trị platform | ⏳ |
+| # | Issue | Change | Phụ thuộc | Màn hình | Trạng thái |
+|---|---|---|---|---|---|
+| 0 | #1 | `setup-monorepo` | — | — | ⏳ |
+| 1 | #2 | `add-tenancy-and-users` | 0 | Đăng ký, phòng ban, người dùng | ⏳ |
+| 2 | #3 | `add-worker-profile` | 1 | Sơ đồ nhân sự số, hồ sơ worker | ⏳ |
+| 3 | #4 | `add-skill-library` | 1 | Thư viện kỹ năng | ⏳ |
+| 4 | #5 | `add-llm-gateway-and-credit` | 1 | Số dư credit (đơn giản) | ⏳ |
+| 5 | #6 | `add-worker-runtime-webchat` | 2, 3, 4 | Web chat | ⏳ |
+| 6 | #7 | `add-channel-telegram` | 5 | Kết nối kênh | ⏳ |
+| 7 | #8 | `add-approval-inbox` | 5, 6 | Hộp duyệt việc | ⏳ |
+| 8 | #9 | `add-schedules` | 5 | Tab lịch trong hồ sơ worker | ⏳ |
+| 9 | #10 | `add-connector-google-sheets` | 5 | Kết nối connector | ⏳ |
+| 10 | #11 | `add-connector-email` | 9 | (dùng lại màn connector) | ⏳ |
+| 11 | #12 | `add-review-and-scanner` | 2, 3, 9 | Kiểm duyệt | ⏳ |
+| 12 | #13 | `add-channel-zalo-dm` | 6 | (dùng lại màn kết nối kênh) | ⏳ |
+| 13 | #14 | `add-payroll-and-morning-report` | 4, 7 | Bảng lương | ⏳ |
+| 14 | #15 | `add-skill-builder-vi` | 3, 5 | Trình tạo skill | ⏳ |
+| 15 | #16 | `add-skill-scripts` | 5, 11 | Kiểm duyệt (xem script, chạy thử) | ⏳ |
+| 16 | #17 | `add-credit-topup` | 4 | Nạp credit, sao kê, quản trị platform | ⏳ |
 
 → Sau change 6: **demo được** worker trả lời trên Telegram.
 → Sau change 10: **dùng thử được** với khách đầu tiên (thử việc; credit cộng tay qua change 4).
