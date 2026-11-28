@@ -10,7 +10,7 @@ Lý do: xem proposal.md. Hiện trạng code (sau change 0–4):
 - `packages/db`: `workers` (`status`: draft / probation / active / suspended / offboarded, `job_description`, `voice_*`, `manager_member_id`), `worker_testers` (người được giao thử), `skills.current_version_id`, `skill_versions`, `skill_version_files` → `skill_blobs`, `worker_skills.status` (active / pending / suspended). Spec worker-skills "Version worker được dùng" đã định nghĩa danh sách kỹ năng có hiệu lực. Mọi truy vấn qua `withCompany`.
 - `packages/core/src/access/permissions.ts`: `task.assign = { owner: all, admin: all, manager: all, member: assigned }`; scope `'assigned'` đã khai báo nhưng chưa có nghĩa cụ thể.
 - `apps/api`: Fastify + Zod, Better Auth (cookie phiên), guard `requireAuth → requireCompany → requirePermission`, `notFound()` → 404 + `access.not_found`. Chưa có WebSocket.
-- Chưa có `packages/channels`. Chưa có `docs/design/screens/web-chat.html` (Q10).
+- Chưa có `packages/channels`. Chưa có `docs/design/screens/web-chat.html` (#128).
 
 ## Goals / Non-Goals
 
@@ -62,7 +62,7 @@ collecting ──(hết cửa sổ gom)──► queued ──(runner nhận)─
 - **Chống chạy trùng**: runner chỉ chạy khi chuyển được `UPDATE tasks SET status='running', started_at=now(), heartbeat_at=now() WHERE id=$1 AND status='queued' RETURNING …` (0 dòng → bỏ job). Một job bị giao hai lần vẫn chỉ chạy một lần.
 - **Tuần tự trong một cuộc trò chuyện**: mọi chuyển trạng thái của một cuộc trò chuyện giữ `pg_advisory_xact_lock(conversation)`. Khi một `Task` sang `queued` mà cuộc trò chuyện đang có `Task` `running`, nó **chờ**; `Task` đang chạy kết thúc thì gửi `task.run` cho `Task` `queued` cũ nhất. Như vậy câu trả lời về đúng thứ tự tin.
 - Song song giữa các cuộc trò chuyện: runner xử lý tối đa 4 `task.run` cùng lúc (cấu hình `RUNNER_CONCURRENCY`).
-- **Không tự chạy lại** một `Task` đã `running` (Q14): lần gọi mô hình đã trả tiền, và từ change 9 tool có thể đã ghi dữ liệu. Lỗi mạng tạm thời đã được gateway thử lại trong một lần gọi.
+- **Không tự chạy lại** một `Task` đã `running` (#132): lần gọi mô hình đã trả tiền, và từ change 9 tool có thể đã ghi dữ liệu. Lỗi mạng tạm thời đã được gateway thử lại trong một lần gọi.
 
 *Đã cân nhắc:* khoá bằng `SELECT … FOR UPDATE SKIP LOCKED` trên `tasks` tự viết thay pg-boss — không chọn vì pg-boss đã có hẹn giờ, lịch (change 8 cần), hết hạn job; dùng pg-boss nhưng **không tin** nó cho việc chống trùng (dựa vào UPDATE có điều kiện).
 
@@ -87,8 +87,8 @@ runner: task.start → queued → task.run → running
 
 ### D4. Gom tin nhắn ngắn (FR-04-07)
 
-- Cửa sổ gom: tin tới trong **5 giây** sau tin trước của **cùng người trong cùng cuộc trò chuyện** thì vào cùng `Task` (`collecting`). Gom tối đa **30 giây** kể từ tin đầu hoặc **20 tin**, quá thì đóng cửa sổ ngay (Q6).
-- Tin tới khi `Task` của cuộc trò chuyện đã `queued` / `running` → `Task` mới, chạy sau (Q7). Không chen tin vào `Task` đang chạy.
+- Cửa sổ gom: tin tới trong **5 giây** sau tin trước của **cùng người trong cùng cuộc trò chuyện** thì vào cùng `Task` (`collecting`). Gom tối đa **30 giây** kể từ tin đầu hoặc **20 tin**, quá thì đóng cửa sổ ngay (#124).
+- Tin tới khi `Task` của cuộc trò chuyện đã `queued` / `running` → `Task` mới, chạy sau (#125). Không chen tin vào `Task` đang chạy.
 - Thực hiện: `task.start` hẹn `startAfter = 5s`; khi chạy, nếu `last_message_at + 5s > now` và chưa quá 30 giây thì hẹn lại phần còn thiếu. Thời gian lấy từ `now()` của PostgreSQL, không từ đồng hồ tiến trình.
 - Các tin gom được đưa cho mô hình là **một lượt người dùng**, nối bằng xuống dòng, đúng thứ tự.
 
@@ -106,7 +106,7 @@ Hàm thuần trong `packages/core/runtime/intake.ts`, nhận ảnh chụp trạn
 | Hết ngân sách tháng của worker | "… đã dùng hết ngân sách tháng này. Đã báo người quản lý." (#018) |
 
 - Runner kiểm tra lại khi `queued → running` vì trạng thái có thể đổi trong lúc gom / chờ; không đạt → `cancelled`, lưu tin notice.
-- Hết ngân sách: gửi email cho người quản lý worker **một lần mỗi worker mỗi tháng** (Q11), qua `packages/mail`; ghi nhớ bằng bảng `worker_budget_alerts (company_id, worker_id, month)` UNIQUE.
+- Hết ngân sách: gửi email cho người quản lý worker **một lần mỗi worker mỗi tháng** (#129), qua `packages/mail`; ghi nhớ bằng bảng `worker_budget_alerts (company_id, worker_id, month)` UNIQUE.
 - Đổi trạng thái giữa chừng: worker bị tạm nghỉ khi `Task` đang `running` thì **làm nốt** (giống #018); hết credit thì dừng ở lần gọi tiếp (#096, gateway đã có).
 
 ### D6. Vòng lặp mô hình ⇄ tool và giới hạn
@@ -123,11 +123,11 @@ loop:
 ```
 
 - **Một bước = một lần gọi mô hình.** Runtime tự lặp (gateway không lặp) để giới hạn, chi phí và tool nằm trong code của mình.
-- Giới hạn mặc định (Q5): **12 bước, 180 giây, 8.000đ** mỗi `Task`; đọc từ cấu hình runner (`TASK_MAX_STEPS`, `TASK_MAX_SECONDS`, `TASK_MAX_CHARGE_VND`), không chỉnh theo worker trong MVP. Kiểm tra chi phí **trước** mỗi lần gọi nên có thể vượt tối đa một lần gọi; `maxOutputTokens` 2048 chặn độ lớn lần vượt.
+- Giới hạn mặc định (#123): **12 bước, 180 giây, 8.000đ** mỗi `Task`; đọc từ cấu hình runner (`TASK_MAX_STEPS`, `TASK_MAX_SECONDS`, `TASK_MAX_CHARGE_VND`), không chỉnh theo worker trong MVP. Kiểm tra chi phí **trước** mỗi lần gọi nên có thể vượt tối đa một lần gọi; `maxOutputTokens` 2048 chặn độ lớn lần vượt.
 - Hết thời gian: `AbortSignal` cắt lần gọi đang chạy; gateway không tính tiền lần bị cắt trước khi có token (spec llm-gateway).
 - Vượt giới hạn → `stopped` với `stop_reason` (`max_steps` / `max_seconds` / `max_charge` / `credit_exhausted`) và tin notice: "Việc này cần nhiều bước hơn giới hạn nên đã dừng. Hãy chia nhỏ yêu cầu." (mỗi lý do một câu). Nếu mô hình đã có chữ ở bước cuối thì gửi kèm.
 - Lỗi khác (`ModelNotPricedError`, `ProviderCallError`, `UsageNotRecordedError`, lỗi tool không lường trước) → `failed` + notice chung "Có lỗi khi làm việc này…"; log chỉ có tên lỗi và id.
-- Mô hình (Q13): `WORKER_MODEL` = `anthropic:claude-sonnet-5-5` mặc định, đổi được bằng biến môi trường; chưa có giá trong DB → `failed` và log cảnh báo cho platform admin.
+- Mô hình (#131): `WORKER_MODEL` = `anthropic:claude-sonnet-5-5` mặc định, đổi được bằng biến môi trường; chưa có giá trong DB → `failed` và log cảnh báo cho platform admin.
 
 ### D7. Ai được trò chuyện với worker nào
 
@@ -136,11 +136,11 @@ Hàm `canChatWith(member, worker, testers)` trong `packages/core` dùng ma trậ
 | Worker | Owner / Admin | Trưởng phòng | Nhân viên |
 |---|---|---|---|
 | Thử việc | chỉ khi có tên trong danh sách người được giao thử | như cột trái | như cột trái |
-| Chính thức | ✓ cả công ty | phòng mình | khi có tên trong danh sách (Q1) |
+| Chính thức | ✓ cả công ty | phòng mình | khi có tên trong danh sách (#119) |
 | Nháp / Tạm nghỉ / Nghỉ việc | không gửi được việc (Tạm nghỉ / Nghỉ việc nhận câu cố định, D5) | | |
 
-- `task.assign` của Trưởng phòng đổi từ `all` sang `own-department` (Q2): Trưởng phòng không xem được hồ sơ worker phòng khác (#047), nên không giao việc được cho chúng. Scope `assigned` = có tên trong danh sách người được giao thử của worker (Q1).
-- Cuộc trò chuyện là **riêng của người nhắn**: người khác (kể cả Owner) không đọc được nội dung (Q9). Id cuộc trò chuyện của người khác hoặc công ty khác → 404 + `access.not_found`.
+- `task.assign` của Trưởng phòng đổi từ `all` sang `own-department` (#120): Trưởng phòng không xem được hồ sơ worker phòng khác (#047), nên không giao việc được cho chúng. Scope `assigned` = có tên trong danh sách người được giao thử của worker (#119).
+- Cuộc trò chuyện là **riêng của người nhắn**: người khác (kể cả Owner) không đọc được nội dung (#127). Id cuộc trò chuyện của người khác hoặc công ty khác → 404 + `access.not_found`.
 - WebSocket: xác thực bằng cookie phiên lúc nâng cấp, kiểm tra `Origin`; mỗi lần đăng ký theo dõi một cuộc trò chuyện kiểm tra lại quyền; mỗi 60 giây kiểm tra phiên còn hiệu lực và thành viên chưa bị khoá, không thì đóng socket.
 
 ### D8. Prompt hệ thống, kỹ năng tiết lộ dần, đóng khung dữ liệu
@@ -167,7 +167,7 @@ Danh sách tool đưa cho mô hình **dựng trong code** từ quyền của wor
 - File nhị phân (xlsx, docx, pdf, ảnh) → "file này chưa đọc được" (đọc file ở change sau). Script không bao giờ chạy (change 15).
 - Gọi tool lỗi → trả lỗi cho mô hình như kết quả tool, vẫn tính là một bước.
 
-**D8.3 Lịch sử**: 30 tin gần nhất của cuộc trò chuyện đang mở (Q8), bỏ tin notice. Tin của người nhắn → vai trò `user`; tin của worker → `assistant`. "Cuộc trò chuyện mới" đóng cuộc cũ, bắt đầu không có lịch sử.
+**D8.3 Lịch sử**: 30 tin gần nhất của cuộc trò chuyện đang mở (#126), bỏ tin notice. Tin của người nhắn → vai trò `user`; tin của worker → `assistant`. "Cuộc trò chuyện mới" đóng cuộc cũ, bắt đầu không có lịch sử.
 
 **D8.4 Đóng khung `<data>`** (`wrapData(source, content)`): `source` chỉ nhận `[a-z0-9:/._-]`; trong `content`, mọi `<` của chuỗi `</data` và `<data` được thay bằng `&lt;` để nội dung không đóng được thẻ. Ở web chat 1:1, tin của chính người giao việc là **yêu cầu**, không bọc. Telegram nhóm (change 6) bọc tin của người khác bằng cùng hàm. Lớp này không thay kiểm tra quyền (architecture mục 4).
 

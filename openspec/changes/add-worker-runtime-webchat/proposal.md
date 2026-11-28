@@ -31,7 +31,7 @@ Tới change 4, worker mới có hồ sơ, kỹ năng và một cửa gọi mô 
 
 - Package mới: `packages/channels`. Thư viện mới, đều có trong danh sách được phép: `pg-boss` (runner, api), `@fastify/websocket` (api). Không thêm thư viện ngoài danh sách.
 - `packages/db`: migration `tasks`, `task_messages`, `chat_conversations`; khoá ngoại `cost_entries (company_id, task_id) → tasks`; schema `pgboss` do pg-boss tạo (không RLS, chỉ chứa id).
-- `packages/core`: `runtime/` (điều kiện nhận việc, dựng prompt, bọc `<data>`, giới hạn); quyền `task.assign` đổi phạm vi Trưởng phòng sang phòng mình (xem câu hỏi Q2).
+- `packages/core`: `runtime/` (điều kiện nhận việc, dựng prompt, bọc `<data>`, giới hạn); quyền `task.assign` đổi phạm vi Trưởng phòng sang phòng mình (xem quyết định #120).
 - `apps/runner`: biến môi trường mới `DATABASE_URL` (bắt buộc), `ENCRYPTION_KEY` (bắt buộc, để mở API key), `WORKER_MODEL` (không bắt buộc, có mặc định); kiểm tra sẵn sàng.
 - `apps/api`: route `/api/chat/*`, WebSocket `/api/chat/ws`, giới hạn gửi tin; tạo job pg-boss.
-- `apps/web`: trang web chat, nút "Trò chuyện" trên hồ sơ worker; chuỗi trong `i18n/chat.vi.ts`. **Chưa có `docs/design/screens/web-chat.html`** — xem câu hỏi Q10.
+- `apps/web`: trang web chat, nút "Trò chuyện" trên hồ sơ worker; chuỗi trong `i18n/chat.vi.ts`. **Chưa có `docs/design/screens/web-chat.html`** — xem quyết định #128.

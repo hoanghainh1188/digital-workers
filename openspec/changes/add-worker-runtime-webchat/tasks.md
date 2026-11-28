@@ -1,6 +1,6 @@
 # Tasks: add-worker-runtime-webchat
 
-> Nhóm 1–7 là nền + runner + API (chạy được bằng API và test). Nhóm 8 là web, **cần `docs/design/screens/web-chat.html` trước** (Q10). Nếu quá 2 buổi thì dừng sau nhóm 7 và tách nhóm 8 thành change 5b (Q16).
+> Nhóm 1–7 là nền + runner + API (chạy được bằng API và test). Nhóm 8 là web, **cần `docs/design/screens/web-chat.html` trước** (#128). Nếu quá 2 buổi thì dừng sau nhóm 7 và tách nhóm 8 thành change 5b (Q16).
 > Mọi test runtime dùng mô hình giả (`@dw/llm/testing`) và kênh giả (`@dw/channels/testing`); không gọi API thật.
 
 ## 1. Khung và phụ thuộc
@@ -61,7 +61,7 @@
 
 ## 8. `apps/web` — màn hình web chat
 
-- [ ] 8.1 Có `docs/design/screens/web-chat.html` đã duyệt (bước 0, Q10); verify: file có trong main
+- [ ] 8.1 Có `docs/design/screens/web-chat.html` đã duyệt (bước 0, #128); verify: file có trong main
 - [ ] 8.2 Trang `/chat` (danh sách worker được trò chuyện) và `/chat/:workerId` (cuộc trò chuyện, ô nhập, "đang làm…", tin hệ thống khác kiểu tin worker, "Cuộc trò chuyện mới", nối lại WebSocket + tải bù `after=`); chuỗi trong `i18n/chat.vi.ts`; verify: Playwright gửi tin → thấy "đang làm…" rồi câu trả lời của mô hình giả
 - [ ] 8.3 Nút "Trò chuyện" trên hồ sơ worker khi `canChatWith`; Owner / Admin không có tên trong danh sách thấy gợi ý thêm mình; verify: Playwright có / không có nút theo vai trò
 - [ ] 8.4 Câu báo dừng / lỗi / tạm nghỉ / hết credit / hết ngân sách đúng chữ của spec; verify: Playwright với worker Tạm nghỉ thấy câu báo hệ thống
