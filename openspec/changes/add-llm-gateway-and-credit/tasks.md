@@ -1,6 +1,6 @@
 # Tasks: add-llm-gateway-and-credit
 
-> Nhóm 1–8 là phần nền + API (dừng được ở đây nếu chia change, xem Q11 trong PR). Nhóm 9–10 là web.
+> Nhóm 1–8 là phần nền + API (đã chốt giữ một change; nhóm vẫn dừng được giữa chừng). Nhóm 9–10 là web.
 > Rebase lên main trước khi bắt đầu; nếu 1b đã merge thì đánh số migration sau migration của 1b.
 
 ## 1. `packages/crypto`
@@ -12,7 +12,7 @@
 ## 2. Cơ sở dữ liệu
 
 - [ ] 2.1 Schema Drizzle + migration cho `credit_accounts`, `credit_transactions`, `cost_entries` (RLS ENABLE + FORCE, policy công ty, index, CHECK) theo D4; verify: `pnpm --filter @dw/db generate` không còn khác biệt, migration chạy trên DB trống
-- [ ] 2.2 Bảng platform `model_prices`, `fx_rates`, `price_multipliers`, `provider_keys`, `platform_audit_events`; seed tỉ giá + hệ số mặc định theo câu trả lời Q8; tạo `credit_accounts` cho công ty đã có (và dùng thử theo Q10); verify: migration chạy trên DB có dữ liệu 1a
+- [ ] 2.2 Bảng platform `model_prices`, `fx_rates`, `price_multipliers`, `provider_keys`, `platform_audit_events`; seed tỉ giá + hệ số mặc định 25.400đ / USD và 1,30 (#102); tạo `credit_accounts` cho công ty đã có (và dùng thử cho công ty đã có Owner xác minh, #104); verify: migration chạy trên DB có dữ liệu 1a
 - [ ] 2.3 REVOKE UPDATE, DELETE, TRUNCATE FROM dw_app cho `credit_transactions`, `cost_entries`, `model_prices`, `fx_rates`, `price_multipliers`, `platform_audit_events`; UNIQUE partial dùng thử, UNIQUE `(company_id, idempotency_key)`; verify: test tích hợp `UPDATE`/`DELETE` bị từ chối trên từng bảng
 - [ ] 2.4 Bảng `auth.two_factors` + cột `auth.users.two_factor_enabled` theo schema của plugin `twoFactor` (better-auth 1.7.28); verify: schema Drizzle trong `@dw/db/auth-schema` khớp migration
 - [ ] 2.5 Hàm `app.platform_company_summaries()` (`SECURITY DEFINER`, owner `dw_owner`, `search_path` cố định, chỉ `dw_app` EXECUTE) và policy SELECT `TO dw_owner` cần cho nó; verify: test tích hợp hàm chỉ trả đúng danh sách cột của D10, `dw_app` đọc thẳng bảng vẫn bị RLS chặn
@@ -61,7 +61,7 @@
 ## 8. API — quản trị platform
 
 - [ ] 8.1 `GET /api/platform/companies` (lọc trạng thái, tìm theo tên) + tổng platform qua `app.platform_company_summaries()`; test chặn import (chỉ `apps/api/src/platform/`); verify: test tích hợp phản hồi chỉ có các trường của spec "Chỉ xem tổng theo công ty", lọc "hết credit" đúng
-- [ ] 8.2 `POST /api/platform/companies/:id/credit-adjustments` (D10: lý do, ghi chú bắt buộc, chặn ≥ 9 chữ số liền nhau, trần số tiền theo Q9, `Idempotency-Key`); verify: test tích hợp từng kịch bản của spec "Điều chỉnh credit tay", công ty hết credit được cộng → gateway gọi được lại (mô hình giả)
+- [ ] 8.2 `POST /api/platform/companies/:id/credit-adjustments` (D10: lý do, ghi chú bắt buộc, chặn ≥ 9 chữ số liền nhau, trần 100.000.000đ mỗi lần (#103), `Idempotency-Key`); verify: test tích hợp từng kịch bản của spec "Điều chỉnh credit tay", công ty hết credit được cộng → gateway gọi được lại (mô hình giả)
 - [ ] 8.3 Giá, tỉ giá, hệ số: `GET/POST /api/platform/model-prices`, `POST /api/platform/fx-rates`, `POST /api/platform/multipliers`, `PUT/DELETE /api/platform/companies/:id/multiplier`; verify: test ngày hiệu lực quá khứ → 400, trùng thời điểm → 409, hệ số < 1 → 400, đổi tỉ giá không đổi `CostEntry` cũ
 - [ ] 8.4 `GET /api/platform/provider-keys`, `PUT /api/platform/provider-keys/:provider` (kiểm tra key trước khi lưu, lưu bản mã, xoá bộ nhớ key); verify: test phản hồi chỉ có trạng thái, key bị từ chối → key cũ giữ nguyên, cột DB không chứa key gốc, log không chứa key
 - [ ] 8.5 `platform_audit_events` cho mọi thay đổi ở 8.2–8.4; verify: test mỗi route ghi đúng một sự kiện, không chứa giá trị key
@@ -69,18 +69,18 @@
 ## 9. Web — trang Credit
 
 - [ ] 9.1 Route `/credit` (Owner, Admin; mục menu ẩn với Trưởng phòng / Nhân viên) theo `docs/design/screens/credit.html`: thẻ số dư 5 trạng thái, đã dùng tháng, lịch sử gộp + mở chi tiết, nút Nạp credit / Tải sao kê "Sắp có"; chuỗi trong `i18n/vi.ts`; verify: Playwright cho Owner thấy số dư và lịch sử, Admin không có nút nạp, Trưởng phòng mở `/credit` bị chuyển về trang chủ
-- [ ] 9.2 Banner "Công ty đã hết credit" trong `app-shell` theo `me.credit.exhausted`; sửa câu "việc đang làm dở…" trong `credit.html` nếu Q2 chọn phương án đề xuất; verify: Playwright banner hiện ở mọi trang khi số dư 0, ẩn sau khi được cộng
+- [ ] 9.2 Banner "Công ty đã hết credit" trong `app-shell` theo `me.credit.exhausted`, câu chữ theo `credit.html` (đã sửa theo #096); verify: Playwright banner hiện ở mọi trang khi số dư 0, ẩn sau khi được cộng
 - [ ] 9.3 Ảnh chụp ở 320, 768, 1024, 1440 cho trang Credit (trạng thái bình thường, sắp hết, hết credit); verify: không tràn ngang
 
 ## 10. Web — quản trị platform và TOTP
 
-- [ ] 10.1 Bước nhập mã TOTP sau mật khẩu (`/two-factor`) và trang bật TOTP (`/platform/setup-2fa`: khoá dạng chữ + link `otpauth://`, mã dự phòng; mã QR theo Q5); verify: Playwright bật TOTP bằng mã sinh trong test, đăng xuất, đăng nhập lại phải nhập mã
+- [ ] 10.1 Bước nhập mã TOTP sau mật khẩu (`/two-factor`) và trang bật TOTP (`/platform/setup-2fa`: khoá dạng chữ + link `otpauth://`, mã dự phòng; không có mã QR, #099); verify: Playwright bật TOTP bằng mã sinh trong test, đăng xuất, đăng nhập lại phải nhập mã
 - [ ] 10.2 `/platform/companies`, `/platform/pricing`, `/platform/keys` + hộp thoại điều chỉnh credit, thêm giá, thay key theo `platform-admin.html`; verify: Playwright platform admin cộng credit cho công ty hết credit → banner của công ty đó biến mất; Owner mở `/platform/companies` thấy trang không tìm thấy
 - [ ] 10.3 Ảnh chụp ở 1024 và 1440 cho ba trang quản trị và hộp thoại điều chỉnh; verify: không tràn ngang
 
 ## 11. Kiểm tra tổng và tài liệu
 
-- [ ] 11.1 `docs/architecture.md` mục 6–7: cách tính số nguyên + cộng dồn phần lẻ, số dư được âm (theo Q1), lối đi `platform_company_summaries`, platform admin + TOTP; verify: đọc lại khớp design.md
+- [ ] 11.1 `docs/architecture.md` mục 6–7: cách tính số nguyên + cộng dồn phần lẻ, số dư được âm (#095), dừng ở lần gọi tiếp theo khi hết credit (#096), lối đi `platform_company_summaries`, platform admin + TOTP; verify: đọc lại khớp design.md
 - [ ] 11.2 `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm e2e` và `npx @fission-ai/openspec@1.17.0 validate --all --strict`; verify: tất cả xanh, ghi kết quả vào mô tả PR apply
 
 ## Workflow follow-up

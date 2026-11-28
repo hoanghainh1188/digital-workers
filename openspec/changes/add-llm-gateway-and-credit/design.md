@@ -104,7 +104,7 @@ Tất cả trong schema `public`, tạo bằng một migration (số thứ tự 
 - `provider_keys` — `provider` PK (`anthropic` | `openai`), `sealed text`, `updated_by`, `updated_at`, `last_ok_at timestamptz NULL`. `dw_app` SELECT/INSERT/UPDATE (thay key = UPDATE dòng; key cũ bị ghi đè, đúng màn "Key cũ bị xoá khỏi hệ thống").
 - `platform_audit_events` — `id`, `actor_user_id`, `action`, `target_type`, `target_id`, `company_id NULL`, `fields text[]`, `created_at`. Chỉ thêm.
 
-Migration seed: tỉ giá và hệ số mặc định 1,30 (#025) với giá trị ban đầu do Harry xác nhận (câu hỏi Q8); **không seed giá mô hình** — giá trên màn thiết kế là dữ liệu mẫu, platform admin nhập giá thật.
+Migration seed: tỉ giá và hệ số mặc định 1,30 (#025) với giá trị ban đầu 25.400đ / USD và 1,30 (0.2 #102); **không seed giá mô hình** — giá trên màn thiết kế là dữ liệu mẫu, platform admin nhập giá thật.
 
 *Đã cân nhắc:* một bảng `platform_settings` key/value cho tỉ giá + hệ số — mất lịch sử và CHECK theo kiểu; không chọn. Dùng `numeric` cho hệ số — xem D3.
 
@@ -120,7 +120,7 @@ Migration seed: tỉ giá và hệ số mặc định 1,30 (#025) với giá tr�
 
 Mọi lần **cộng** (dùng thử, điều chỉnh) cũng khoá dòng như vậy, đặt `last_credit_vnd = số tiền cộng`, và hạ cờ `low_notified` / `zero_notified` khi số dư mới lần lượt ≥ ngưỡng mới / > 0.
 
-Số dư được phép âm sau một lần gọi đã xong (spec credit-ledger; câu hỏi Q1). Kiểm tra trước khi gọi (D6) không khoá, nên N lần gọi đồng thời có thể cùng qua khi số dư còn ít: mức âm tối đa ≈ N × chi phí một lần gọi — chấp nhận cho MVP.
+Số dư được phép âm sau một lần gọi đã xong (spec credit-ledger; 0.2 #095); hết credit thì việc đang chạy dừng ở lần gọi tiếp theo (#096). Kiểm tra trước khi gọi (D6) không khoá, nên N lần gọi đồng thời có thể cùng qua khi số dư còn ít: mức âm tối đa ≈ N × chi phí một lần gọi — chấp nhận cho MVP.
 
 *Đã cân nhắc:* giữ chỗ (reserve) số tiền ước tính trước khi gọi rồi quyết toán — chính xác hơn nhưng cần bảng giữ chỗ và dọn giữ chỗ treo khi tiến trình chết; để sau nếu thấy âm nhiều. `SERIALIZABLE` thay cho `FOR UPDATE` — phải thử lại khi xung đột, phức tạp hơn mà không lợi gì.
 
@@ -162,7 +162,7 @@ Thứ tự trong `generate`:
 
 Lỗi cấp dùng thử chỉ ghi log, không làm hỏng việc xác minh email; cấp lại được bằng tay ở màn quản trị (lý do "Credit dùng thử").
 
-Công ty có từ trước change này (chỉ dữ liệu dev): migration tạo `credit_accounts` số dư 0 cho mọi công ty; dùng thử cho công ty cũ đã có Owner xác minh — xem câu hỏi Q10.
+Công ty có từ trước change này (chỉ dữ liệu dev): migration tạo `credit_accounts` số dư 0 cho mọi công ty; công ty cũ đã có Owner xác minh email được cấp dùng thử (0.2 #104).
 
 ### D9. Báo sắp hết / hết credit
 
@@ -181,7 +181,7 @@ Tạo công ty (`POST /api/companies`, onboarding Google) bằng email platform 
 - `/two-factor/enable`: chỉ cho email trong `PLATFORM_ADMIN_EMAILS` (người khác 404) — MVP không mở 2FA cho khách.
 - `/two-factor/verify-totp`, `/two-factor/verify-backup-code`: bỏ `trustDevice` (luôn false) — không "ghi nhớ thiết bị".
 - Giới hạn: thêm `customRules` cho `/two-factor/*` (5 lần / phút / IP), và dùng `FailedLoginLimiter` theo email cho mã sai.
-Bật TOTP trên web: hiện khoá bí mật dạng chữ + link `otpauth://` để nhập tay vào app xác thực; có mã dự phòng của plugin. Không vẽ mã QR (cần thư viện ngoài danh sách — câu hỏi Q5).
+Bật TOTP trên web: hiện khoá bí mật dạng chữ + link `otpauth://` để nhập tay vào app xác thực; có mã dự phòng của plugin. Không vẽ mã QR (cần thư viện ngoài danh sách — 0.2 #099).
 
 **Đọc chéo công ty.** Platform admin không có `company_id`, nên RLS chặn mọi bảng nghiệp vụ. Hai cách đi qua, cả hai hẹp:
 - Danh sách công ty: hàm `app.platform_company_summaries()` (`SECURITY DEFINER`, owner `dw_owner`, `search_path` cố định, chỉ `dw_app` EXECUTE) trả **chỉ** các cột tổng của spec: id, tên, email Owner đầu tiên, số dư, đã trừ 30 ngày, chi phí thật 30 ngày (chỉ để tính tổng platform), hệ số riêng, lần dùng gần nhất. Số worker thêm vào hàm này ở change 2 (bảng `workers` chưa có). Policy SELECT `TO dw_owner` cho các bảng nó đọc, như `members_owner_lookup` của 1a.
@@ -221,7 +221,7 @@ Tên worker chưa có ở change 4: API trả `workerId`, web hiện "Nhân viê
 - [Gửi email báo sau commit có thể mất khi tiến trình chết đúng lúc] → Chấp nhận cho MVP; trang Credit và banner vẫn hiện đúng trạng thái. Hàng đợi pg-boss có ở change 5 nếu cần chắc hơn.
 - [`platform_company_summaries` là lối đi qua RLS thứ hai] → `SECURITY DEFINER` hẹp, chỉ trả cột tổng, test chặn import, test kiểm tra hàm không trả cột nào ngoài danh sách.
 - [Khoá chính mất = mất mọi key đã lưu] → Key nhà cung cấp lấy lại được từ trang nhà cung cấp; ghi vào hướng dẫn vận hành ở change `deploy-staging`: sao lưu `ENCRYPTION_KEY` riêng với bản sao lưu DB.
-- [Change lớn: 3 package + 2 màn hình] → Task chia nhóm để dừng được sau nhóm API (xem câu hỏi Q11 về chia 4a / 4b).
+- [Change lớn: 3 package + 2 màn hình] → Task chia nhóm để dừng được sau nhóm API (đã chốt giữ một change).
 - [Migration đụng số thứ tự với 1b] → Đặt số khi apply sau khi rebase lên main.
 
 ## Migration Plan
@@ -232,4 +232,4 @@ Tên worker chưa có ở change 4: API trả `workerId`, web hiện "Nhân viê
 
 ## Open Questions
 
-Câu hỏi nghiệp vụ nằm trong mô tả PR (Q1–Q11); spec và task đang theo phương án đề xuất. Câu trả lời ghi vào `docs/requirements.md` 0.2 #095–#104 trong PR này.
+Không còn. Câu hỏi nghiệp vụ của PR propose đã chốt ở `docs/requirements.md` 0.2 #095–#104.

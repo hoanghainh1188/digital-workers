@@ -32,7 +32,7 @@ Worker runtime (change 5) cần một cửa duy nhất để gọi mô hình AI 
 
 ## Impact
 
-- Package mới: `packages/crypto`, `packages/llm`, `packages/billing`. Thư viện mới, đều có trong danh sách được phép: `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`. Plugin `twoFactor` có sẵn trong `better-auth`. Không thêm thư viện ngoài danh sách (xem câu hỏi về mã QR trong PR).
+- Package mới: `packages/crypto`, `packages/llm`, `packages/billing`. Thư viện mới, đều có trong danh sách được phép: `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`. Plugin `twoFactor` có sẵn trong `better-auth`. Không thêm thư viện ngoài danh sách (không vẽ mã QR, 0.2 #099).
 - `packages/db`: migration mới cho `credit_accounts`, `credit_transactions`, `cost_entries`, `model_prices`, `fx_rates`, `price_multipliers`, `provider_keys`, `platform_audit_events`, bảng `auth.two_factors` + cột `auth.users.two_factor_enabled`, hàm `app.platform_company_summaries()`.
 - `apps/api`: biến môi trường mới `ENCRYPTION_KEY` (bắt buộc), `PLATFORM_ADMIN_EMAILS` (không bắt buộc); route `/api/credit/*`, `/api/platform/*`; `GET /api/me` có thêm trạng thái credit; Better Auth bật `twoFactor`; tạo công ty thì tạo luôn `CreditAccount`.
 - `apps/web`: trang `/credit`, `/platform/*`, `/two-factor`, banner hết credit trong khung app; chuỗi tiếng Việt trong `i18n/vi.ts`.
