@@ -27,7 +27,7 @@ last_updated: 2026-11-27
 |---|---|---|---|---|---|
 | 0 | #1 | `setup-monorepo` | — | — | ✅ |
 | 1a | #2 | `add-tenancy-and-auth` | 0 | Đăng ký, đăng nhập | ✅ |
-| 1b | #26 | `add-departments-and-invites` | 1a | Phòng ban, người dùng, nhận lời mời | ⏳ |
+| 1b | #26 | `add-departments-and-invites` | 1a | Phòng ban, người dùng, nhận lời mời | ✅ |
 | 2 | #3 | `add-worker-profile` | 1b | Sơ đồ nhân sự số, hồ sơ worker | ⏳ |
 | 3 | #4 | `add-skill-library` | 1a, 2 | Thư viện kỹ năng | ⏳ |
 | 4 | #5 | `add-llm-gateway-and-credit` | 1a | Số dư credit, quản trị platform (credit, giá, key) | ⏳ |
