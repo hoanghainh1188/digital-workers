@@ -18,7 +18,7 @@
 
 ## 3. `packages/core` — quyền và runtime thuần
 
-- [ ] 3.1 Test ma trận theo hàng "Giao việc cho worker" của `docs/requirements.md` mục 1 (đã sửa ở PR propose, #139), rồi `permissions.ts` (`task.assign.manager = own-department`); verify: test ma trận xanh
+- [x] 3.1 Ma trận quyền hàng "Giao việc cho worker" + `permissions.ts` (`task.assign.manager = own-department`) đã sửa ở PR #46 (#139); test ma trận trong `permissions.test.ts` đọc bảng tài liệu; verify: `pnpm test` xanh
 - [ ] 3.2 `canChatWith(member, worker, testerIds)` theo design D7; verify: unit test đủ các ca của spec web-chat (Thử việc chỉ danh sách, kể cả Owner; Chính thức theo vai trò; Nháp 403; phòng khác)
 - [ ] 3.3 `evaluateIntake(snapshot)` theo D5 trả `accept` hoặc lý do + khoá i18n; verify: unit test Tạm nghỉ, Nghỉ việc, Nháp, hết credit, hết ngân sách, còn ngân sách
 - [ ] 3.4 `wrapData(source, content)` theo D8.4; verify: unit test nguồn sai ký tự bị từ chối, `</data>` và `<data` trong nội dung bị vô hiệu hoá, nội dung còn lại giữ nguyên
