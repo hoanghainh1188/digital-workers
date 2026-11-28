@@ -50,7 +50,7 @@
 ## 9. Kiểm tra cuối
 
 - [x] 9.1 E2E Playwright: Owner xác minh email → tạo phòng → mời → người được mời nhận lời mời → Owner khoá người đó → người đó bị đăng xuất; quên mật khẩu → đặt lại → đăng nhập bằng mật khẩu mới.
-- [ ] 9.2 `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm e2e` và `openspec validate --all --strict` xanh; `pnpm ci:runner` chạy trên máy trước khi merge.
+- [x] 9.2 `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm e2e` và `openspec validate --all --strict` xanh; `pnpm ci:runner` chạy trên máy trước khi merge.
 
 ## Workflow follow-up
 
