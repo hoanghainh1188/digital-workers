@@ -1,6 +1,6 @@
 # Tasks: deploy-staging
 
-> Nhóm 1–4 là code trong repo (làm và test trên máy, không cần máy chủ). Nhóm 5–8 là dựng và kiểm tra staging thật, cần câu trả lời Q1–Q4 trong PR (nhà cung cấp, tên miền, SMTP, người giữ khoá).
+> Nhóm 1–4 là code trong repo (làm và test trên máy, không cần máy chủ). Nhóm 5–8 là dựng và kiểm tra staging thật, cần câu trả lời Q1–Q4 trong PR; Q5–Q7 đã chốt (0.2 #143–#145) (nhà cung cấp, tên miền, SMTP, người giữ khoá).
 
 ## 1. Hạn mức lời mời (#082)
 
@@ -51,7 +51,7 @@
 
 ## 8. Kết thúc
 
-- [ ] 8.1 Ghi các quyết định đã trả lời (Q1–Q6) vào `docs/requirements.md` 0.2 (số tiếp theo + ngày), sửa `docs/architecture.md` mục 8 theo nhà cung cấp đã chốt; verify: `openspec validate --all --strict` xanh
+- [ ] 8.1 Ghi các quyết định còn lại khi được trả lời (Q1–Q4; Q5–Q7 đã ghi ở #143–#145) vào `docs/requirements.md` 0.2 (số tiếp theo + ngày), sửa `docs/architecture.md` mục 8 theo nhà cung cấp đã chốt; verify: `openspec validate --all --strict` xanh
 - [ ] 8.2 `pnpm ci:runner` xanh; mô tả PR có kết quả 6.1, 6.2, 7.2
 
 ## Workflow follow-up

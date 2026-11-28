@@ -19,7 +19,7 @@ Staging SHALL chỉ phục vụ người dùng qua HTTPS trên tên miền đã 
 - **THEN** nhận chuyển hướng sang `https://<staging>/`
 
 ### Requirement: Kiểm tra sẵn sàng sau mỗi lần đưa bản mới
-Sau mỗi lần đưa bản mới lên, quy trình deploy SHALL gọi `GET /health/ready` của api từ mạng nội bộ của máy chủ và chỉ báo thành công khi nhận HTTP 200. `/health/ready` MUST vẫn không gọi được từ ngoài internet (trả 404 qua Caddy).
+Sau mỗi lần đưa bản mới lên, quy trình deploy SHALL gọi `GET /health/ready` của api từ mạng nội bộ của máy chủ và chỉ báo thành công khi nhận HTTP 200. `/health/ready` MUST vẫn không gọi được từ ngoài internet (trả 404 qua Caddy, 0.2 #144).
 
 #### Scenario: Deploy thành công
 - **WHEN** chạy deploy một tag mới và cơ sở dữ liệu sẵn sàng

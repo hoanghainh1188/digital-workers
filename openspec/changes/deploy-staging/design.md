@@ -33,7 +33,7 @@
 ### D2. Build và đưa bản mới lên
 
 - **Build ở GitHub Actions** (workflow mới `images.yml`, chạy khi push lên `main` và chạy tay): build 3 target `api`, `runner`, `caddy` cho `linux/amd64`, đẩy lên **GHCR riêng tư** `ghcr.io/<owner>/dw-{api,runner,caddy}:<git sha>`. Ảnh chỉ chứa code + web đã build, không có dữ liệu hay bí mật → đặt ngoài Việt Nam không trái #011.
-  - Đã cân nhắc: build trên máy chủ (`git pull && compose build`) — đơn giản nhưng tốn RAM / CPU của máy 4 GB, máy chủ cần quyền đọc repo, và mỗi lần build có thể ra ảnh khác. Build trên Mac của Harry — kiến trúc arm64, phải cross-build. Registry của VNG — cần thêm tài khoản; đổi được sau vì chỉ là `IMAGE_REPO`.
+  - Đã cân nhắc: build trên máy chủ (`git pull && compose build`) — đơn giản nhưng tốn RAM / CPU của máy 4 GB, máy chủ cần quyền đọc repo, và mỗi lần build có thể ra ảnh khác. Build trên Mac của Harry — kiến trúc arm64, phải cross-build. Registry của VNG — cần thêm tài khoản; đổi được sau vì chỉ là `IMAGE_REPO`. **Đã chốt GHCR (0.2 #145).**
   - `ci.yml` giữ nguyên (kiểm tra nhẹ, #030); `images.yml` là job riêng, không chạy test.
 - **`compose.prod.yaml`**: mỗi service app có `image: ${IMAGE_REPO:-dw}/dw-api:${IMAGE_TAG:-local}` cạnh `build:` — `pnpm ci:runner` vẫn build tại chỗ, máy chủ chỉ `pull`. Thêm `logging: json-file, max-size 10m, max-file 5`. Tên project lấy từ `COMPOSE_PROJECT_NAME=dw-staging` trong file env.
 - **`scripts/deploy.sh <git-sha>`** chạy trên máy Harry, SSH vào máy chủ:
@@ -47,7 +47,7 @@
 
 ### D3. Kiểm tra sức khoẻ (đối chiếu ROADMAP)
 
-ROADMAP ghi test "`https://<staging>/health/ready` trả 200", nhưng `Caddyfile` (change 0) cố ý trả 404 cho `/health/*` từ ngoài vì `/health/ready` chạm DB. Spec (`service-health`) và Caddyfile thắng ROADMAP. Change này **giữ chặn** và tách test thành: (a) `https://<staging>/health` 200 + chứng chỉ hợp lệ từ ngoài — chứng minh DNS, TLS, Caddy, api; (b) `/health/ready` 200 gọi trong mạng nội bộ từ script deploy — chứng minh DB. Xem Q6.
+ROADMAP ghi test "`https://<staging>/health/ready` trả 200", nhưng `Caddyfile` (change 0) cố ý trả 404 cho `/health/*` từ ngoài vì `/health/ready` chạm DB. Spec (`service-health`) và Caddyfile thắng ROADMAP. Change này **giữ chặn** (đã chốt, 0.2 #144) và tách test thành: (a) `https://<staging>/health` 200 + chứng chỉ hợp lệ từ ngoài — chứng minh DNS, TLS, Caddy, api; (b) `/health/ready` 200 gọi trong mạng nội bộ từ script deploy — chứng minh DB.
 
 ### D4. Bí mật
 
@@ -90,7 +90,7 @@ ROADMAP ghi test "`https://<staging>/health/ready` trả 200", nhưng `Caddyfile
   3. Số lời mời sẽ tạo (sau khi loại email đã là thành viên / đang được mời) cộng số đã gửi > hạn mức → trả 429 `INVITATION_QUOTA_EXCEEDED` kèm `retryAfter` (thời điểm lần gửi cũ nhất trong cửa sổ hết 24 giờ). Không tạo gì, không gửi email.
   4. Gửi lại: thêm kiểm tra số `resend` của lời mời < 3 và lần gửi gần nhất cách ≥ 10 phút, không thì 429 `INVITATION_RESEND_LIMITED`.
   5. Chèn `invitation_sends` cho mỗi lời mời được tạo / gửi lại. Email gửi sau khi commit như hiện tại; gửi email lỗi vẫn tính (an toàn về phía chống rác).
-- Con số (20 / 200 / 7 ngày / 3 lần / 10 phút) là hằng số trong `apps/api/src/org/invitation-quota.ts`, không phải biến môi trường — đổi số là đổi spec. Xem Q5.
+- Con số (20 / 200 / 7 ngày / 3 lần / 10 phút) là hằng số trong `apps/api/src/org/invitation-quota.ts`, không phải biến môi trường — đổi số là đổi spec. Đã chốt (0.2 #143).
 - `apps/web`: chuỗi tiếng Việt cho hai mã lỗi mới trong i18n, hiện trong hộp mời / nút gửi lại đã có.
 
 ## Risks / Trade-offs
@@ -101,7 +101,7 @@ ROADMAP ghi test "`https://<staging>/health/ready` trả 200", nhưng `Caddyfile
 - [Docker vượt qua `ufw`] → chỉ caddy publish cổng, security group là lớp chính, test từ máy ngoài (D7).
 - [Mất khoá `age` hoặc `ENCRYPTION_KEY` là mất dữ liệu / API key] → hai bản giữ ở hai nơi ngoài máy chủ; lần thử khôi phục đầu tiên dùng đúng bản giữ ngoài.
 - [Migration "chỉ thêm" bị quên] → luật trong `CLAUDE.md`, mục kiểm tra trong mô tả PR; migration phá vỡ thì sao lưu tay trước.
-- [Hạn mức quá chặt với công ty mới mời cả phòng] → 20 người / ngày đầu đủ cho SME 10–200 người thử dần; con số là câu hỏi trong PR (Q5).
+- [Hạn mức quá chặt với công ty mới mời cả phòng] → 20 người / ngày đầu đủ cho SME 10–200 người thử dần; đã chốt (#143); đổi số là đổi spec.
 
 ## Migration Plan
 
@@ -114,4 +114,4 @@ Quay lại: `scripts/deploy.sh --rollback`. Bỏ cả change: tắt máy, xoá b
 
 ## Open Questions
 
-Không còn câu hỏi hoãn được; các câu cần trả lời trước khi apply nằm trong mô tả PR (Q1–Q6).
+Không còn câu hỏi hoãn được; các câu còn mở trước khi dựng máy (Q1–Q4: nhà cung cấp, tên miền, SMTP, người giữ khoá) nằm trong mô tả PR.

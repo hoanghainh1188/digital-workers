@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Hạn mức người nhận lời mời mỗi ngày
-Mỗi công ty SHALL gửi lời mời (tạo mới hoặc gửi lại) tới tối đa một số người nhận trong 24 giờ gần nhất: **20** với công ty tạo chưa đủ 7 ngày, **200** với công ty khác (0.2 #082). Yêu cầu làm vượt hạn mức MUST bị từ chối cả yêu cầu với HTTP 429 và mã lỗi "vượt hạn mức lời mời", không tạo lời mời và không gửi email nào; giao diện báo bằng tiếng Việt khi nào gửi tiếp được. Hạn mức tính theo công ty, không theo người mời.
+Mỗi công ty SHALL gửi lời mời (tạo mới hoặc gửi lại) tới tối đa một số người nhận trong 24 giờ gần nhất: **20** với công ty tạo chưa đủ 7 ngày, **200** với công ty khác (0.2 #082, #143). Yêu cầu làm vượt hạn mức MUST bị từ chối cả yêu cầu với HTTP 429 và mã lỗi "vượt hạn mức lời mời", không tạo lời mời và không gửi email nào; giao diện báo bằng tiếng Việt khi nào gửi tiếp được. Hạn mức tính theo công ty, không theo người mời.
 
 #### Scenario: Công ty mới mời vượt hạn mức
 - **WHEN** Owner của công ty tạo 2 ngày trước đã gửi lời mời tới 15 người trong 24 giờ qua và mời thêm 6 email
