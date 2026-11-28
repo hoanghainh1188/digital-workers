@@ -107,6 +107,16 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 082 | 2026-11-28 | **Hạn mức gửi lời mời** theo công ty (chống dùng lời mời để gửi email lừa đảo / rác: số người nhận mỗi ngày cho công ty mới, giới hạn gửi lại) **làm ở change `deploy-staging`**, trước khi mở cho khách thật. 1b chỉ có giới hạn 50 email mỗi lần mời. (`add-departments-and-invites`) |
 | 083 | 2026-11-28 | Giới hạn "Quên mật khẩu" **giữ như #067**: quá 3 lần / 15 phút cho một email thì **trả 429**. Chấp nhận rủi ro người lạ làm chậm việc lấy lại mật khẩu tối đa 15 phút. (`add-departments-and-invites`) |
 | 084 | 2026-11-28 | **Admin không tự đổi vai trò của mình** (theo #063: Admin không quản lý Admin). Owner tự hạ vai trò được khi còn Owner khác đang hoạt động. (`add-departments-and-invites`) |
+| 095 | 2026-11-28 | Chi phí chỉ biết sau khi gọi xong → lần gọi cuối **trừ đủ**, số dư **được âm** (vd. −150đ); lần cộng credit sau bù vào. Số dư ≤ 0 thì mọi lần gọi mới bị từ chối. (`add-llm-gateway-and-credit`) |
+| 096 | 2026-11-28 | Hết credit giữa chừng: việc đang chạy **dừng ở lần gọi mô hình tiếp theo** (không làm nốt), người nhắn nhận "công ty đã hết credit". Lỗ tối đa là một lần gọi. (`add-llm-gateway-and-credit`) |
+| 097 | 2026-11-28 | Số trừ credit mỗi lần là số nguyên đồng: **làm tròn xuống, phần lẻ dưới 1 đồng cộng dồn** cho lần sau của công ty; tổng đã trừ = phần nguyên của tổng số tiền bán. (`add-llm-gateway-and-credit`) |
+| 098 | 2026-11-28 | Email platform admin **không là thành viên công ty nào** và **không tạo công ty được**; email trong danh sách mà thuộc một công ty thì không vào được màn quản trị. (`add-llm-gateway-and-credit`) |
+| 099 | 2026-11-28 | Bật TOTP cho platform admin: **không thêm thư viện mã QR**; hiện khoá bí mật dạng chữ + link `otpauth://` để nhập tay. (`add-llm-gateway-and-credit`) |
+| 100 | 2026-11-28 | Quyền quản trị platform **hết sau 12 giờ** kể từ lúc đăng nhập; **không ghi nhớ thiết bị**, nhập mã TOTP mỗi lần đăng nhập. (`add-llm-gateway-and-credit`) |
+| 101 | 2026-11-28 | Change 4 chỉ báo **qua email**: "credit sắp hết" gửi Owner; "hết credit" gửi **Owner, Admin và Trưởng phòng** đang hoạt động (rộng hơn FR-13-04). Báo qua app chat để sau. (`add-llm-gateway-and-credit`) |
+| 102 | 2026-11-28 | Giá trị ban đầu: tỉ giá **25.400đ / USD**, hệ số giá mặc định **1,30**. Không nạp sẵn giá mô hình; platform admin nhập giá thật. (`add-llm-gateway-and-credit`) |
+| 103 | 2026-11-28 | Điều chỉnh credit tay: tối đa **100.000.000đ mỗi lần**, bắt buộc lý do và ghi chú (≤ 200 ký tự), từ chối ghi chú có **từ 9 chữ số liền nhau** trở lên, chặn gửi trùng bằng `Idempotency-Key`. (`add-llm-gateway-and-credit`) |
+| 104 | 2026-11-28 | Công ty có từ trước change 4: migration tạo tài khoản credit 0đ và **cấp credit dùng thử** cho công ty đã có Owner xác minh email. (`add-llm-gateway-and-credit`) |
 
 ### 0.3. Đề xuất chờ chốt
 
