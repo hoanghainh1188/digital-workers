@@ -412,10 +412,12 @@ Nháp ──► Thử việc ──► Chính thức ◄──► Tạm nghỉ
 | Hạng mục | Dự kiến |
 |---|---|
 | Zalo nhóm | v0.2, khi API ổn định |
+| Connector Google Drive (theo file / thư mục, #47) | v0.2 |
 | Nhận việc theo sự kiện (email đến, dòng mới trong Sheet) | v0.2 |
 | KPI chi tiết, đánh giá hàng tháng tự động | v0.2 |
 | Kênh Messenger, Lark, Slack, Teams | v0.3, theo yêu cầu khách |
-| Connector phần mềm kế toán, CRM | v0.3 |
+| Connector phần mềm kế toán, CRM (MISA, KiotViet, #47) | v0.3 |
+| Hỗ trợ External MCP Server & kết nối DB nội bộ an toàn (#47) | v0.3 |
 | Worker phối hợp với nhau | v0.3 |
 | Đồng bộ skill ra Claude Code / Codex / ChatGPT | Sau v0.3 |
 | Worker nói chuyện với khách hàng bên ngoài (Zalo OA, Facebook Page) | Sau v0.3 |
