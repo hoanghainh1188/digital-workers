@@ -216,7 +216,7 @@ Hiện không có đề xuất chờ chốt.
 | Tạo / sửa skill (bản nháp) | ✓ | ✓ | ✓ | ✓ |
 | Duyệt skill (duyệt / từ chối version, quay lại version cũ, lưu trữ, duyệt yêu cầu giao) | ✓ | ✓ | — | — |
 | Giao / gỡ skill cho worker | ✓ | ✓ | ✓ (phòng mình) | — |
-| Giao việc cho worker | ✓ | ✓ | ✓ (phòng mình) | ✓ (nếu có tên trong danh sách người được giao việc) |
+| Giao việc cho worker | ✓ | ✓ | ✓ (phòng mình) | ✓ (nếu được gán: có tên trong danh sách người được giao việc) |
 | Duyệt việc của worker | theo quy tắc duyệt của worker |||
 | Kết nối kênh chat, connector | ✓ | ✓ | — | — |
 | Nạp credit, xem sao kê | ✓ | ✓ (xem) | — | — |
