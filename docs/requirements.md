@@ -105,6 +105,8 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 080 | 2026-11-28 | Trang Phòng ban giữ số **"N người chưa có phòng ban"** như spec. Theo ràng buộc mới, chỉ Owner / Admin có thể không có phòng nên con số thực chất đếm Owner / Admin chưa gán phòng. (`add-departments-and-invites`) |
 | 081 | 2026-11-28 | Owner / Admin **được gán vào phòng ban** (không bắt buộc, #036). Khi đã gán, họ **tính là người trong phòng** và chặn lưu trữ phòng như mọi thành viên khác (#064). (`add-departments-and-invites`) |
 | 082 | 2026-11-28 | **Hạn mức gửi lời mời** theo công ty (chống dùng lời mời để gửi email lừa đảo / rác: số người nhận mỗi ngày cho công ty mới, giới hạn gửi lại) **làm ở change `deploy-staging`**, trước khi mở cho khách thật. 1b chỉ có giới hạn 50 email mỗi lần mời. (`add-departments-and-invites`) |
+| 083 | 2026-11-28 | Giới hạn "Quên mật khẩu" **giữ như #067**: quá 3 lần / 15 phút cho một email thì **trả 429**. Chấp nhận rủi ro người lạ làm chậm việc lấy lại mật khẩu tối đa 15 phút. (`add-departments-and-invites`) |
+| 084 | 2026-11-28 | **Admin không tự đổi vai trò của mình** (theo #063: Admin không quản lý Admin). Owner tự hạ vai trò được khi còn Owner khác đang hoạt động. (`add-departments-and-invites`) |
 
 ### 0.3. Đề xuất chờ chốt
 
