@@ -1,18 +1,18 @@
 # Tasks: add-skill-library
 
-> Điều kiện trước khi apply: change 2 (`add-worker-profile`) đã apply (bảng worker, trạng thái, phòng ban của worker) — xem design.md Risks và câu hỏi Q1 trong PR. Câu trả lời Q1–Q10 đã ghi vào docs/requirements.md 0.2 #085–#094.
+> Điều kiện trước khi apply: change 2 (`add-worker-profile`) đã apply (bảng worker, trạng thái, phòng ban của worker) — 0.2 #085. Quyết định của change này: 0.2 #056–#060, #085–#094.
 
 ## 1. Tài liệu và luật dùng chung (`packages/core`)
 
-- [ ] 1.1 Thêm hàng "Giao / gỡ skill cho worker" (Owner ✓, Admin ✓, Trưởng phòng ✓ phòng mình, Nhân viên —) và mở rộng hàng "Duyệt skill" theo câu trả lời Q3 trong docs/requirements.md mục 1, rồi action `skill.assign` trong `permissions.ts` (design D8); test ma trận đọc tài liệu vẫn xanh (`pnpm test`).
+- [ ] 1.1 Thêm hàng "Giao / gỡ skill cho worker" (Owner ✓, Admin ✓, Trưởng phòng ✓ phòng mình, Nhân viên —) và mở rộng hàng "Duyệt skill" theo 0.2 #087 trong docs/requirements.md mục 1, rồi action `skill.assign` trong `permissions.ts` (design D8); test ma trận đọc tài liệu vẫn xanh (`pnpm test`).
 - [ ] 1.2 `skills/assignment-rules.ts`: `decideAssignment(actor, worker, skill)` theo bảng D8 và mã lỗi (`SKILL_ARCHIVED`, `SKILL_NOT_APPROVED`, `SKILL_NEEDS_REVIEW`, `WORKER_OFFBOARDED`, `ALREADY_ASSIGNED`); unit test dạng bảng vai trò × trạng thái worker × có / không script × cùng / khác phòng.
-- [ ] 1.3 Schema Zod dùng chung cho API và web: tạo kỹ năng, lưu bản nháp (`skillMd`, `revision`), gửi duyệt (`changeNote`, `proposedRisk`), duyệt (`risk`), từ chối (`reason` bắt buộc, theo Q7), quay lại (`versionNumber`), bộ lọc danh sách; unit test.
+- [ ] 1.3 Schema Zod dùng chung cho API và web: tạo kỹ năng, lưu bản nháp (`skillMd`, `revision`), gửi duyệt (`changeNote`, `proposedRisk`), duyệt (`risk`), từ chối (`reason` bắt buộc, 0.2 #091), quay lại (`versionNumber`), bộ lọc danh sách; unit test.
 
 ## 2. Gói kỹ năng (`packages/skills`, mới)
 
-- [ ] 2.1 Tạo package `@dw/skills` (tsconfig, `package.json`, vitest), thêm `gray-matter` và `fflate` (nếu Q2 duyệt; không thì nhánh tự viết trên `node:zlib`, design D5 a); `pnpm typecheck` và `pnpm test` chạy được với package mới.
+- [ ] 2.1 Tạo package `@dw/skills` (tsconfig, `package.json`, vitest), thêm `gray-matter` và `fflate` (0.2 #086); `pnpm typecheck` và `pnpm test` chạy được với package mới.
 - [ ] 2.2 `parseSkillMd`: chặn frontmatter không phải `---` thuần trước khi gọi `gray-matter`, chỉ engine YAML, kiểm `name` / `description` / trường tuỳ chọn, cảnh báo trường ngoài chuẩn, lấy `title` từ dòng `#` đầu (design D4); unit test mọi kịch bản "Frontmatter của SKILL.md", "Trường tuỳ chọn của frontmatter", kể cả `---js` không chạy mã.
-- [ ] 2.3 `checkFile` / `checkPackage`: danh sách đuôi, UTF-8, chữ ký file nhị phân, luật `scripts/*.py`, đường dẫn an toàn, trùng hoa thường, bỏ `__MACOSX/` và `.DS_Store`, giới hạn (D5, D11); trả danh sách kiểm tra mã cố định; unit test mỗi kịch bản "Loại file đi kèm", "Thư mục scripts", "Đường dẫn an toàn trong gói".
+- [ ] 2.3 `checkFile` / `checkPackage`: danh sách đuôi, UTF-8, chữ ký file nhị phân, luật `scripts/*.py`, đường dẫn an toàn, trùng hoa thường, bỏ `__MACOSX/` và `.DS_Store`, gốc gói theo #094, giới hạn theo #089 (D5, D11); trả danh sách kiểm tra mã cố định; unit test mỗi kịch bản "Loại file đi kèm", "Thư mục scripts", "Đường dẫn an toàn trong gói".
 - [ ] 2.4 `readZip` / `writeZip`: đếm byte thật khi inflate và dừng khi vượt 50 MB / 200 file, từ chối mục mã hoá / symlink, xuất có thứ tự và thời gian cố định; unit test với zip độc tự tạo (zip slip, zip bomb, symlink, mã hoá) và round-trip `writeZip` → `readZip` cho cùng nội dung.
 - [ ] 2.5 `suggestRisk` theo D7; unit test: có `scripts/` → cao, câu "gửi email cho khách" → cao, "đọc Google Sheets" → trung bình, chỉ soạn văn bản → thấp.
 - [ ] 2.6 10 kỹ năng mẫu trong `packages/skills/templates/` theo bảng D10 (tiếng Việt, đủ mục Khi nào dùng / Các bước / Không làm / Đầu ra, file đi kèm mẫu); unit test: mọi mẫu qua `checkPackage`, `name` không trùng, không mẫu nào có `scripts/`.
@@ -33,7 +33,7 @@
 
 ## 5. API nhập, xuất, file, mẫu (`apps/api`)
 
-- [ ] 5.1 Content-type parser `application/zip` / `application/octet-stream` chỉ cho route nhập và route file, `bodyLimit` 25 MB riêng, giới hạn theo IP (`perIpLimit`); `POST /api/skills/import[?dryRun=1]` trả danh sách kiểm tra, có lỗi → 422 không ghi gì; test tích hợp mọi kịch bản "Nhập kỹ năng từ zip", "Giới hạn kích thước gói" và test bắt buộc: **nhập zip sai định dạng bị từ chối với lý do rõ** (thiếu `SKILL.md` ở gốc, thiếu `description`, file `.exe`, zip slip, quá 25 MB → 413).
+- [ ] 5.1 Content-type parser `application/zip` / `application/octet-stream` chỉ cho route nhập và route file, `bodyLimit` 25 MB riêng, giới hạn theo IP (`perIpLimit`); `POST /api/skills/import[?dryRun=1]` trả danh sách kiểm tra, có lỗi → 422 không ghi gì; test tích hợp mọi kịch bản "Nhập kỹ năng từ zip", "Giới hạn kích thước gói" và test bắt buộc: **nhập zip sai định dạng bị từ chối với lý do rõ** (thiếu `SKILL.md` ở gốc hoặc thư mục con sai tên, thiếu `description`, file `.exe`, zip slip, quá 25 MB → 413).
 - [ ] 5.2 `PUT|DELETE /api/skills/:id/draft/files/*` (kiểm như một mục zip, tổng ≤ 50 MB, blob dùng chung) và `GET …/versions/:n/files/*` (attachment, `nosniff`, kiểu từ danh sách, không `text/html`); test: tải lên `.svg` → từ chối, tải xuống `.md` có `Content-Disposition: attachment`, sửa file làm `has_scripts` / rủi ro gợi ý cập nhật.
 - [ ] 5.3 `GET …/versions/:n/export` (mặc định version đang dùng, tên file an toàn, `AuditEvent skill.exported`); test "Xuất rồi nhập lại" cho cùng nội dung và id công ty B → 404.
 - [ ] 5.4 `GET /api/skill-templates`, `POST /api/skill-templates/:name/use` (trùng `name` → 409); test "Dùng mẫu" và "Mẫu của một công ty không ảnh hưởng công ty khác".
@@ -61,7 +61,7 @@
 ## 9. Kiểm tra tổng
 
 - [ ] 9.1 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`, `pnpm e2e` (hoặc `pnpm ci:runner`) xanh; `npx @fission-ai/openspec@1.17.0 validate --all --strict` xanh.
-- [ ] 9.2 Chạy tay trên máy dev: nén một kỹ năng mẫu của agentskills.io (có `references/`, `assets/`) theo luật gốc gói đã chốt ở Q10, nhập, xuất lại, so nội dung; ghi kết quả vào mô tả PR apply.
+- [ ] 9.2 Chạy tay trên máy dev: nén một kỹ năng mẫu của agentskills.io (có `references/`, `assets/`) dạng thư mục `<name>/` theo 0.2 #094, nhập, xuất lại, so nội dung; ghi kết quả vào mô tả PR apply.
 
 ## Workflow follow-up
 

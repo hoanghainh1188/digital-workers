@@ -5,8 +5,8 @@
 - Có sẵn từ 1a: `withCompany` + RLS `ENABLE` + `FORCE` theo `app.company_id` (`packages/db/src/tenancy.ts`), `recordAudit`, guard `requireCompany` / `requirePermission` / `notFound` (`apps/api/src/tenancy/guards.ts`), ma trận quyền một nguồn (`packages/core/src/access/permissions.ts`, đã có `skill.edit` cho mọi vai trò và `skill.approve` cho Owner / Admin), lỗi dạng `{ error: { code, message } }`, chuỗi giao diện trong `apps/web/src/i18n/vi.ts`.
 - Đang apply song song (1b): `departments`, `members.department_id`, mẫu FK ghép `(company_id, id)` chống tham chiếu chéo công ty, `companyOutcome()` cho ghi nhiều bước. Change này dùng các thứ đó qua change 2.
 - Chưa có: bảng worker (change 2 — `add-worker-profile`), `Review` (change 11), chạy script (change 15), object storage (#029 chưa chốt nhà cung cấp).
-- Đặc tả agentskills.io: thư mục kỹ năng có `SKILL.md` (frontmatter `name`, `description` bắt buộc; `license`, `compatibility`, `metadata`, `allowed-tools` tuỳ chọn), thư mục tuỳ chọn `scripts/`, `references/`, `assets/`; khuyên `SKILL.md` dưới 500 dòng, tham chiếu file bằng đường dẫn tương đối một cấp. Chuẩn đòi `name` trùng tên thư mục cha; với gói `.zip` có `SKILL.md` ở gốc (theo màn hình), thư mục khi xuất / chạy chính là `name`.
-- Thư viện: `gray-matter` đã được phép; **chưa có thư viện zip** (xem D5).
+- Đặc tả agentskills.io: thư mục kỹ năng có `SKILL.md` (frontmatter `name`, `description` bắt buộc; `license`, `compatibility`, `metadata`, `allowed-tools` tuỳ chọn), thư mục tuỳ chọn `scripts/`, `references/`, `assets/`; khuyên `SKILL.md` dưới 500 dòng, tham chiếu file bằng đường dẫn tương đối một cấp. Chuẩn đòi `name` trùng tên thư mục cha. Gói `.zip` nhận `SKILL.md` ở gốc hoặc trong đúng một thư mục ở gốc trùng `name` (0.2 #094); khi xuất, `SKILL.md` ở gốc.
+- Thư viện: `gray-matter` đã được phép; `fflate` được thêm cho zip (0.2 #086, xem D5).
 
 ## Goals / Non-Goals
 
@@ -19,7 +19,7 @@
 - Quét nội dung (prompt injection, ký tự ẩn, URL lạ) — change 11. Mức rủi ro ở đây chỉ là gợi ý theo luật đơn giản (D7).
 - Chạy script, xem / chạy thử script trong màn kiểm duyệt — change 15.
 - Worker dùng version riêng (ghim version theo từng worker) — mọi worker theo version đang dùng của kỹ năng (D2).
-- Nhập từ **thư mục** (FR-03-05 nói "`.zip` / thư mục"): để sau, xem câu hỏi Q8 trong PR.
+- Nhập từ **thư mục** (FR-03-05 nói "`.zip` / thư mục"): để sau (0.2 #092).
 - Trình tạo kỹ năng bằng tiếng Việt — change 14 (tab "CHANGE 14" trên màn hình giữ nguyên nhãn sắp có).
 - Dọn blob không còn version nào dùng — chưa cần trong MVP (không có thao tác xoá version).
 
@@ -78,19 +78,20 @@ worker_skills        (id, company_id, worker_id → workers, skill_id → skills
 
 ### D3. Quay lại version cũ = trỏ lại, không tạo version mới
 
-"Quay lại v1" đặt `current_version_id` về v1 (phải `ever_approved`), ghi `AuditEvent skill.rolled_back` (trường `current_version_id`). Không tạo bản sao vì bản sao là version chưa duyệt, sẽ phải duyệt lại — trái "một thao tác" (FR-03-03). Version `pending` / `draft` đang mở giữ nguyên. Mức rủi ro của kỹ năng đi theo version đang dùng. Câu hỏi Q6 xác nhận.
+"Quay lại v1" đặt `current_version_id` về v1 (phải `ever_approved`), ghi `AuditEvent skill.rolled_back` (trường `current_version_id`). Không tạo bản sao vì bản sao là version chưa duyệt, sẽ phải duyệt lại — trái "một thao tác" (FR-03-03). Version `pending` / `draft` đang mở giữ nguyên. Mức rủi ro của kỹ năng đi theo version đang dùng. (0.2 #090.)
 
 ### D4. Đọc `SKILL.md` an toàn bằng `gray-matter`
 
 - `gray-matter` mặc định nhận `---js` / `---coffee` và **chạy** frontmatter đó (`eval`). Gọi với `engines` chỉ có `yaml`, đồng thời tự kiểm dòng mở đầu phải đúng `---` (không có tên ngôn ngữ) → khác thì từ chối `FRONTMATTER_NOT_YAML` trước khi gọi `gray-matter`. YAML đọc bằng schema an toàn (không tag tuỳ biến).
 - Frontmatter kiểm bằng Zod trong `packages/skills` (dùng chung web để báo lỗi khi gõ): luật ở spec `skill-package`. Trường ngoài chuẩn → cảnh báo, giữ nguyên vì lưu nguyên văn `SKILL.md`.
-- `title` (tên hiển thị tiếng Việt) = dòng `# …` đầu tiên của phần thân, không có thì dùng `name`. `name` cố định sau khi tạo: bản nháp đổi `name` → `400 NAME_IMMUTABLE` (Q9).
+- `title` (tên hiển thị tiếng Việt) = dòng `# …` đầu tiên của phần thân, không có thì dùng `name`. `name` cố định sau khi tạo: bản nháp đổi `name` → `400 NAME_IMMUTABLE` (0.2 #093).
 - `description`, `title`, `has_scripts` lưu thành cột của version để danh sách và runtime (change 5: "luôn biết tên + mô tả", FR-04-02) không phải đọc blob.
 
-### D5. Zip: dùng `fflate` (cần duyệt thêm thư viện)
+### D5. Zip: dùng `fflate` (0.2 #086)
 
 - **Chọn `fflate`** (MIT, không phụ thuộc, chạy cả Node lẫn trình duyệt): giải nén từng mục với bộ lọc trước khi inflate (bỏ qua `__MACOSX/`, từ chối mục mã hoá / symlink theo `attrs`), và inflate theo luồng nên đếm được byte thật để dừng ngay khi vượt 50 MB tổng / 200 file — không tin kích thước khai trong central directory. Xuất bằng `zipSync` với thứ tự đường dẫn cố định và thời gian cố định để cùng nội dung ra cùng file.
-- **Đã cân nhắc:** (a) tự viết đọc / ghi zip trên `node:zlib` (`inflateRaw`) — không thêm thư viện, nhưng phải tự xử lý central directory, zip64, data descriptor: ~300 dòng mã nhạy cảm bảo mật, dễ sai. Là phương án dự phòng nếu không duyệt `fflate`; (b) `yauzl` + `yazl` (MIT) — hai thư viện, API callback, chỉ chạy Node; (c) `adm-zip` — từng có lỗi zip slip, đọc cả file vào bộ nhớ không giới hạn. Câu hỏi Q2.
+- **Đã cân nhắc:** (a) tự viết đọc / ghi zip trên `node:zlib` (`inflateRaw`) — không thêm thư viện, nhưng phải tự xử lý central directory, zip64, data descriptor: ~300 dòng mã nhạy cảm bảo mật, dễ sai. Không chọn; (b) `yauzl` + `yazl` (MIT) — hai thư viện, API callback, chỉ chạy Node; (c) `adm-zip` — từng có lỗi zip slip, đọc cả file vào bộ nhớ không giới hạn.
+- **Gốc gói** (0.2 #094): nếu gốc zip không có `SKILL.md` nhưng chỉ có đúng một thư mục (bỏ qua file rác) và thư mục đó có `SKILL.md` với `name` trùng tên thư mục, bỏ tiền tố thư mục đó khỏi mọi đường dẫn; còn lại → `SKILL_MD_IN_SUBFOLDER`.
 - **Tải lên không cần `@fastify/multipart`**: route nhập nhận thân `application/zip` thô với `bodyLimit` 25 MB riêng của route (thêm content-type parser trả `Buffer` cho đúng route đó); vượt → `413 PACKAGE_TOO_LARGE`. Web gửi `fetch(…, { body: file })`. Route sửa file đi kèm của bản nháp dùng cách tương tự (`application/octet-stream`, đường dẫn trong query, kiểm như một mục zip).
 - **Luồng nhập**: `POST /api/skills/import?dryRun=1` trả danh sách kiểm tra (màn "Nhập .zip" hiện danh sách rồi mới bấm "Nhập làm bản nháp"); bấm thật gửi lại file không có `dryRun`. Server kiểm lại toàn bộ, không giữ trạng thái giữa hai lần gọi. Có lỗi → `422 PACKAGE_INVALID` kèm cùng danh sách, không ghi gì.
 - **Danh sách kiểm tra** là mảng `{ check, level: 'ok'|'warn'|'error', path?, params? }` với `check` là mã cố định (`ROOT_SKILL_MD`, `SKILL_MD_IN_SUBFOLDER`, `NAME_FORMAT`, `DESCRIPTION_MISSING`, `NAME_TAKEN`, `HAS_SCRIPTS`, `FILE_TYPE`, `CONTENT_MISMATCH`, `PATH_UNSAFE`, `TOO_LARGE_UNPACKED`, `TOO_MANY_FILES`, …). Web dịch mã sang tiếng Việt trong `vi.ts` (CLAUDE.md: chuỗi hiển thị nằm trong i18n).
@@ -114,7 +115,7 @@ Danh sách từ nằm trong một hằng số có test. Thay bằng kết quả 
 
 ### D8. Quyền: một action mới, luật giao trong `packages/core`
 
-- Ma trận (docs/requirements.md mục 1, rồi `permissions.ts`): thêm hàng **"Giao / gỡ skill cho worker"** → action `skill.assign` (Owner, Admin: `all`; Trưởng phòng: `own-department`; Nhân viên: —). Hàng "Duyệt skill" (`skill.approve`) phủ: duyệt / từ chối version, quay lại version cũ, lưu trữ kỹ năng, duyệt / từ chối yêu cầu giao. Xem thư viện không có hàng riêng: mọi thành viên đang hoạt động (`requireCompany`). Câu hỏi Q3.
+- Ma trận (docs/requirements.md mục 1, rồi `permissions.ts`): thêm hàng **"Giao / gỡ skill cho worker"** → action `skill.assign` (Owner, Admin: `all`; Trưởng phòng: `own-department`; Nhân viên: —). Hàng "Duyệt skill" (`skill.approve`) phủ: duyệt / từ chối version, quay lại version cũ, lưu trữ kỹ năng, duyệt / từ chối yêu cầu giao. Xem thư viện không có hàng riêng: mọi thành viên đang hoạt động (`requireCompany`). (0.2 #087.)
 - `requirePermission` chỉ trả lời "vai trò có quyền không". Phần còn lại là hàm thuần `decideAssignment(actor, worker, skill)` trong `packages/core/src/skills/assignment-rules.ts`, trả `'grant' | 'request' | { error }`:
 
 | Worker \ Người giao | Owner / Admin | Trưởng phòng (phòng mình) | Kỹ năng có script |
@@ -174,7 +175,7 @@ Package mới, không phụ thuộc DB / Fastify (dùng được ở web để k
 - `parseSkillMd(text)` → frontmatter đã kiểm + `title` + cảnh báo (D4).
 - `readZip(bytes, limits)` / `writeZip(files)` (D5), `checkFile(path, bytes)` (loại file, đường dẫn), `checkPackage(files)` → danh sách kiểm tra.
 - `suggestRisk(files)` (D7), `templates` (D10).
-- Hằng số giới hạn (`MAX_ZIP_BYTES = 25 MiB`, `MAX_UNPACKED_BYTES = 50 MiB`, `MAX_FILES = 200`, `MAX_PATH = 200`, `MAX_DEPTH = 5`, `MAX_SKILL_MD = 200 KiB`) — chờ chốt Q5.
+- Hằng số giới hạn (`MAX_ZIP_BYTES = 25 MiB`, `MAX_UNPACKED_BYTES = 50 MiB`, `MAX_FILES = 200`, `MAX_PATH = 200`, `MAX_DEPTH = 5`, `MAX_SKILL_MD = 200 KiB`) — theo 0.2 #089.
 
 ### D12. Nhật ký
 
@@ -182,13 +183,12 @@ Package mới, không phụ thuộc DB / Fastify (dùng được ở web để k
 
 ## Risks / Trade-offs
 
-- [Phần `worker-skills` cần bảng worker của change 2, mà change 2 phụ thuộc 1b đang apply] → Đề xuất apply change 3 sau change 2 (Q1). Nếu muốn apply trước, nhóm task 7–8 (giao kỹ năng) chuyển sang change 2 và change này vẫn đứng được với 1a.
+- [Phần `worker-skills` cần bảng worker của change 2, mà change 2 phụ thuộc 1b đang apply] → Chốt apply change 3 sau change 2 (0.2 #085, ROADMAP phụ thuộc `1a, 2`).
 - [Change lớn: thư viện + version + zip + mẫu + giao kỹ năng + 2 màn web, sát giới hạn "1–2 buổi"] → Nhóm task độc lập theo thứ tự `packages/skills` → DB → API → web; nếu quá giờ, tách nhóm 8 (web giao kỹ năng) thành change nhỏ tiếp theo mà không đổi spec.
 - [DB phình vì `bytea`] → Giới hạn 50 MB / gói, blob dùng chung giữa version; theo dõi kích thước bảng; chuyển `content` ra object storage khi có (#029) mà không đổi API.
 - [Zip độc (zip slip, zip bomb, symlink, tên trùng hoa thường)] → Kiểm từng mục trước khi inflate, đếm byte thật, từ chối cả gói; unit test có file zip độc tự tạo cho từng trường hợp.
 - [`gray-matter` chạy frontmatter `---js`] → Chặn trước khi gọi, chỉ bật engine YAML; test riêng (D4).
 - [Hai Admin duyệt hai version cùng lúc, hoặc duyệt khi đang có người gửi duyệt bản mới] → `FOR UPDATE` trên dòng `skills` cho mọi thao tác đổi trạng thái version / con trỏ; partial unique index là lớp cuối.
-- [Không thư viện zip được duyệt] → Phương án tự viết trên `node:zlib` (D5 a), thêm khoảng nửa buổi.
 - [Gợi ý rủi ro theo từ khoá sai nhiều] → Chỉ là gợi ý, người tạo đổi được, Owner / Admin chốt; thay bằng quét ở change 11.
 - [Xung đột với 1b khi merge] → 1b cũng thêm hàng vào ma trận mục 1 và `permissions.ts` (xung đột văn bản nhỏ); change này không sửa spec `audit-log` mà 1b đang sửa; số migration lấy số kế tiếp lúc apply.
 

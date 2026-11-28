@@ -71,11 +71,15 @@ File `.zip` SHALL tối đa 25 MB. Gói sau giải nén MUST tối đa 50 MB, t�
 - **THEN** việc giải nén dừng khi vượt giới hạn và gói bị từ chối với lý do quá dung lượng sau giải nén
 
 ### Requirement: Nhập kỹ năng từ zip
-Mọi vai trò SHALL nhập được kỹ năng từ `.zip` có `SKILL.md` ở gốc; kỹ năng mới ở trạng thái Nháp với v1 là bản nháp. API MUST trả danh sách kiểm tra (đạt, cảnh báo, lỗi) và MUST từ chối cả gói nếu có một lỗi, không tạo dữ liệu nào. Tên trùng kỹ năng chưa lưu trữ của công ty là lỗi.
+Mọi vai trò SHALL nhập được kỹ năng từ `.zip` có `SKILL.md` ở gốc, hoặc có đúng một thư mục ở gốc trùng `name` chứa `SKILL.md` (thư mục đó được coi là gốc gói); kỹ năng mới ở trạng thái Nháp với v1 là bản nháp. API MUST trả danh sách kiểm tra (đạt, cảnh báo, lỗi) và MUST từ chối cả gói nếu có một lỗi, không tạo dữ liệu nào. Tên trùng kỹ năng chưa lưu trữ của công ty là lỗi.
+
+#### Scenario: SKILL.md trong thư mục trùng name
+- **WHEN** zip chỉ có thư mục `lap-bao-gia/` ở gốc, trong đó có `SKILL.md` với `name: lap-bao-gia` và `references/bang-gia.md`
+- **THEN** gói được nhận với `SKILL.md` và `references/bang-gia.md` ở gốc kỹ năng
 
 #### Scenario: SKILL.md nằm trong thư mục con
-- **WHEN** zip chỉ có `bao-gia/SKILL.md`
-- **THEN** bị từ chối với lý do không tìm thấy `SKILL.md` ở gốc, gợi ý nén lại từ bên trong thư mục `bao-gia`
+- **WHEN** zip chỉ có `bao-gia/SKILL.md` với `name: lap-bao-gia`, hoặc có `SKILL.md` lồng sâu hơn một cấp, hoặc có thêm file khác ở gốc cạnh thư mục đó
+- **THEN** bị từ chối với lý do không tìm thấy `SKILL.md` ở gốc, gợi ý nén lại từ bên trong thư mục `bao-gia` hoặc đặt tên thư mục trùng `name`
 
 #### Scenario: Nhập thành công
 - **WHEN** Nhân viên nhập zip hợp lệ gồm `SKILL.md` và `references/bang-gia.md`
