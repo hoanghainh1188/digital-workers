@@ -20,6 +20,7 @@ Lý do: xem proposal.md. Hiện trạng code (sau change 0–4):
 - Quyền (ai được giao việc, worker có nhận việc không) kiểm tra trong code ở cả api và runner, không dựa vào prompt.
 
 **Non-Goals:**
+- Màn hình web chat trong `apps/web` và nút "Trò chuyện" trên hồ sơ worker: tách sang change 5b `add-webchat-ui`, làm sau khi có `docs/design/screens/web-chat.html` (#128, #142). Change này dừng ở API + WebSocket.
 - Streaming từng chữ về web chat: MVP gửi câu trả lời khi xong một bước, có báo "đang làm…". Streaming cần gateway có `stream` (để sau).
 - Tool connector, `Approval`, trạng thái `waiting_approval` (change 7, 9, 10) — change 7 thêm trạng thái bằng MODIFIED.
 - Gửi / nhận file trong web chat, nút bấm (change 7 cho nút duyệt).
@@ -36,8 +37,13 @@ chat_conversations (company_id, id, worker_id, member_id, status open|closed, cr
 tasks (company_id, id, worker_id, conversation_id, requested_by_member_id, source web|telegram|zalo|schedule,
        status, stop_reason, steps, charge_vnd, first_message_at, last_message_at,
        started_at, heartbeat_at, finished_at, created_at)
-task_messages (company_id, id, task_id, conversation_id, role user|worker|notice, content, created_at)
+task_messages (company_id, id, task_id NULL, conversation_id NOT NULL, role user|worker|notice,
+               client_message_id NULL, content, created_at)
+  └─ UNIQUE (company_id, conversation_id, client_message_id)
 ```
+
+- `task_messages.task_id` **cho phép NULL** (#134): khi worker không nhận việc (D5), tin của người dùng và tin notice được lưu mà không có `Task`. Mọi tin luôn có `conversation_id NOT NULL`; khoá ngoại `(company_id, task_id) → tasks` chỉ áp khi có giá trị.
+- `client_message_id` (uuid do web sinh, #135): chỉ có ở tin `user` gửi qua API; dùng để gửi lại an toàn (D3).
 
 - Mọi bảng có `company_id NOT NULL`, RLS `ENABLE + FORCE`, khoá ngoại ghép `(company_id, …)` như các bảng khác.
 - `task_messages` giữ **nội dung** (xoá sau 90 ngày, #019); `tasks` chỉ có số liệu, **không có nội dung** (giữ 1 năm). Tin "notice" là câu trả lời cố định của hệ thống (tạm nghỉ, hết ngân sách, đã dừng vì vượt giới hạn) — không qua mô hình.
@@ -61,7 +67,7 @@ collecting ──(hết cửa sổ gom)──► queued ──(runner nhận)─
   - `task.reap`: lịch mỗi phút (D9).
 - **Chống chạy trùng**: runner chỉ chạy khi chuyển được `UPDATE tasks SET status='running', started_at=now(), heartbeat_at=now() WHERE id=$1 AND status='queued' RETURNING …` (0 dòng → bỏ job). Một job bị giao hai lần vẫn chỉ chạy một lần.
 - **Tuần tự trong một cuộc trò chuyện**: mọi chuyển trạng thái của một cuộc trò chuyện giữ `pg_advisory_xact_lock(conversation)`. Khi một `Task` sang `queued` mà cuộc trò chuyện đang có `Task` `running`, nó **chờ**; `Task` đang chạy kết thúc thì gửi `task.run` cho `Task` `queued` cũ nhất. Như vậy câu trả lời về đúng thứ tự tin.
-- Song song giữa các cuộc trò chuyện: runner xử lý tối đa 4 `task.run` cùng lúc (cấu hình `RUNNER_CONCURRENCY`).
+- Song song giữa các cuộc trò chuyện: runner xử lý tối đa 4 `task.run` cùng lúc (cấu hình `RUNNER_CONCURRENCY`). Giới hạn này **chung toàn hệ thống**; MVP chưa giới hạn theo công ty (#140, xem Risks).
 - **Không tự chạy lại** một `Task` đã `running` (#132): lần gọi mô hình đã trả tiền, và từ change 9 tool có thể đã ghi dữ liệu. Lỗi mạng tạm thời đã được gateway thử lại trong một lần gọi.
 
 *Đã cân nhắc:* khoá bằng `SELECT … FOR UPDATE SKIP LOCKED` trên `tasks` tự viết thay pg-boss — không chọn vì pg-boss đã có hẹn giờ, lịch (change 8 cần), hết hạn job; dùng pg-boss nhưng **không tin** nó cho việc chống trùng (dựa vào UPDATE có điều kiện).
@@ -79,6 +85,7 @@ runner: task.start → queued → task.run → running
   runner: vòng lặp (D6) → lưu tin worker → NOTIFY ──► api ──WS──► web
 ```
 
+- **Gửi lại an toàn** (#135): body có `clientMessageId` (uuid, web sinh một lần cho mỗi tin). Api chèn tin với `ON CONFLICT (company_id, conversation_id, client_message_id) DO NOTHING`; trùng → trả lại tin đã lưu (200, không phải 201), **không** gom thêm vào `Task`, không tạo `Task` hay job mới, không lưu thêm notice. Thiếu `clientMessageId` hoặc không phải uuid → 400. Lần gửi bị 429 không lưu gì nên gửi lại sau vẫn dùng cùng id.
 - **Runner → api** bằng `LISTEN / NOTIFY` của PostgreSQL trên kênh `chat_events`; payload chỉ có `{ companyId, conversationId, messageId?, event }` (không nội dung). `pg_notify` gọi trong transaction lưu tin nên chỉ tới khi đã commit. Api giữ **một** kết nối `pg` riêng để `LISTEN`, nhận sự kiện thì đọc tin bằng `withCompany` rồi đẩy cho các socket đang theo dõi cuộc trò chuyện đó.
 - Mất kết nối WebSocket: web gọi lại `GET …/messages?after=<id>` khi nối lại, nên không mất tin.
 - Một api chạy nhiều tiến trình sau này vẫn đúng: mỗi tiến trình `LISTEN` riêng.
@@ -160,10 +167,11 @@ Danh sách tool đưa cho mô hình **dựng trong code** từ quyền của wor
 | Tool | Vào | Ra |
 |---|---|---|
 | `load_skill` | `name` | nội dung `SKILL.md` của version đang dùng + danh sách file đính kèm (đường dẫn, kích thước) |
-| `read_skill_file` | `name`, `path` | nội dung file văn bản của version đó, tối đa 100 KB, bọc `<data source="skill:<name>/<path>">` |
+| `read_skill_file` | `name`, `path` | nội dung file văn bản của version đó, tối đa **32 KB** (#138), bọc `<data source="skill:<name>/<path>">` |
 
 - `name` không thuộc danh sách có hiệu lực của worker → kết quả lỗi "không có kỹ năng này" (không lộ kỹ năng chưa giao hay của công ty khác). Đọc qua `withCompany` của công ty của `Task`.
 - `SKILL.md` là chỉ dẫn đã được Owner / Admin duyệt nên **không** bọc `<data>`; file đính kèm (bảng giá, mẫu, csv) là dữ liệu nên bọc.
+- File dài hơn 32 KB: cắt ở 32 KB (đúng ranh giới ký tự UTF-8), sau thẻ `</data>` thêm dòng của platform "File đã bị cắt, còn N KB chưa đọc." Lý do: kết quả tool nằm trong lịch sử và được gửi lại ở mỗi bước sau; 100 KB (vài chục nghìn token) × vài bước là chạm trần 8.000đ (#123).
 - File nhị phân (xlsx, docx, pdf, ảnh) → "file này chưa đọc được" (đọc file ở change sau). Script không bao giờ chạy (change 15).
 - Gọi tool lỗi → trả lỗi cho mô hình như kết quả tool, vẫn tính là một bước.
 
@@ -174,8 +182,9 @@ Danh sách tool đưa cho mô hình **dựng trong code** từ quyền của wor
 ### D9. Dọn `Task` treo
 
 - Runner cập nhật `heartbeat_at` sau mỗi bước và mỗi 15 giây khi đang chờ mô hình.
-- `task.reap` mỗi phút: `running` có `heartbeat_at` cũ hơn 60 giây → `failed` (`stop_reason = runner_lost`), tin notice "Việc bị gián đoạn, vui lòng gửi lại.", rồi gửi `task.run` cho `Task` `queued` kế tiếp của cuộc trò chuyện. `collecting` / `queued` quá 10 phút không có job → gửi lại job.
-- Khi runner tắt (SIGTERM, `onShutdown`): ngừng nhận job mới, chờ tối đa 30 giây cho `Task` đang chạy; còn lại để reaper xử lý.
+- `task.reap` mỗi phút: `running` có `heartbeat_at` cũ hơn 60 giây → `failed` (`stop_reason = runner_lost`), tin notice "Việc bị gián đoạn, vui lòng gửi lại.", rồi gửi `task.run` cho `Task` `queued` kế tiếp của cuộc trò chuyện.
+- `Task` mồ côi (#137): `collecting` đã quá hạn đóng cửa sổ gom, hoặc `queued` không có `Task` `running` đứng trước trong cuộc trò chuyện, mà **quá 2 phút** không đổi trạng thái → gửi lại job (`task.start` / `task.run`). Nhờ `UPDATE … WHERE status='queued'` (D2), gửi lại thừa cũng không chạy trùng. Trường hợp chính: `task.run` có `retryLimit 0`, runner chết sau khi lấy job nhưng trước `queued → running`.
+- Khi runner tắt (SIGTERM, `onShutdown`, #136): ngừng nhận job mới, tiếp tục gửi heartbeat, chờ tới **`TASK_MAX_SECONDS` + 10 giây** cho `Task` đang chạy (mọi `Task` tự dừng ở `TASK_MAX_SECONDS`), rồi thoát. `compose.prod.yaml` đặt `stop_grace_period: 200s` cho service `runner` (mặc định của Docker là 10 giây rồi kill). Nếu vẫn bị kill, reaper xử lý như runner chết.
 
 ### D10. `ChannelAdapter` (`packages/channels`)
 
@@ -219,7 +228,9 @@ interface ChannelAdapter {
 - [Không tự chạy lại `Task` khi runner chết] → người dùng phải gửi lại; đổi lại không trừ tiền hai lần và an toàn khi có tool ghi dữ liệu.
 - [Prompt injection qua file đính kèm của kỹ năng hoặc tin trong nhóm] → bọc `<data>` chỉ giảm rủi ro; change này không có tool ghi / gửi ra ngoài nên tác hại tối đa là câu trả lời sai. Change 9–10 dựa vào kiểm tra quyền trong code + `Approval`.
 - [LISTEN cần một kết nối riêng, đứt thì web không nhận tin] → api nối lại có lùi thời gian; web luôn tải bù bằng `after=<id>` khi nối lại WebSocket; `/health/ready` của api báo không sẵn sàng khi LISTEN đứt quá 30 giây.
-- [Change lớn: runner + runtime + kênh + API + WebSocket + màn hình] → task chia nhóm; dừng được sau nhóm 7 (chạy được bằng API + test) và tách web (nhóm 8–9) thành change 5b nếu quá 2 buổi (Q16).
+- [Một công ty có thể chiếm hết runner] → `RUNNER_CONCURRENCY = 4` chung toàn hệ thống; một công ty gửi nhiều việc dài cùng lúc làm công ty khác chờ tới 180 giây mỗi lượt. Chấp nhận trong MVP vì ít khách (#140). Thêm giới hạn theo công ty (mặc định 2 `Task` chạy cùng lúc) trước khi có nhiều khách, muộn nhất khi tăng `RUNNER_CONCURRENCY`.
+- [Deploy khi có `Task` đang chạy] → runner chờ tới `TASK_MAX_SECONDS` (D9) nên deploy runner mất tối đa ~3 phút; đổi lại không có `Task` Lỗi vì deploy.
+- [Change lớn: runner + runtime + kênh + API + WebSocket] → màn hình web chat đã tách sang change 5b `add-webchat-ui` (#142); change này chạy được bằng API + test.
 
 ## Migration Plan
 
@@ -230,3 +241,4 @@ interface ChannelAdapter {
 ## Open Questions
 
 - Giới hạn số kết nối WebSocket mỗi người (đặt tạm 5) — chỉnh sau khi đo trên staging, không đổi spec.
+- Prompt caching cho prompt hệ thống + kết quả tool đã đọc: giảm chi phí mỗi bước rõ rệt, nhưng gateway (change 4) chưa nhận chỉ dẫn cache. Đo chi phí thật trên staging rồi thêm vào `packages/llm` ở change sau; không đổi spec của change này.

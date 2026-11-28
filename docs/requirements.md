@@ -156,6 +156,15 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 131 | 2026-11-28 | Mô hình của worker: **một mô hình chung** đặt bằng `WORKER_MODEL`, mặc định **`anthropic:claude-sonnet-5-5`**. Mô hình chưa có giá trong bảng giá → `Task` báo lỗi. Chọn mô hình theo từng worker để sau. (`add-worker-runtime-webchat`) |
 | 132 | 2026-11-28 | Runner chết giữa chừng: `Task` **không tự chạy lại**; runner ngừng báo còn sống **quá 60 giây** → `Task` sang Lỗi, người nhắn nhận "Việc bị gián đoạn, vui lòng gửi lại." Không bao giờ trừ credit hai lần. (`add-worker-runtime-webchat`) |
 | 133 | 2026-11-28 | Web chat: tin văn bản **1–4.000 ký tự**, **20 tin / phút / người**, tối đa **5 kết nối WebSocket mỗi người**. Chưa gửi file. (`add-worker-runtime-webchat`) |
+| 134 | 2026-11-28 | `task_messages.task_id` **cho phép NULL**: khi worker không nhận việc, tin của người dùng và câu báo cố định được lưu mà không có `Task`. Mọi tin luôn có `conversation_id`. (`add-worker-runtime-webchat`) |
+| 135 | 2026-11-28 | Gửi tin web chat mang **`clientMessageId`** (uuid do web sinh, bắt buộc), duy nhất trong một cuộc trò chuyện. Gửi lại cùng id → trả lại tin đã lưu (**200**), không lưu thêm tin, không tạo `Task` / job mới, không trừ credit. (`add-worker-runtime-webchat`) |
+| 136 | 2026-11-28 | Runner tắt (deploy): ngừng nhận việc mới, chờ `Task` đang chạy tới **`TASK_MAX_SECONDS` + 10 giây** rồi thoát; `compose.prod.yaml` đặt **`stop_grace_period: 200s`** cho `runner`. Deploy không làm `Task` đang chạy bị Lỗi. (`add-worker-runtime-webchat`) |
+| 137 | 2026-11-28 | `Task` Đang gom quá hạn / Chờ chạy không có việc nào đứng trước mà **quá 2 phút** không đổi trạng thái → đưa lại vào hàng đợi (thay cho 10 phút). Không chạy trùng nhờ chuyển trạng thái có điều kiện. (`add-worker-runtime-webchat`) |
+| 138 | 2026-11-28 | `read_skill_file` đọc tối đa **32 KB** mỗi lần; dài hơn thì cắt, kèm dòng "File đã bị cắt, còn N KB chưa đọc." (100 KB gửi lại ở mỗi bước sẽ chạm trần 8.000đ, #123). Prompt caching để sau, khi gateway hỗ trợ. (`add-worker-runtime-webchat`) |
+| 139 | 2026-11-28 | Ma trận quyền mục 1, hàng "Giao việc cho worker", **sửa ngay trong PR propose** (không chờ apply): Trưởng phòng ✓ (phòng mình) theo #120; Nhân viên ✓ nếu có tên trong danh sách người được giao việc theo #119. (`add-worker-runtime-webchat`) |
+| 140 | 2026-11-28 | MVP **chưa giới hạn số `Task` chạy cùng lúc theo công ty**; `RUNNER_CONCURRENCY` (4) chung toàn hệ thống — rủi ro một công ty chiếm runner được chấp nhận khi còn ít khách. Thêm giới hạn theo công ty (mặc định 2) trước khi tăng `RUNNER_CONCURRENCY` hoặc mở cho nhiều khách. (`add-worker-runtime-webchat`) |
+| 141 | 2026-11-28 | Chủ sản phẩm xác nhận **giữ #127**: Owner / Admin không đọc được nội dung web chat của người khác, kể cả khi worker trả lời sai. Xem lại nội dung khi có lý do (kèm `AuditEvent`) để sau nếu khách cần. (`add-worker-runtime-webchat`) |
+| 142 | 2026-11-28 | **Tách change 5**: `add-worker-runtime-webchat` gồm nền, runner, runtime, kênh, API và WebSocket (chạy được bằng API + test); màn hình web chat và nút "Trò chuyện" thành change **5b `add-webchat-ui`**, propose sau khi có `docs/design/screens/web-chat.html` (#128). Thay cho câu hỏi tách giữa chừng (Q16). (`add-worker-runtime-webchat`) |
 
 ### 0.3. Đề xuất chờ chốt
 
@@ -207,7 +216,7 @@ Hiện không có đề xuất chờ chốt.
 | Tạo / sửa skill (bản nháp) | ✓ | ✓ | ✓ | ✓ |
 | Duyệt skill (duyệt / từ chối version, quay lại version cũ, lưu trữ, duyệt yêu cầu giao) | ✓ | ✓ | — | — |
 | Giao / gỡ skill cho worker | ✓ | ✓ | ✓ (phòng mình) | — |
-| Giao việc cho worker | ✓ | ✓ | ✓ | ✓ (nếu được gán) |
+| Giao việc cho worker | ✓ | ✓ | ✓ (phòng mình) | ✓ (nếu được gán: có tên trong danh sách người được giao việc) |
 | Duyệt việc của worker | theo quy tắc duyệt của worker |||
 | Kết nối kênh chat, connector | ✓ | ✓ | — | — |
 | Nạp credit, xem sao kê | ✓ | ✓ (xem) | — | — |
