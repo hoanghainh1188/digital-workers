@@ -127,6 +127,16 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 102 | 2026-11-28 | Giá trị ban đầu: tỉ giá **25.400đ / USD**, hệ số giá mặc định **1,30**. Không nạp sẵn giá mô hình; platform admin nhập giá thật. (`add-llm-gateway-and-credit`) |
 | 103 | 2026-11-28 | Điều chỉnh credit tay: tối đa **100.000.000đ mỗi lần**, bắt buộc lý do và ghi chú (≤ 200 ký tự), từ chối ghi chú có **từ 9 chữ số liền nhau** trở lên, chặn gửi trùng bằng `Idempotency-Key`. (`add-llm-gateway-and-credit`) |
 | 104 | 2026-11-28 | Công ty có từ trước change 4: migration tạo tài khoản credit 0đ và **cấp credit dùng thử** cho công ty đã có Owner xác minh email. (`add-llm-gateway-and-credit`) |
+| 105 | 2026-11-28 | **Nhân viên xem (chỉ xem)** hồ sơ worker của phòng mình; phòng khác chỉ thấy **số lượng** như Trưởng phòng (#047). Owner / Admin xem cả công ty. (`add-worker-profile`) |
+| 106 | 2026-11-28 | Đường chuyển trạng thái worker: Nháp → Thử việc → Chính thức ⇄ Tạm nghỉ; mọi trạng thái → Nghỉ việc. Trưởng phòng làm được **mọi đường với worker phòng mình trừ lên Chính thức** (chỉ đề nghị). **Không xoá worker**: bỏ bản nháp = Nghỉ việc (vẫn bắt buộc lý do, #054). Cho thử việc cần **mô tả công việc không trống**. (`add-worker-profile`) |
+| 107 | 2026-11-28 | **Gia hạn thử việc** thêm **7 hoặc 14 ngày** mỗi lần, không giới hạn số lần; người làm được là người đổi được trạng thái worker (Owner / Admin, Trưởng phòng phòng mình). (`add-worker-profile`) |
+| 108 | 2026-11-28 | Lên Chính thức mà ngân sách **vẫn là 300.000đ** (mặc định thử việc) thì **tự lên 800.000đ** (#050); đã chỉnh khác thì giữ nguyên. (`add-worker-profile`) |
+| 109 | 2026-11-28 | Ngân sách tháng: số nguyên **0 – 100.000.000đ**. Trưởng phòng **không sửa** ngân sách của worker đang **trên 2.000.000đ** (do Owner / Admin đặt), các trường khác vẫn sửa được. (`add-worker-profile`) |
+| 110 | 2026-11-28 | Người quản lý mặc định là trưởng phòng; phòng chưa có trưởng phòng thì là **người tạo**. Người quản lý **bị khoá hoặc chuyển phòng** → worker tự về trưởng phòng hiện tại, không có thì **để trống** ("Chưa có người quản lý"). **Người được giao thử**: tối đa **10**, người đang hoạt động trong phòng hoặc Owner / Admin, mặc định là người quản lý; người đổi được trạng thái thì sửa được danh sách. (`add-worker-profile`) |
+| 111 | 2026-11-28 | Ảnh đại diện worker MVP: **chữ cái đầu + một trong 8 màu**; tải ảnh lên để sau. (`add-worker-profile`) |
+| 112 | 2026-11-28 | **Không lưu trữ phòng ban còn worker chưa nghỉ việc** (bổ sung #064); worker đã nghỉ việc không chặn và vẫn hiện tên phòng cũ. (`add-worker-profile`) |
+| 113 | 2026-11-28 | Ma trận quyền mục 1 thêm hàng **"Xem hồ sơ worker"** (Owner, Admin cả công ty; Trưởng phòng, Nhân viên phòng mình), **"Sửa hồ sơ worker"** (Owner, Admin; Trưởng phòng phòng mình) và **"Đề nghị worker lên chính thức"** (Trưởng phòng phòng mình). "Tạm nghỉ / nghỉ việc" phủ cả đi làm lại và gia hạn thử việc; "Duyệt worker lên chính thức" phủ cả trả lại đề nghị. (Ghi vào bảng cùng code khi apply, task 1.1.) (`add-worker-profile`) |
+| 114 | 2026-11-28 | Hết hạn thử việc: change 2 **chỉ báo trên web** (hồ sơ, sơ đồ); email / tin nhắn nhắc người quản lý làm ở change 8 (`add-schedules`). Trưởng phòng **không rút lại** đề nghị chính thức trong MVP; Owner / Admin trả lại. (`add-worker-profile`) |
 
 ### 0.3. Đề xuất chờ chốt
 
