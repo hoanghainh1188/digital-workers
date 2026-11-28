@@ -30,7 +30,7 @@ last_updated: 2026-11-27
 | 1b | #26 | `add-departments-and-invites` | 1a | Phòng ban, người dùng, nhận lời mời | ✅ |
 | 2 | #3 | `add-worker-profile` | 1b | Sơ đồ nhân sự số, hồ sơ worker | ✅ |
 | 3 | #4 | `add-skill-library` | 1a, 2 | Thư viện kỹ năng | ✅ |
-| 4 | #5 | `add-llm-gateway-and-credit` | 1a | Số dư credit, quản trị platform (credit, giá, key) | ⏳ |
+| 4 | #5 | `add-llm-gateway-and-credit` | 1a | Số dư credit, quản trị platform (credit, giá, key) | ✅ |
 | 5 | #6 | `add-worker-runtime-webchat` | 2, 3, 4 | Web chat | ⏳ |
 | 5a | #21 | `deploy-staging` | 0 | — | ⏳ |
 | 6 | #7 | `add-channel-telegram` | 5, 5a | Kết nối kênh | ⏳ |
