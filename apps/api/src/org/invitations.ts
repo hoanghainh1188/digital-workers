@@ -17,6 +17,7 @@ import {
   recordAudit,
 } from '@dw/db';
 import { and, desc, eq, inArray, isNull, lt, sql } from '@dw/db/drizzle';
+import { currentActor, departmentHeadTaken } from './members.ts';
 import { denied, fieldError, notFound, type Outcome, ok, rejected } from './outcome.ts';
 
 export const INVITATION_TTL_DAYS = 7; // 0.2 #034
@@ -84,31 +85,6 @@ async function departmentName(tx: CompanyTx, id: string): Promise<string | null>
   return row?.name ?? null;
 }
 
-/** 409 when the department already has a Manager or a pending, unexpired Manager invite. */
-async function departmentHeadTaken(
-  tx: CompanyTx,
-  departmentId: string,
-  exceptInvitationId?: string,
-): Promise<boolean> {
-  const [head] = await tx
-    .select({ id: members.id })
-    .from(members)
-    .where(and(eq(members.departmentId, departmentId), eq(members.role, 'manager')));
-  if (head) return true;
-  const pending = await tx
-    .select({ id: invitations.id })
-    .from(invitations)
-    .where(
-      and(
-        eq(invitations.departmentId, departmentId),
-        eq(invitations.role, 'manager'),
-        eq(invitations.status, 'pending'),
-        sql`${invitations.expiresAt} > now()`,
-      ),
-    );
-  return pending.some((row) => row.id !== exceptInvitationId);
-}
-
 export type CreatedInvitation = { id: string; email: string; token: string };
 export type SkippedEmail = { email: string; reason: 'already_member' | 'already_invited' };
 
@@ -128,7 +104,10 @@ export async function createInvitations(
     departmentName: string | null;
   }>
 > {
-  if (!canAssignRole(actor.role, input.role)) return denied(MEMBER_RULE_ERRORS.roleRequiresOwner);
+  const fresh = await currentActor(tx, actor);
+  if (!fresh || !canAssignRole(fresh.role, input.role)) {
+    return denied(MEMBER_RULE_ERRORS.roleRequiresOwner);
+  }
   let deptName: string | null = null;
   if (input.departmentId !== null) {
     deptName = await departmentName(tx, input.departmentId);
@@ -229,13 +208,19 @@ export async function resendInvitation(
 ): Promise<Outcome<{ email: string; token: string; role: Role; departmentName: string | null }>> {
   const row = await lockPending(tx, id);
   if (!row) return notFound;
+  const fresh = await currentActor(tx, actor);
+  if (!fresh || !canManageMember(fresh.role, row.role)) {
+    return denied(MEMBER_RULE_ERRORS.roleRequiresOwner);
+  }
   if (row.status !== 'pending') return rejected(409, 'INVITATION_NOT_PENDING');
-  if (!canManageMember(actor.role, row.role)) return denied(MEMBER_RULE_ERRORS.roleRequiresOwner);
   let deptName: string | null = null;
   if (row.departmentId !== null) {
     deptName = await departmentName(tx, row.departmentId);
     if (deptName === null) return rejected(409, 'INVITATION_NOT_PENDING');
-    if (row.role === 'manager' && (await departmentHeadTaken(tx, row.departmentId, row.id))) {
+    if (
+      row.role === 'manager' &&
+      (await departmentHeadTaken(tx, row.departmentId, { exceptInvitationId: row.id }))
+    ) {
       return rejected(409, MEMBER_RULE_ERRORS.departmentHasHead);
     }
   }
@@ -260,8 +245,11 @@ export async function cancelInvitation(
 ): Promise<Outcome<{ id: string }>> {
   const row = await lockPending(tx, id);
   if (!row) return notFound;
+  const fresh = await currentActor(tx, actor);
+  if (!fresh || !canManageMember(fresh.role, row.role)) {
+    return denied(MEMBER_RULE_ERRORS.roleRequiresOwner);
+  }
   if (row.status !== 'pending') return rejected(409, 'INVITATION_NOT_PENDING');
-  if (!canManageMember(actor.role, row.role)) return denied(MEMBER_RULE_ERRORS.roleRequiresOwner);
   await tx
     .update(invitations)
     .set({ status: 'cancelled', updatedAt: new Date() })

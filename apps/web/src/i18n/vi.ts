@@ -139,6 +139,7 @@ export const vi = {
   'invite.signedInAs': 'Bạn đang đăng nhập bằng',
   'invite.acceptSignedIn': 'Nhận lời mời bằng tài khoản này',
   'invite.loading': 'Đang mở lời mời…',
+  'invite.retry': 'Thử lại',
   'invite.expired.title': 'Lời mời đã hết hạn',
   'invite.expired.body': 'Lời mời chỉ dùng được trong 7 ngày. Nhờ người mời gửi lại lời mời mới.',
   'invite.invalid.title': 'Lời mời không còn hiệu lực',

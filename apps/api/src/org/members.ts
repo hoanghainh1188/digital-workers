@@ -12,13 +12,14 @@ import {
   type CompanyTx,
   type Database,
   departments,
+  invitations,
   isUniqueViolation,
   memberProfiles,
   members,
   recordAudit,
   withCompany,
 } from '@dw/db';
-import { and, asc, eq, ilike, isNull, ne, or, sql } from '@dw/db/drizzle';
+import { and, asc, eq, ilike, isNull, or, sql } from '@dw/db/drizzle';
 import { denied, fieldError, notFound, type Outcome, ok, rejected } from './outcome.ts';
 
 export type MemberActor = { readonly memberId: string; readonly role: Role };
@@ -107,7 +108,7 @@ export async function listMembers(
  * number, so two concurrent requests queue instead of both passing (design D3).
  * Always taken first, before the target row, so lock order is the same everywhere.
  */
-async function lockActiveOwners(tx: CompanyTx): Promise<number> {
+export async function lockActiveOwners(tx: CompanyTx): Promise<number> {
   const rows = await tx
     .select({ id: members.id })
     .from(members)
@@ -121,7 +122,7 @@ async function lockActiveOwners(tx: CompanyTx): Promise<number> {
  * The actor's role as it is now, read inside the transaction: the request context
  * was resolved before this transaction and may be stale (e.g. demoted meanwhile).
  */
-async function currentActor(tx: CompanyTx, actor: MemberActor): Promise<MemberActor | null> {
+export async function currentActor(tx: CompanyTx, actor: MemberActor): Promise<MemberActor | null> {
   const [row] = await tx
     .select({ role: members.role, status: members.status })
     .from(members)
@@ -153,6 +154,35 @@ async function activeDepartment(tx: CompanyTx, id: string): Promise<boolean> {
     .where(and(eq(departments.id, id), isNull(departments.archivedAt)))
     .for('share');
   return Boolean(row);
+}
+
+/**
+ * True when the department already has a Manager (other than `exceptMemberId`) or a
+ * pending, unexpired Manager invitation (other than `exceptInvitationId`), so a
+ * second head can come neither from a role change nor from accepting an invite.
+ */
+export async function departmentHeadTaken(
+  tx: CompanyTx,
+  departmentId: string,
+  except: { exceptMemberId?: string; exceptInvitationId?: string } = {},
+): Promise<boolean> {
+  const heads = await tx
+    .select({ id: members.id })
+    .from(members)
+    .where(and(eq(members.departmentId, departmentId), eq(members.role, 'manager')));
+  if (heads.some((row) => row.id !== except.exceptMemberId)) return true;
+  const pending = await tx
+    .select({ id: invitations.id })
+    .from(invitations)
+    .where(
+      and(
+        eq(invitations.departmentId, departmentId),
+        eq(invitations.role, 'manager'),
+        eq(invitations.status, 'pending'),
+        sql`${invitations.expiresAt} > now()`,
+      ),
+    );
+  return pending.some((row) => row.id !== except.exceptInvitationId);
 }
 
 /** PATCH /api/members/:id: change role and / or department (spec member-management). */
@@ -195,17 +225,9 @@ export async function patchMember(
     return rejected(409, MEMBER_RULE_ERRORS.lastOwner);
   }
   if (role === 'manager' && departmentId !== null) {
-    const [head] = await tx
-      .select({ id: members.id })
-      .from(members)
-      .where(
-        and(
-          eq(members.departmentId, departmentId),
-          eq(members.role, 'manager'),
-          ne(members.id, id),
-        ),
-      );
-    if (head) return rejected(409, MEMBER_RULE_ERRORS.departmentHasHead);
+    if (await departmentHeadTaken(tx, departmentId, { exceptMemberId: id })) {
+      return rejected(409, MEMBER_RULE_ERRORS.departmentHasHead);
+    }
   }
 
   await tx.update(members).set({ role, departmentId }).where(eq(members.id, id));
@@ -309,7 +331,6 @@ export function createLastSeenTracker(
     const last = touched.get(member.memberId);
     if (last !== undefined && time - last < HOUR) return;
     if (touched.size > 50_000) touched.clear();
-    touched.set(member.memberId, time);
     await withCompany(database, member.companyId, (tx) =>
       tx
         .update(members)
@@ -321,5 +342,7 @@ export function createLastSeenTracker(
           ),
         ),
     );
+    // Noted only after the write, so a failed update is retried on the next request.
+    touched.set(member.memberId, time);
   };
 }

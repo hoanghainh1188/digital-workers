@@ -63,10 +63,7 @@ export function registerDepartmentRoutes(app: FastifyInstance, deps: OrgRouteDep
         departmentWriteError,
       );
       if (!outcome.ok) {
-        return sendFailure(request, reply, deps, outcome, {
-          type: 'member',
-          id: request.body.headMemberId ?? '',
-        });
+        return sendFailure(request, reply, deps, outcome, { type: 'department', id: 'new' });
       }
       return reply.status(201).send(outcome.value);
     },

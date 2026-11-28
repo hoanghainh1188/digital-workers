@@ -1,4 +1,4 @@
-import type { DepartmentInput, DepartmentPatchInput } from '@dw/core';
+import { can, type DepartmentInput, type DepartmentPatchInput, type Role } from '@dw/core';
 import {
   type CompanyTx,
   departments,
@@ -9,7 +9,8 @@ import {
   recordAudit,
 } from '@dw/db';
 import { and, asc, count, eq, isNull, lt, ne, sql } from '@dw/db/drizzle';
-import { fieldError, notFound, type Outcome, ok, rejected } from './outcome.ts';
+import { currentActor, departmentHeadTaken, lockActiveOwners } from './members.ts';
+import { denied, fieldError, notFound, type Outcome, ok, rejected } from './outcome.ts';
 
 /** Members shown as avatars on a department card. */
 const AVATARS_PER_DEPARTMENT = 4;
@@ -23,7 +24,18 @@ export type DepartmentView = {
   members: { id: string; name: string }[];
 };
 
-export type Actor = { readonly memberId: string };
+export type Actor = { readonly memberId: string; readonly role: Role };
+
+/**
+ * First steps of every department write: the same Owner-row lock that member writes
+ * take first (one lock order everywhere, no deadlock with PATCH /api/members), then
+ * the actor's role as it is now (the request context may be stale).
+ */
+async function beginWrite(tx: CompanyTx, actor: Actor): Promise<Outcome<null>> {
+  await lockActiveOwners(tx);
+  const fresh = await currentActor(tx, actor);
+  return fresh && can(fresh.role, 'org.manage') !== false ? ok(null) : denied('FORBIDDEN');
+}
 
 /**
  * Non-archived departments with head, member count and a few names (design D5).
@@ -89,6 +101,8 @@ export async function createDepartment(
   actor: Actor,
   input: DepartmentInput,
 ): Promise<Outcome<{ id: string }>> {
+  const begun = await beginWrite(tx, actor);
+  if (!begun.ok) return begun;
   const [created] = await tx
     .insert(departments)
     .values({
@@ -118,6 +132,8 @@ export async function updateDepartment(
   id: string,
   patch: DepartmentPatchInput,
 ): Promise<Outcome<{ id: string; changed: string[] }>> {
+  const begun = await beginWrite(tx, actor);
+  if (!begun.ok) return begun;
   const current = await lockDepartment(tx, id);
   if (!current) return notFound;
   const changed: string[] = [];
@@ -205,6 +221,10 @@ export async function setDepartmentHead(
     if (row.status !== 'active' || (row.role !== 'manager' && row.role !== 'member')) {
       return fieldError('headMemberId', 'head_not_eligible');
     }
+    // A pending Manager invitation would collide with this head on accept.
+    if (await departmentHeadTaken(tx, departmentId, { exceptMemberId: current?.id ?? row.id })) {
+      return rejected(409, 'DEPARTMENT_HAS_HEAD');
+    }
     candidate = row;
   }
   if (!current && !candidate) return ok({ changed: false });
@@ -247,6 +267,8 @@ export async function archiveDepartment(
   actor: Actor,
   id: string,
 ): Promise<Outcome<{ id: string }>> {
+  const begun = await beginWrite(tx, actor);
+  if (!begun.ok) return begun;
   const current = await lockDepartment(tx, id);
   if (!current) return notFound;
   const [people] = await tx

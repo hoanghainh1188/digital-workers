@@ -74,8 +74,20 @@ export function InvitePage() {
     );
   }
   if (preview.error) {
-    const expired =
-      preview.error instanceof ApiError && preview.error.code === 'INVITATION_EXPIRED';
+    // Only a 410 means the link is dead; a 429 or network error keeps the token for a retry.
+    if (!(preview.error instanceof ApiError) || preview.error.status !== 410) {
+      return (
+        <AuthLayout>
+          <Callout tone="danger" role="alert">
+            {preview.error instanceof ApiError ? t('app.error.generic') : t('app.error.network')}
+          </Callout>
+          <Button type="button" variant="outline" onClick={() => preview.refetch()}>
+            {t('invite.retry')}
+          </Button>
+        </AuthLayout>
+      );
+    }
+    const expired = preview.error.code === 'INVITATION_EXPIRED';
     return <Unusable kind={expired ? 'expired' : 'invalid'} />;
   }
   return <AcceptInvitation token={token} invitation={preview.data} />;
@@ -140,6 +152,7 @@ function AcceptInvitation({ token, invitation }: { token: string; invitation: Pr
     },
   });
 
+  const { mutate } = accept;
   const signedIn = me.data ?? null;
   const sameEmail = signedIn?.user.email.toLowerCase() === invitation.email;
 
@@ -147,9 +160,9 @@ function AcceptInvitation({ token, invitation }: { token: string; invitation: Pr
   useEffect(() => {
     if (signedIn && !signedIn.member && sameEmail && sessionStorage.getItem(GOOGLE_KEY)) {
       sessionStorage.removeItem(GOOGLE_KEY);
-      accept.mutate({ token });
+      mutate({ token });
     }
-  }, [signedIn, sameEmail, token, accept]);
+  }, [signedIn, sameEmail, token, mutate]);
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();

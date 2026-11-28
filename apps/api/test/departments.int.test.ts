@@ -240,6 +240,49 @@ describe('departments (spec departments)', () => {
     });
   });
 
+  describe('review fixes: pending Manager invitations and lock order', () => {
+    it('setting a head while a Manager invitation is pending → 409, invitation still usable', async () => {
+      const dept = await createDepartment(t.app, a.owner.cookie, `Chờ ${randomUUID().slice(0, 6)}`);
+      const res = await call(t.app, 'POST', '/api/invitations', a.owner.cookie, {
+        emails: [uniqueEmail('lead')],
+        role: 'manager',
+        departmentId: dept,
+      });
+      expect(res.statusCode).toBe(201);
+      const p = await addPerson(t, harness, a.companyId, 'member', dept);
+      const head = await call(t.app, 'PATCH', `/api/departments/${dept}`, a.owner.cookie, {
+        headMemberId: p.memberId,
+      });
+      expect(head.statusCode).toBe(409);
+      expect(head.json().error.code).toBe('DEPARTMENT_HAS_HEAD');
+      const promote = await call(t.app, 'PATCH', `/api/members/${p.memberId}`, a.owner.cookie, {
+        role: 'manager',
+      });
+      expect(promote.statusCode).toBe(409);
+      expect(await memberRow(harness, a.companyId, p.memberId)).toMatchObject({ role: 'member' });
+    });
+
+    it('a head change racing a member move never deadlocks (no 500)', async () => {
+      for (let round = 0; round < 5; round += 1) {
+        const dept = await createDepartment(
+          t.app,
+          a.owner.cookie,
+          `Đua ${randomUUID().slice(0, 6)}`,
+        );
+        const x = await addPerson(t, harness, a.companyId, 'member', a.departmentId);
+        const results = await Promise.all([
+          call(t.app, 'PATCH', `/api/members/${x.memberId}`, a.admin.cookie, {
+            departmentId: dept,
+          }),
+          call(t.app, 'PATCH', `/api/departments/${dept}`, a.owner.cookie, {
+            headMemberId: x.memberId,
+          }),
+        ]);
+        for (const res of results) expect(res.statusCode).toBeLessThan(500);
+      }
+    });
+  });
+
   describe('Lưu trữ thay cho xoá', () => {
     it('Lưu trữ phòng trống: gone from the list, row kept, AuditEvent', async () => {
       const id = await createDepartment(t.app, a.owner.cookie, 'Kho vận cũ');

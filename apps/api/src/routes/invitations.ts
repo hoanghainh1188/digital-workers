@@ -245,7 +245,6 @@ export function registerInvitationRoutes(app: FastifyInstance, deps: InvitationR
           );
         }
         userId = ctx.userId;
-        await markEmailVerified(database, userId);
       } else {
         if (name === undefined || password === undefined) {
           return reply.status(400).send({
@@ -299,6 +298,8 @@ export function registerInvitationRoutes(app: FastifyInstance, deps: InvitationR
         if (outcome.kind !== 'rejected') throw new Error('unexpected outcome accepting invitation');
         return sendError(reply, outcome.status, outcome.code, outcome.code);
       }
+      // Holding the token proves the inbox (0.2 #033); only once the membership exists.
+      if (ctx) await markEmailVerified(database, userId);
       return reply.status(201).send({ companyId: found.companyId });
     },
   );

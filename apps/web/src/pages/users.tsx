@@ -3,7 +3,7 @@ import { can, ROLES, type Role } from '@dw/core/permissions';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Search, UserPlus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SignedInMe } from '@/components/app/app-shell';
 import { PageHeader } from '@/components/app/page-header';
 import { Avatar } from '@/components/ui/avatar';
@@ -64,15 +64,24 @@ export function UsersPage({ me, search }: { me: SignedInMe; search: UsersSearch 
   const [failure, setFailure] = useState<string | null>(null);
   const [q, setQ] = useState(search.q ?? '');
 
-  // Search box → URL after a short pause, so the filtered list can be shared.
+  // The search box follows the URL (Back / Forward, shared links, "Xoá bộ lọc")…
+  const pushed = useRef(search.q);
   useEffect(() => {
+    if (search.q !== pushed.current) {
+      pushed.current = search.q;
+      setQ(search.q ?? '');
+    }
+  }, [search.q]);
+  // …and typing updates the URL after a short pause, so the filtered list can be shared.
+  useEffect(() => {
+    const value = q.trim() || undefined;
+    if (value === pushed.current) return;
     const id = setTimeout(() => {
-      const value = q.trim() || undefined;
-      if (value !== search.q)
-        navigate({ search: (prev) => ({ ...prev, q: value }), replace: true });
+      pushed.current = value;
+      navigate({ search: (prev) => ({ ...prev, q: value }), replace: true });
     }, 300);
     return () => clearTimeout(id);
-  }, [q, search.q, navigate]);
+  }, [q, navigate]);
 
   const setFilter = (patch: Partial<UsersSearch>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch }) });
