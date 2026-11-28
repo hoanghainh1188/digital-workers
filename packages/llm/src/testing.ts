@@ -15,6 +15,16 @@ export type FakeReply = {
   readonly cacheWriteTokens?: number;
   /** Throw an APICallError with this HTTP status instead of answering. */
   readonly failWithStatus?: number;
+  /** Ask for these tools instead of (or next to) answering with text. */
+  readonly toolCalls?: ReadonlyArray<{ readonly toolName: string; readonly input: unknown }>;
+  /** Answer after this long; an aborted call rejects without usage (never charged). */
+  readonly delayMs?: number;
+};
+
+/** What the gateway sent to the fake model on one call. */
+export type FakeRequest = {
+  readonly prompt: unknown;
+  readonly toolNames: readonly string[];
 };
 
 export type FakeCall = {
@@ -28,19 +38,30 @@ export type FakeModels = ModelResolver & {
   readonly calls: FakeCall[];
   /** Reply for the next calls (default: 1.000 in / 500 out). */
   reply: FakeReply;
+  /** Replies used first, one per call, in order; then `reply`. */
+  script: FakeReply[];
+  /** Prompt and tool names of every call that reached the model. */
+  readonly requests: FakeRequest[];
 };
 
 export function createFakeModels(initial?: FakeReply): FakeModels {
   const fake: FakeModels = {
     calls: [],
     reply: initial ?? { text: 'Xin chào', inputTokens: 1000, outputTokens: 500 },
+    script: [],
+    requests: [],
     resolve(provider, modelId, apiKey) {
       fake.calls.push({ provider, modelId, apiKey });
-      const reply = fake.reply;
+      const reply = fake.script.shift() ?? fake.reply;
       return new MockLanguageModelV4({
         provider,
         modelId,
-        doGenerate: async () => {
+        doGenerate: async (options) => {
+          fake.requests.push({
+            prompt: options.prompt,
+            toolNames: (options.tools ?? []).map((tool) => tool.name),
+          });
+          if (reply.delayMs) await wait(reply.delayMs, options.abortSignal);
           if (reply.failWithStatus) {
             throw new APICallError({
               message: `fake ${reply.failWithStatus}`,
@@ -53,9 +74,22 @@ export function createFakeModels(initial?: FakeReply): FakeModels {
           }
           const cacheRead = reply.cacheReadTokens ?? 0;
           const cacheWrite = reply.cacheWriteTokens ?? 0;
+          const calls = (reply.toolCalls ?? []).map((call, index) => ({
+            type: 'tool-call' as const,
+            toolCallId: `call-${fake.calls.length}-${index}`,
+            toolName: call.toolName,
+            input: JSON.stringify(call.input),
+          }));
+          const text =
+            reply.text === undefined && calls.length > 0
+              ? []
+              : [{ type: 'text' as const, text: reply.text ?? 'Xin chào' }];
           return {
-            content: [{ type: 'text', text: reply.text ?? 'Xin chào' }],
-            finishReason: { unified: 'stop', raw: 'stop' },
+            content: [...text, ...calls],
+            finishReason:
+              calls.length > 0
+                ? { unified: 'tool-calls', raw: 'tool_use' }
+                : { unified: 'stop', raw: 'stop' },
             usage: {
               inputTokens: {
                 total: reply.inputTokens + cacheRead + cacheWrite,
@@ -72,4 +106,19 @@ export function createFakeModels(initial?: FakeReply): FakeModels {
     },
   };
   return fake;
+}
+
+function wait(ms: number, signal: AbortSignal | undefined): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(signal.reason ?? new Error('aborted'));
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        reject(signal.reason ?? new Error('aborted'));
+      },
+      { once: true },
+    );
+  });
 }

@@ -25,18 +25,31 @@ export type RequestLimit = { readonly max: number; readonly windowMs: number };
 
 /** Fixed-window per-IP limit as a preHandler (sign-up and company creation). */
 export function perIpLimit(limit: RequestLimit, now: () => number = Date.now) {
+  return perKeyLimit(limit, (request) => request.ip, now);
+}
+
+/**
+ * Fixed-window limit keyed by `keyOf` (e.g. the member for web chat, 0.2 #133). A request
+ * over the limit gets 429 and goes no further, so nothing is stored.
+ */
+export function perKeyLimit(
+  limit: RequestLimit,
+  keyOf: (request: FastifyRequest) => string,
+  now: () => number = Date.now,
+) {
   const windows = new Map<string, { count: number; endsAt: number }>();
-  return async function ipLimit(request: FastifyRequest, reply: FastifyReply) {
+  return async function limitByKey(request: FastifyRequest, reply: FastifyReply) {
     const time = now();
     if (windows.size > 50_000) {
-      for (const [key, entry] of windows) if (entry.endsAt <= time) windows.delete(key);
+      for (const [old, entry] of windows) if (entry.endsAt <= time) windows.delete(old);
     }
-    const current = windows.get(request.ip);
+    const key = keyOf(request);
+    const current = windows.get(key);
     const entry =
       current && current.endsAt > time
         ? { count: current.count + 1, endsAt: current.endsAt }
         : { count: 1, endsAt: time + limit.windowMs };
-    windows.set(request.ip, entry);
+    windows.set(key, entry);
     if (entry.count > limit.max) {
       reply.header('retry-after', Math.ceil((entry.endsAt - time) / 1000));
       return sendError(reply, 429, 'TOO_MANY_REQUESTS', 'Too many requests');

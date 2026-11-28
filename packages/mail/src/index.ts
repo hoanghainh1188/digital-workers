@@ -14,4 +14,5 @@ export {
   type RenderedEmail,
   resetPasswordTemplate,
   verifyEmailTemplate,
+  workerBudgetExhaustedTemplate,
 } from './templates/vi.ts';

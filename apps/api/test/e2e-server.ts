@@ -6,6 +6,7 @@
 import type { AddressInfo } from 'node:net';
 import { createLogger, loadConfigOrExit, onShutdown } from '@dw/core';
 import { createDatabase } from '@dw/db';
+import { createRecordingQueue } from '@dw/db/queue';
 import { createMemoryMailer } from '@dw/mail';
 import { buildApp } from '../src/app.ts';
 import { apiConfigSchema } from '../src/config.ts';
@@ -28,6 +29,8 @@ const app = buildApp({
     ipRateLimit: false,
     signupLimit: { max: 1_000, windowMs: 60_000 },
     invitationLimit: { max: 1_000, windowMs: 60_000 },
+    // Web chat has no screen yet (change 5b): jobs are recorded, not run.
+    chatQueue: createRecordingQueue(),
   }),
 });
 app.get('/__e2e/emails', async (request) => {

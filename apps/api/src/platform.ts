@@ -1,7 +1,9 @@
 import { grantTrial, type Notifier } from '@dw/billing';
+import { createBudgetAlerter } from '@dw/channels';
 import { describeError } from '@dw/core';
 import { createSecretBox } from '@dw/crypto';
-import { type Database, memberForUser, recordAudit, withCompany } from '@dw/db';
+import { type Database, memberForUser, messageById, recordAudit, withCompany } from '@dw/db';
+import type { TaskQueue } from '@dw/db/queue';
 import {
   createProviderKeyStore,
   type KeyCheck,
@@ -19,6 +21,7 @@ import {
   isPlatformAdminEmail,
   readSessionUser,
 } from './auth/index.ts';
+import { createChatHub } from './chat/hub.ts';
 import { type ApiConfig, googleCredentials } from './config.ts';
 import { emailNotifier } from './credit/notifier.ts';
 import { createLastSeenTracker } from './org/members.ts';
@@ -46,6 +49,11 @@ export type PlatformOptions = {
   readonly notifier?: Notifier;
   readonly now?: () => Date;
   readonly keys?: ProviderKeyStore;
+  /** pg-boss in production (main.ts); a recording queue in tests. */
+  readonly chatQueue: TaskQueue;
+  /** Web chat messages per member. Default: 20 per minute (0.2 #133). */
+  readonly chatSendLimit?: RequestLimit;
+  readonly chatRecheckMs?: number;
 };
 
 /** Wires auth, request context, guards and services for `buildApp` (main and tests). */
@@ -104,6 +112,25 @@ export function createPlatform(options: PlatformOptions): PlatformDeps {
         logger: options.logger,
       }),
     now: options.now,
+    chat: {
+      queue: options.chatQueue,
+      sendLimit: options.chatSendLimit ?? { max: 20, windowMs: 60_000 },
+      onBudgetExhausted: createBudgetAlerter({
+        database,
+        mailer: options.mailer,
+        webOrigin: config.WEB_ORIGIN,
+        logger: options.logger,
+      }),
+      onQueueError: (error: unknown) =>
+        options.logger.error({ error: describeError(error) }, 'task job not sent'),
+      hub: createChatHub({
+        readMessage: (companyId, messageId) =>
+          withCompany(database, companyId, (tx) => messageById(tx, messageId)),
+        onError: (error) =>
+          options.logger.error({ error: describeError(error) }, 'chat push failed'),
+      }),
+      recheckMs: options.chatRecheckMs,
+    },
     resolveContext: async (headers) => {
       const user = await readSessionUser(auth, headers);
       if (!user) return null;

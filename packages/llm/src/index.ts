@@ -14,4 +14,5 @@ export {
   providerKeyAad,
 } from './keys.ts';
 export { type ModelResolver, providerModels, readUsage } from './models.ts';
+export { declareTool, type ModelMessage, type ToolInputSchema, type ToolSet } from './tools.ts';
 export { type KeyCheck, ProviderUnreachableError, verifyProviderKey } from './verify.ts';

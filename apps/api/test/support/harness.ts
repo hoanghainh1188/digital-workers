@@ -1,4 +1,5 @@
 import { createDatabase, type Database } from '@dw/db';
+import { createRecordingQueue } from '@dw/db/queue';
 import { startTestPostgres, type TestPostgres } from '@dw/db/testing';
 import { createMemoryMailer, type SentEmail } from '@dw/mail';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
@@ -58,7 +59,8 @@ export type TestApp = {
 export function makeApp(
   harness: Harness,
   overrides: Partial<PlatformOptions> & Pick<AppDeps, 'trustProxy'> = {},
-): TestApp {
+): TestApp & { readonly queue: ReturnType<typeof createRecordingQueue> } {
+  const queue = createRecordingQueue();
   const capture = captureLogger();
   const { mailer, sent } = createMemoryMailer();
   const platform = createPlatform({
@@ -69,6 +71,7 @@ export function makeApp(
     ipRateLimit: false,
     signupLimit: { max: 10_000, windowMs: 60_000 },
     invitationLimit: { max: 10_000, windowMs: 60_000 },
+    chatQueue: queue,
     ...overrides,
   });
   const app = buildApp({
@@ -77,7 +80,7 @@ export function makeApp(
     checkDatabase: async () => true,
     platform,
   });
-  return { app, platform, sent, logs: capture.text };
+  return { app, platform, sent, logs: capture.text, queue };
 }
 
 /** "name=value; name2=value2" from a response's Set-Cookie headers. */

@@ -1,3 +1,22 @@
+export {
+  CHAT_EVENTS_CHANNEL,
+  type ChatEvent,
+  type ChatMessage,
+  type ConversationRow,
+  conversationById,
+  conversationHistory,
+  insertMessage,
+  listMessages,
+  lockConversation,
+  type MessageRole,
+  messageByClientId,
+  messageById,
+  type NewMessage,
+  notifyChat,
+  openConversation,
+  startNewConversation,
+  taskUserMessages,
+} from './chat.ts';
 export { createDatabase, type Database } from './client.ts';
 export { migrationsFolder, runMigrations } from './migrate.ts';
 export { ping } from './ping.ts';
@@ -9,6 +28,25 @@ export {
   workerSkillTarget,
   workersHoldingSkill,
 } from './skills.ts';
+export {
+  type AttentionKind,
+  claimTask,
+  closeWindowIfDue,
+  databaseNow,
+  type FinalStatus,
+  finishTask,
+  heartbeat,
+  joinOrCreateTask,
+  nextRunnable,
+  recordStep,
+  type TaskIntake,
+  type TaskNeedingAttention,
+  type TaskRow,
+  type TaskSource,
+  taskById,
+  tasksNeedingAttention,
+  type WindowOutcome,
+} from './tasks.ts';
 export {
   type AuditEventInput,
   type CompanyTx,

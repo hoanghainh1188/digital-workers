@@ -3,5 +3,6 @@
 
 export * from './billing.ts';
 export * from './skills.ts';
+export * from './tasks.ts';
 export * from './tenancy.ts';
 export * from './workers.ts';
