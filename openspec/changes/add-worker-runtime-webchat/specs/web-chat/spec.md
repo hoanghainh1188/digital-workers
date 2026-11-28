@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Kênh web chat trong web quản lý: người có quyền giao việc trò chuyện với worker, gửi việc và nhận câu trả lời gần như tức thời. Đây là kênh duy nhất của worker Thử việc (FR-02-03).
+Kênh web chat trong web quản lý: người có quyền giao việc trò chuyện với worker, gửi việc và nhận câu trả lời gần như tức thời. Đây là kênh duy nhất của worker Thử việc (FR-02-03). Spec này mô tả API và kết nối thời gian thực; màn hình thuộc change `add-webchat-ui`.
 
 ## ADDED Requirements
 
@@ -19,7 +19,7 @@ Worker Thử việc SHALL chỉ nhận tin web chat từ người có tên trong
 
 #### Scenario: Owner không có tên trong danh sách
 - **WHEN** Owner chưa có tên trong danh sách người được giao thử gửi tin cho worker Thử việc
-- **THEN** API trả 403 và màn hình gợi ý thêm mình vào danh sách người được giao thử
+- **THEN** API trả 403 với lỗi cho biết người đó chưa có tên trong danh sách người được giao thử, và không có `Task`
 
 ### Requirement: Ai được trò chuyện với worker Chính thức
 Worker Chính thức SHALL nhận tin web chat từ Owner, Admin, Trưởng phòng của phòng worker và Nhân viên có tên trong danh sách người được giao việc của worker. Người khác MUST bị từ chối với 403.
@@ -84,16 +84,31 @@ Người được trò chuyện SHALL gửi được tin văn bản 1–4.000 k�
 - **WHEN** một người gửi tin thứ 21 trong cùng một phút
 - **THEN** API trả 429 và tin đó không được lưu
 
-### Requirement: Nhận câu trả lời gần như tức thời
-Trang web chat SHALL nhận tin của worker, trạng thái "đang làm…" và câu báo của hệ thống mà không cần tải lại trang. Mất kết nối rồi nối lại MUST tải bù đủ các tin đã có trong lúc mất.
+### Requirement: Gửi lại cùng tin không tạo việc trùng
+Mỗi tin gửi lên SHALL mang mã tin do web sinh (`clientMessageId`, uuid). Gửi lại cùng mã trong cùng cuộc trò chuyện MUST trả lại tin đã lưu và MUST NOT lưu thêm tin, tạo `Task` mới hay trừ thêm credit. Thiếu mã hoặc mã sai định dạng MUST trả 400.
 
-#### Scenario: Câu trả lời hiện ra
-- **WHEN** worker làm xong `Task` trong lúc người dùng đang mở web chat
-- **THEN** câu trả lời hiện trong cuộc trò chuyện mà người dùng không phải tải lại trang
+#### Scenario: Gửi lại sau lỗi mạng
+- **WHEN** web gửi một tin, mất mạng trước khi nhận phản hồi, rồi gửi lại cùng `clientMessageId`
+- **THEN** API trả 200 với tin đã lưu lần đầu, cuộc trò chuyện chỉ có một tin đó và chỉ có một `Task` cho nó
+
+#### Scenario: Gửi lại khi worker không nhận việc
+- **WHEN** web gửi lại cùng `clientMessageId` cho worker Tạm nghỉ
+- **THEN** chỉ có một tin của người dùng và một câu báo hệ thống trong cuộc trò chuyện
+
+#### Scenario: Thiếu mã tin
+- **WHEN** web gửi tin không có `clientMessageId`
+- **THEN** API trả 400 và không có tin hay `Task` mới
+
+### Requirement: Nhận câu trả lời gần như tức thời
+Kết nối thời gian thực SHALL đẩy tin của worker, trạng thái "đang làm…" và câu báo của hệ thống tới người đang theo dõi cuộc trò chuyện mà không cần gọi lại API. Sau khi mất kết nối, API đọc tin `after=<id>` MUST trả đủ các tin đã có trong lúc mất, đúng thứ tự, không trùng.
+
+#### Scenario: Câu trả lời được đẩy tới
+- **WHEN** worker làm xong `Task` trong lúc người dùng đang theo dõi cuộc trò chuyện qua kết nối thời gian thực
+- **THEN** câu trả lời được đẩy qua kết nối đó mà không cần gọi lại API
 
 #### Scenario: Mất mạng giữa chừng
-- **WHEN** người dùng mất mạng 1 phút, trong lúc đó worker trả lời, rồi có mạng lại
-- **THEN** câu trả lời hiện ra đúng một lần, đúng thứ tự
+- **WHEN** người dùng mất kết nối 1 phút, trong lúc đó worker trả lời, rồi nối lại và đọc tin `after=` tin cuối đã nhận
+- **THEN** câu trả lời có đúng một lần, đúng thứ tự
 
 #### Scenario: Kết nối của người không có quyền
 - **WHEN** một người mở kết nối thời gian thực rồi đăng ký theo dõi cuộc trò chuyện không phải của mình
@@ -104,26 +119,26 @@ Trang web chat SHALL nhận tin của worker, trạng thái "đang làm…" và 
 - **THEN** trong vòng 60 giây kết nối thời gian thực bị đóng và người đó không nhận thêm tin nào
 
 ### Requirement: Câu trả lời cố định khi worker không nhận việc
-Khi worker không nhận việc (tạm nghỉ, nghỉ việc, hết credit, hết ngân sách), web chat SHALL lưu tin của người dùng và hiện ngay câu báo cố định của hệ thống, phân biệt rõ với câu trả lời của worker. Câu báo MUST NOT tốn credit.
+Khi worker không nhận việc (tạm nghỉ, nghỉ việc, hết credit, hết ngân sách), web chat SHALL lưu tin của người dùng và ngay sau đó một câu báo cố định có vai trò hệ thống (khác vai trò worker), không qua `Task`. Câu báo MUST NOT tốn credit.
 
 #### Scenario: Nhắn worker Tạm nghỉ
 - **WHEN** người được giao việc nhắn worker Tạm nghỉ trên web chat
-- **THEN** tin được lưu, ngay sau đó hiện câu báo "… đang tạm nghỉ, chưa nhận việc mới." kiểu thông báo hệ thống, không có `CostEntry` mới
+- **THEN** tin được lưu, ngay sau đó có câu báo hệ thống "… đang tạm nghỉ, chưa nhận việc mới.", không có `Task` và không có `CostEntry` mới
 
 ### Requirement: Báo việc bị dừng hoặc lỗi
-Khi `Task` Đã dừng hoặc Lỗi, web chat SHALL hiện câu báo nói rõ lý do (vượt số bước, hết thời gian, vượt chi phí, hết credit, gián đoạn, lỗi chung) bằng tiếng Việt, không lộ chi tiết kỹ thuật.
+Khi `Task` Đã dừng hoặc Lỗi, cuộc trò chuyện SHALL có câu báo hệ thống nói rõ lý do (vượt số bước, hết thời gian, vượt chi phí, hết credit, gián đoạn, lỗi chung) bằng tiếng Việt, không lộ chi tiết kỹ thuật.
 
 #### Scenario: Việc vượt giới hạn
 - **WHEN** một `Task` dừng vì vượt số bước
-- **THEN** web chat hiện "Việc này cần nhiều bước hơn giới hạn nên đã dừng. Hãy chia nhỏ yêu cầu."
+- **THEN** cuộc trò chuyện có câu báo hệ thống "Việc này cần nhiều bước hơn giới hạn nên đã dừng. Hãy chia nhỏ yêu cầu."
 
-### Requirement: Mở web chat từ hồ sơ worker
-Hồ sơ worker SHALL có nút "Trò chuyện" khi người xem được trò chuyện với worker đó; trang web chat liệt kê các worker người dùng được trò chuyện. Chuỗi hiển thị MUST là tiếng Việt từ file i18n.
+### Requirement: Danh sách worker được trò chuyện
+API SHALL trả danh sách các worker người dùng được trò chuyện, theo đúng luật ai được trò chuyện với worker nào; worker người dùng không được trò chuyện MUST NOT có trong danh sách.
 
-#### Scenario: Nút trò chuyện
-- **WHEN** người được giao thử mở hồ sơ worker Thử việc
-- **THEN** hồ sơ có nút "Trò chuyện" mở web chat với worker đó
+#### Scenario: Người được giao thử
+- **WHEN** người được giao thử của một worker Thử việc gọi API danh sách worker được trò chuyện
+- **THEN** worker đó có trong danh sách
 
-#### Scenario: Không có quyền thì không có nút
-- **WHEN** Nhân viên cùng phòng không có tên trong danh sách mở hồ sơ worker Thử việc
-- **THEN** hồ sơ không có nút "Trò chuyện"
+#### Scenario: Không có tên trong danh sách
+- **WHEN** Nhân viên cùng phòng không có tên trong danh sách gọi API danh sách worker được trò chuyện
+- **THEN** worker Thử việc đó không có trong danh sách

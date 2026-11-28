@@ -87,6 +87,20 @@ Tin của cùng một người trong cùng cuộc trò chuyện tới trong 5 gi
 - **WHEN** một `Task` bị đánh dấu gián đoạn trong khi cùng cuộc trò chuyện còn một `Task` Chờ chạy
 - **THEN** `Task` Chờ chạy được bắt đầu
 
+### Requirement: Việc chờ bị mất trong hàng đợi
+`Task` Đang gom đã quá hạn gom, hoặc Chờ chạy mà không có `Task` Đang chạy đứng trước trong cuộc trò chuyện, SHALL được đưa lại vào hàng đợi khi quá 2 phút không đổi trạng thái. Đưa lại MUST NOT làm `Task` chạy hai lần.
+
+#### Scenario: Runner chết trước khi bắt đầu
+- **WHEN** runner lấy việc chạy một `Task` Chờ chạy rồi chết trước khi `Task` sang Đang chạy
+- **THEN** sau tối đa 3 phút `Task` được chạy bởi runner khác, đúng một lần
+
+### Requirement: Deploy không làm hỏng việc đang chạy
+Khi runner được yêu cầu tắt, runner SHALL ngừng nhận việc mới và chờ các `Task` Đang chạy kết thúc (mỗi `Task` tự dừng trong giới hạn thời gian) trước khi thoát.
+
+#### Scenario: Deploy khi worker đang làm việc
+- **WHEN** runner nhận lệnh tắt lúc một `Task` đã chạy được 20 giây
+- **THEN** `Task` đó vẫn kết thúc bình thường với câu trả lời, không chuyển sang Lỗi, và runner không bắt đầu `Task` mới trong lúc chờ
+
 ### Requirement: Hàng đợi không chứa nội dung
 Việc trong hàng đợi SHALL chỉ mang id công ty và id `Task`; nội dung tin và dữ liệu nghiệp vụ MUST được đọc lại theo công ty khi chạy.
 

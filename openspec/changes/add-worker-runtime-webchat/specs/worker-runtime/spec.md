@@ -63,7 +63,7 @@ Lúc bắt đầu `Task`, worker SHALL chỉ được đưa tên và mô tả c�
 - **THEN** kỹ năng đó không có trong danh sách
 
 ### Requirement: Nạp kỹ năng khi cần
-Worker SHALL nạp được nội dung `SKILL.md` của một kỹ năng trong danh sách bằng tool `load_skill`, và đọc file văn bản đính kèm bằng `read_skill_file`, luôn theo **version đang dùng**. Tên không có trong danh sách có hiệu lực MUST trả lỗi "không có kỹ năng này".
+Worker SHALL nạp được nội dung `SKILL.md` của một kỹ năng trong danh sách bằng tool `load_skill`, và đọc file văn bản đính kèm bằng `read_skill_file` (tối đa 32 KB mỗi lần đọc, phần dư bị cắt kèm dòng báo), luôn theo **version đang dùng**. Tên không có trong danh sách có hiệu lực MUST trả lỗi "không có kỹ năng này".
 
 #### Scenario: load_skill trả đúng version đang dùng
 - **WHEN** "lap-bao-gia" có v2 đang dùng và v3 chờ duyệt, worker gọi `load_skill("lap-bao-gia")`
@@ -88,6 +88,10 @@ Worker SHALL nạp được nội dung `SKILL.md` của một kỹ năng trong d
 #### Scenario: Đọc file đính kèm
 - **WHEN** worker gọi `read_skill_file("lap-bao-gia", "bang-gia.csv")`
 - **THEN** kết quả là nội dung file của version đang dùng, được đánh dấu là dữ liệu
+
+#### Scenario: File đính kèm quá dài
+- **WHEN** worker gọi `read_skill_file` với một file văn bản 100 KB
+- **THEN** kết quả chỉ có 32 KB đầu của file, kèm dòng báo "File đã bị cắt, còn 68 KB chưa đọc."
 
 #### Scenario: File không đọc được
 - **WHEN** worker gọi `read_skill_file` với một file `.xlsx` hoặc file trong `scripts/`

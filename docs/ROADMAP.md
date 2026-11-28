@@ -31,8 +31,9 @@ last_updated: 2026-11-27
 | 2 | #3 | `add-worker-profile` | 1b | Sơ đồ nhân sự số, hồ sơ worker | ✅ |
 | 3 | #4 | `add-skill-library` | 1a, 2 | Thư viện kỹ năng | ✅ |
 | 4 | #5 | `add-llm-gateway-and-credit` | 1a | Số dư credit, quản trị platform (credit, giá, key) | ✅ |
-| 5 | #6 | `add-worker-runtime-webchat` | 2, 3, 4 | Web chat | ⏳ |
+| 5 | #6 | `add-worker-runtime-webchat` | 2, 3, 4 | — (API + WebSocket, 0.2 #142) | ⏳ |
 | 5a | #21 | `deploy-staging` | 0 | — | ⏳ |
+| 5b | — | `add-webchat-ui` | 5, `web-chat.html` (#128) | Web chat | ⏳ |
 | 6 | #7 | `add-channel-telegram` | 5, 5a | Kết nối kênh | ⏳ |
 | 7 | #8 | `add-approval-inbox` | 5, 6 | Hộp duyệt việc | ⏳ |
 | 8 | #9 | `add-schedules` | 5 | Tab lịch trong hồ sơ worker | ⏳ |
@@ -299,6 +300,28 @@ Quyết định cần chốt: nêu trong mô tả PR propose; ghi vào 0.2 trong
 
 Tạo nhánh deploy-staging, commit, mở PR (Refs #<issue>). Chưa code.
 Dừng lại sau khi propose để tôi duyệt.
+```
+
+## 5b. `add-webchat-ui`
+
+**Mục tiêu:** màn hình web chat trên API + WebSocket của change 5 (0.2 #128, #142).
+
+```text
+/opsx:propose add-webchat-ui
+
+Thêm màn hình web chat trong apps/web: trang /chat (worker được trò chuyện), /chat/:workerId (cuộc trò chuyện,
+"đang làm…", câu báo hệ thống khác kiểu tin worker, "Cuộc trò chuyện mới", nối lại WebSocket + tải bù after=,
+gửi lại cùng clientMessageId khi lỗi mạng), nút "Trò chuyện" trên hồ sơ worker, gợi ý Owner / Admin tự thêm mình
+vào danh sách người được giao thử.
+
+Đọc trước:
+- docs/design/screens/web-chat.html (bắt buộc có trong main trước)
+- openspec/specs/web-chat/spec.md
+
+Test bắt buộc: Playwright gửi tin → "đang làm…" → câu trả lời (mô hình giả); có / không có nút theo vai trò;
+ảnh chụp 320 / 768 / 1024 / 1440; Enter gửi, Shift+Enter xuống dòng; axe không lỗi nghiêm trọng.
+
+Tạo nhánh add-webchat-ui, commit, mở PR. Chưa code. Dừng lại sau khi propose để tôi duyệt.
 ```
 
 ## 6. `add-channel-telegram`
