@@ -58,7 +58,7 @@ Khi Owner hoặc Admin chọn một Nhân viên làm trưởng phòng, hệ th�
 - **THEN** form hiện thông báo người đó sẽ đổi vai trò sang Trưởng phòng và chuyển vào phòng này, trước khi bấm lưu
 
 ### Requirement: Lưu trữ thay cho xoá
-Phòng ban SHALL không bị xoá mà được lưu trữ: ẩn khỏi danh sách và ô chọn phòng, giữ nguyên lịch sử. Chỉ lưu trữ được phòng không còn thành viên nào (kể cả người đã khoá) và không còn lời mời đang chờ vào phòng đó. Mỗi lần lưu trữ có `AuditEvent`.
+Phòng ban SHALL không bị xoá mà được lưu trữ: ẩn khỏi danh sách và ô chọn phòng, giữ nguyên lịch sử. Chỉ lưu trữ được phòng không còn thành viên nào (kể cả người đã khoá), không còn lời mời đang chờ vào phòng đó và không còn worker nào chưa nghỉ việc. Mỗi lần lưu trữ có `AuditEvent`.
 
 #### Scenario: Lưu trữ phòng trống
 - **WHEN** Admin lưu trữ phòng "Kho vận" không còn ai
@@ -71,6 +71,14 @@ Phòng ban SHALL không bị xoá mà được lưu trữ: ẩn khỏi danh sác
 #### Scenario: Tạo lại tên đã lưu trữ
 - **WHEN** Admin tạo phòng "Kho vận" sau khi phòng cùng tên đã được lưu trữ
 - **THEN** phòng mới được tạo
+
+#### Scenario: Phòng còn worker
+- **WHEN** Admin lưu trữ phòng "Kho vận" không còn người nhưng còn một worker Tạm nghỉ
+- **THEN** hệ thống từ chối, báo số worker chưa nghỉ việc còn trong phòng và phòng giữ nguyên
+
+#### Scenario: Phòng chỉ còn worker đã nghỉ việc
+- **WHEN** Admin lưu trữ phòng "Kho vận" không còn người và chỉ có worker đã nghỉ việc
+- **THEN** phòng được lưu trữ và worker đã nghỉ việc vẫn tra cứu được với tên phòng cũ
 
 ### Requirement: Xem danh sách phòng ban
 Mọi thành viên đang hoạt động SHALL xem được danh sách phòng ban chưa lưu trữ của công ty mình, gồm tên, mô tả, trưởng phòng và số người. Danh sách MUST chỉ có phòng ban của công ty người xem.
