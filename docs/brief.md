@@ -174,8 +174,8 @@ Mỗi digital worker có một **hồ sơ nhân sự**:
 
 - Sau change 6: demo được trên Telegram. Sau change 10: dùng thử với khách đầu tiên (credit cộng tay).
 
-**v0.2**: Zalo nhóm, KPI + giờ tiết kiệm, nhận việc theo sự kiện, cổng thanh toán tự động.
-**v0.3**: thêm kênh theo yêu cầu khách (Messenger, Lark, Slack, Teams), connector phần mềm kế toán, worker phối hợp với nhau.
+**v0.2**: Zalo nhóm, connector Google Drive (#47), KPI + giờ tiết kiệm, nhận việc theo sự kiện, cổng thanh toán tự động.
+**v0.3**: thêm kênh theo yêu cầu khách (Messenger, Lark, Slack, Teams), connector phần mềm kế toán / bán hàng (MISA, KiotViet) & hỗ trợ External MCP Server cho DB nội bộ (#47), worker phối hợp với nhau.
 **Sau đó**: worker nói chuyện với khách hàng bên ngoài (Zalo OA, Facebook Page); chợ worker mẫu theo ngành.
 
 ## 12. Công nghệ (đã chốt — chi tiết ở `docs/architecture.md`)
