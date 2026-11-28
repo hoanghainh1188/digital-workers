@@ -24,6 +24,7 @@ const ownDept: Row = { owner: 'all', admin: 'all', manager: 'own-department', me
 export const PERMISSIONS = {
   'company.update': ownerAdmin,
   'org.manage': ownerAdmin,
+  'member.list': ownDept,
   'worker.create': ownDept,
   'worker.startProbation': ownDept,
   'worker.approve': ownerAdmin,

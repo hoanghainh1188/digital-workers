@@ -48,3 +48,20 @@ export function Field({ id, label, hint, error, children }: FieldProps) {
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(inputClass, className)} {...props} />;
 }
+
+export function Select({ className, ...props }: ComponentProps<'select'>) {
+  return (
+    <select
+      className={cn(
+        inputClass,
+        "appearance-none bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")] bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat pr-9",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
+  return <textarea className={cn(inputClass, 'h-auto min-h-20 py-2.5', className)} {...props} />;
+}

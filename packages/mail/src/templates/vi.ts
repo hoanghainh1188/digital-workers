@@ -39,3 +39,67 @@ export function verifyEmailTemplate(input: { name: string; url: string }): Rende
 </body></html>`;
   return { subject, text, html };
 }
+
+function button(url: string, label: string): string {
+  return `<p><a href="${url}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">${label}</a></p>`;
+}
+
+function page(body: string): string {
+  return `<!doctype html>
+<html lang="vi"><body style="font-family:'Be Vietnam Pro',Arial,sans-serif;color:#1f2937;line-height:1.6">
+${body}
+</body></html>`;
+}
+
+const ROLE_NAMES: Record<string, string> = {
+  owner: 'Owner',
+  admin: 'Admin',
+  manager: 'Trưởng phòng',
+  member: 'Nhân viên',
+};
+
+/** Invitation to join a company (spec invitations). The link carries the token after `#`. */
+export function inviteTemplate(input: {
+  companyName: string;
+  inviterName: string;
+  role: string;
+  departmentName: string | null;
+  url: string;
+}): RenderedEmail {
+  const roleName = ROLE_NAMES[input.role] ?? input.role;
+  const where = input.departmentName ? `${roleName} — phòng ${input.departmentName}` : roleName;
+  const subject = `${input.inviterName} mời bạn tham gia ${input.companyName} — Digital Workers`;
+  const text = [
+    'Chào bạn,',
+    '',
+    `${input.inviterName} mời bạn tham gia ${input.companyName} trên Digital Workers với vai trò ${where}.`,
+    'Mở link dưới đây để nhận lời mời:',
+    input.url,
+    '',
+    'Lời mời dùng được trong 7 ngày. Nếu bạn không biết người mời, hãy bỏ qua email này.',
+  ].join('\n');
+  const html = page(`<p>Chào bạn,</p>
+<p><b>${escapeHtml(input.inviterName)}</b> mời bạn tham gia <b>${escapeHtml(input.companyName)}</b> trên Digital Workers với vai trò ${escapeHtml(where)}.</p>
+${button(escapeHtml(input.url), 'Nhận lời mời')}
+<p style="font-size:13px;color:#6b7280">Hoặc mở link: ${escapeHtml(input.url)}<br>Lời mời dùng được trong 7 ngày. Nếu bạn không biết người mời, hãy bỏ qua email này.</p>`);
+  return { subject, text, html };
+}
+
+/** Password reset link (spec authentication: "Quên mật khẩu"). */
+export function resetPasswordTemplate(input: { name: string; url: string }): RenderedEmail {
+  const subject = 'Đặt lại mật khẩu — Digital Workers';
+  const text = [
+    `Chào ${input.name},`,
+    '',
+    'Bấm vào link dưới đây để đặt mật khẩu mới cho tài khoản Digital Workers của bạn:',
+    input.url,
+    '',
+    'Link dùng được một lần và hết hạn sau 1 giờ. Đặt lại xong, mọi phiên đăng nhập cũ sẽ bị đăng xuất.',
+    'Nếu bạn không yêu cầu, hãy bỏ qua email này: mật khẩu hiện tại vẫn giữ nguyên.',
+  ].join('\n');
+  const html = page(`<p>Chào ${escapeHtml(input.name)},</p>
+<p>Bấm vào nút dưới đây để đặt mật khẩu mới cho tài khoản Digital Workers của bạn:</p>
+${button(escapeHtml(input.url), 'Đặt lại mật khẩu')}
+<p style="font-size:13px;color:#6b7280">Hoặc mở link: ${escapeHtml(input.url)}<br>Link dùng được một lần và hết hạn sau 1 giờ. Đặt lại xong, mọi phiên đăng nhập cũ sẽ bị đăng xuất.<br>Nếu bạn không yêu cầu, hãy bỏ qua email này: mật khẩu hiện tại vẫn giữ nguyên.</p>`);
+  return { subject, text, html };
+}

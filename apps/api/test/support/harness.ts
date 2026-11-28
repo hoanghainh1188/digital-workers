@@ -62,6 +62,7 @@ export function makeApp(
     logger: capture.logger,
     ipRateLimit: false,
     signupLimit: { max: 10_000, windowMs: 60_000 },
+    invitationLimit: { max: 10_000, windowMs: 60_000 },
     ...overrides,
   });
   const app = buildApp({

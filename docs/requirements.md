@@ -102,6 +102,11 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 075 | 2026-11-28 | Tỉ giá USD → VNĐ **chung cho mọi công ty**. Hệ số giá mặc định chung (1,3); platform admin **đặt hệ số riêng cho từng công ty** được. Đổi tỉ giá / hệ số không tính lại giao dịch cũ. (Thay câu "tỉ giá theo công ty" ở architecture.md mục 6.) (`add-llm-gateway-and-credit`) |
 | 076 | 2026-11-28 | Platform admin là các email đặt trong **biến môi trường**, đăng nhập **bắt buộc xác thực 2 bước TOTP** (plugin `twoFactor` có sẵn trong Better Auth, không thêm thư viện). Không phải vai trò trong công ty nào. (`add-llm-gateway-and-credit`) |
 | 077 | 2026-11-28 | Platform admin chỉ xem **tổng theo công ty** (số dư, đã trừ, số worker, email Owner); không xem tên worker, nội dung việc hay dữ liệu nghiệp vụ. (`add-llm-gateway-and-credit`) |
+| 080 | 2026-11-28 | Trang Phòng ban giữ số **"N người chưa có phòng ban"** như spec. Theo ràng buộc mới, chỉ Owner / Admin có thể không có phòng nên con số thực chất đếm Owner / Admin chưa gán phòng. (`add-departments-and-invites`) |
+| 081 | 2026-11-28 | Owner / Admin **được gán vào phòng ban** (không bắt buộc, #036). Khi đã gán, họ **tính là người trong phòng** và chặn lưu trữ phòng như mọi thành viên khác (#064). (`add-departments-and-invites`) |
+| 082 | 2026-11-28 | **Hạn mức gửi lời mời** theo công ty (chống dùng lời mời để gửi email lừa đảo / rác: số người nhận mỗi ngày cho công ty mới, giới hạn gửi lại) **làm ở change `deploy-staging`**, trước khi mở cho khách thật. 1b chỉ có giới hạn 50 email mỗi lần mời. (`add-departments-and-invites`) |
+| 083 | 2026-11-28 | Giới hạn "Quên mật khẩu" **giữ như #067**: quá 3 lần / 15 phút cho một email thì **trả 429**. Chấp nhận rủi ro người lạ làm chậm việc lấy lại mật khẩu tối đa 15 phút. (`add-departments-and-invites`) |
+| 084 | 2026-11-28 | **Admin không tự đổi vai trò của mình** (theo #063: Admin không quản lý Admin). Owner tự hạ vai trò được khi còn Owner khác đang hoạt động. (`add-departments-and-invites`) |
 | 085 | 2026-11-28 | Change 3 **apply sau change 2** (`add-worker-profile`): `worker_skills` cần bảng worker. ROADMAP: change 3 phụ thuộc `1a, 2`. (`add-skill-library`) |
 | 086 | 2026-11-28 | Thêm **`fflate`** (MIT, không phụ thuộc) vào danh sách thư viện được phép, để đọc / ghi `.zip` của kỹ năng (Node và trình duyệt, inflate theo luồng để chặn zip bomb). (`add-skill-library`) |
 | 087 | 2026-11-28 | Ma trận quyền mục 1 thêm hàng **"Giao / gỡ skill cho worker"**: Owner, Admin cả công ty; Trưởng phòng phòng mình; Nhân viên không. Hàng "Duyệt skill" gồm cả từ chối version, quay lại version cũ, lưu trữ kỹ năng, duyệt yêu cầu giao. Mọi thành viên xem được thư viện và xuất `.zip`. (Ghi vào bảng cùng code khi apply, task 1.1.) (`add-skill-library`) |
@@ -162,6 +167,7 @@ Hiện không có đề xuất chờ chốt.
 |---|:-:|:-:|:-:|:-:|
 | Đổi thông tin công ty (tên, số điện thoại) | ✓ | ✓ | — | — |
 | Quản lý phòng ban, người dùng | ✓ | ✓ | — | — |
+| Xem danh sách người dùng | ✓ | ✓ | ✓ (phòng mình) | — |
 | Tạo worker (bản nháp) | ✓ | ✓ | ✓ (phòng mình) | — |
 | Chuyển worker sang thử việc | ✓ | ✓ | ✓ (phòng mình) | — |
 | Duyệt worker lên chính thức | ✓ | ✓ | — | — |

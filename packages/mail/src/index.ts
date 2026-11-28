@@ -5,4 +5,10 @@ export {
   type OutgoingEmail,
   type SentEmail,
 } from './mailer.ts';
-export { escapeHtml, type RenderedEmail, verifyEmailTemplate } from './templates/vi.ts';
+export {
+  escapeHtml,
+  inviteTemplate,
+  type RenderedEmail,
+  resetPasswordTemplate,
+  verifyEmailTemplate,
+} from './templates/vi.ts';

@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./testing": "./test/run-process.ts",
     "./schemas": "./src/auth/schemas.ts",
-    "./permissions": "./src/access/permissions.ts"
+    "./permissions": "./src/access/permissions.ts",
+    "./org-schemas": "./src/org/schemas.ts",
+    "./member-rules": "./src/access/member-rules.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"

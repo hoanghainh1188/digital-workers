@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { t } from './t.ts';
+import { t, tf } from './t.ts';
 import { vi } from './vi.ts';
 
 describe('t()', () => {
@@ -16,5 +16,12 @@ describe('t()', () => {
     for (const value of Object.values(vi)) {
       expect(value.trim()).not.toBe('');
     }
+  });
+});
+
+describe('tf()', () => {
+  it('fills placeholders and leaves unknown ones', () => {
+    expect(tf('users.expiresIn', { days: 5 })).toBe('Hết hạn sau 5 ngày');
+    expect(tf('users.expiresIn', {})).toBe('Hết hạn sau {days} ngày');
   });
 });

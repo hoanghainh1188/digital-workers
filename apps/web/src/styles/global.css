@@ -64,3 +64,17 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Dialog entrance (compositor-only: opacity + transform). Reduced motion disables it above. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+/* Positioning uses the separate `translate` property (Tailwind v4), so this composes with it. */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}

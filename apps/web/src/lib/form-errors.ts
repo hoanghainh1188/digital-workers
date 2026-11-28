@@ -1,4 +1,5 @@
 import { isMessageKey, t } from '../i18n/t.ts';
+import { ApiError } from './api.ts';
 
 export type FieldIssue = { readonly path: string; readonly message: string };
 export type FieldErrors = Readonly<Record<string, string>>;
@@ -29,4 +30,11 @@ export function fromZodIssues(
     path: issue.path.map(String).join('.'),
     message: issue.message,
   }));
+}
+
+/** One Vietnamese sentence for a failed API call (code-specific when we have one). */
+export function apiErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return t('app.error.network');
+  const key = `error.${error.code}`;
+  return isMessageKey(key) ? t(key) : t('app.error.generic');
 }

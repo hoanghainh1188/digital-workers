@@ -7,7 +7,8 @@ import {
 } from '@dw/core';
 import { type Database, memberForUser, recordAudit, withCompany } from '@dw/db';
 import { accounts, sessions, users, verifications } from '@dw/db/auth-schema';
-import { type Mailer, verifyEmailTemplate } from '@dw/mail';
+import { and, eq } from '@dw/db/drizzle';
+import { type Mailer, resetPasswordTemplate, verifyEmailTemplate } from '@dw/mail';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
@@ -32,6 +33,8 @@ export type AuthDeps = {
   readonly logger: FastifyBaseLogger;
   /** Per-email failed sign-in counter (design D6). */
   readonly limiter: FailedLoginLimiter;
+  /** Password-reset requests per email: 3 per 15 minutes (0.2 #067). */
+  readonly resetLimiter: FailedLoginLimiter;
   /** Better Auth's own per-IP limiter (design D6). Defaults to on. */
   readonly ipRateLimit?: boolean;
 };
@@ -44,10 +47,28 @@ const PASSWORD_FIELDS: Readonly<Record<string, string>> = {
   '/reset-password': 'newPassword',
 };
 const SIGN_IN_EMAIL = '/sign-in/email';
+const REQUEST_PASSWORD_RESET = '/request-password-reset';
+
+/**
+ * Emails whose next sign-up must not send a verification email: accepting an
+ * invitation proves the address (0.2 #033), so the account is marked verified instead.
+ */
+const skipVerificationEmail = new Set<string>();
+
+/** Runs `fn` (an invited sign-up) without sending the usual verification email. */
+export async function withoutVerificationEmail<T>(email: string, fn: () => Promise<T>): Promise<T> {
+  const key = email.trim().toLowerCase();
+  skipVerificationEmail.add(key);
+  try {
+    return await fn();
+  } finally {
+    skipVerificationEmail.delete(key);
+  }
+}
 
 /** Better Auth instance (design D4). The only module that touches the auth.* tables. */
 export function createAuth(deps: AuthDeps) {
-  const { config, database, mailer, logger, limiter } = deps;
+  const { config, database, mailer, logger, limiter, resetLimiter } = deps;
   const google = googleCredentials(config);
 
   return betterAuth({
@@ -76,12 +97,43 @@ export function createAuth(deps: AuthDeps) {
       maxPasswordLength: PASSWORD_MAX_LENGTH,
       requireEmailVerification: false, // 0.2 #033: usable right away
       autoSignIn: true,
+      // Design D7 / 0.2 #067: one-hour single-use link; a reset signs out everywhere.
+      resetPasswordTokenExpiresIn: 60 * 60,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: async ({ user, token }) => {
+        // Only accounts that have a password get a link (spec authentication); the
+        // response is the same either way. Not awaited, like the verification email.
+        if (!(await hasPasswordAccount(database, user.id))) return;
+        const callback = encodeURIComponent(`${config.WEB_ORIGIN}/reset-password`);
+        const url = `${config.BETTER_AUTH_URL}/api/auth/reset-password/${encodeURIComponent(token)}?callbackURL=${callback}`;
+        void mailer
+          .send({ to: user.email, ...resetPasswordTemplate({ name: user.name, url }) })
+          .catch((error: unknown) =>
+            logger.error({ error: describeError(error) }, 'password reset email failed'),
+          );
+      },
+      // Holding the inbox proves the email: this is how the real owner takes back an
+      // address someone else signed up with (0.2 #067).
+      onPasswordReset: async ({ user }) => {
+        await markEmailVerified(database, user.id);
+        const member = await memberForUser(database, user.id);
+        if (!member) return;
+        await withCompany(database, member.companyId, (tx) =>
+          recordAudit(tx, {
+            actorMemberId: member.memberId,
+            action: 'auth.password_reset',
+            targetType: 'member',
+            targetId: member.memberId,
+          }),
+        );
+      },
     },
     emailVerification: {
       sendOnSignUp: true,
       expiresIn: DAY,
       // Not awaited (timing): failures are logged without the address (design risks).
       sendVerificationEmail: async ({ user, token }) => {
+        if (skipVerificationEmail.has(user.email.toLowerCase())) return;
         const url = `${config.WEB_ORIGIN}/verify-email?token=${encodeURIComponent(token)}`;
         void mailer
           .send({ to: user.email, ...verifyEmailTemplate({ name: user.name, url }) })
@@ -99,6 +151,7 @@ export function createAuth(deps: AuthDeps) {
         '/sign-in/email': { window: 60, max: 30 },
         '/sign-up/email': { window: 60, max: 10 },
         '/send-verification-email': { window: 60, max: 5 },
+        [REQUEST_PASSWORD_RESET]: { window: 60, max: 5 },
       },
     },
     logger: {
@@ -125,6 +178,17 @@ export function createAuth(deps: AuthDeps) {
             });
           }
         }
+        if (ctx.path === REQUEST_PASSWORD_RESET) {
+          // Every request counts (not only failures): 3 per email per 15 minutes.
+          const email = emailOf(ctx.body);
+          if (email && resetLimiter.isBlocked(email)) {
+            throw new APIError('TOO_MANY_REQUESTS', {
+              code: 'TOO_MANY_REQUESTS',
+              message: 'Too many password reset requests',
+            });
+          }
+          if (email) resetLimiter.recordFailure(email);
+        }
         if (ctx.path === '/verify-email') {
           await rejectUsedVerificationLink(ctx.query?.token, ctx.context.secret, (email) =>
             ctx.context.internalAdapter.findUserByEmail(email),
@@ -143,6 +207,17 @@ export function createAuth(deps: AuthDeps) {
     databaseHooks: {
       session: {
         create: {
+          // Every way of creating a session (email, Google, invited sign-up) goes
+          // through here: a locked member gets no session (design D6, 0.2 #040).
+          before: async (session) => {
+            const member = await memberForUser(database, session.userId);
+            if (member?.status === 'locked') {
+              throw new APIError('FORBIDDEN', {
+                code: 'ACCOUNT_LOCKED',
+                message: 'Account is locked',
+              });
+            }
+          },
           // AuditEvent for a successful sign-in, when the user already belongs to a company.
           after: async (session) => {
             const member = await memberForUser(database, session.userId);
@@ -165,6 +240,38 @@ export function createAuth(deps: AuthDeps) {
 }
 
 export type Auth = ReturnType<typeof createAuth>;
+
+async function hasPasswordAccount(database: Database, userId: string): Promise<boolean> {
+  const rows = await database.db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(and(eq(accounts.userId, userId), eq(accounts.providerId, 'credential')))
+    .limit(1);
+  return rows.length > 0;
+}
+
+/** Marks the user's email as verified (invitation accepted, password reset). */
+export async function markEmailVerified(database: Database, userId: string): Promise<void> {
+  await database.db
+    .update(users)
+    .set({ emailVerified: true, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+/** Deletes every session of the user: the next request with an old cookie gets 401. */
+export async function revokeUserSessions(database: Database, userId: string): Promise<void> {
+  await database.db.delete(sessions).where(eq(sessions.userId, userId));
+}
+
+/** The id of the account with this email (any provider), or null. */
+export async function userIdByEmail(database: Database, email: string): Promise<string | null> {
+  const [row] = await database.db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, email.trim().toLowerCase()))
+    .limit(1);
+  return row?.id ?? null;
+}
 
 function emailOf(body: unknown): string | null {
   const email = (body as { email?: unknown } | null | undefined)?.email;

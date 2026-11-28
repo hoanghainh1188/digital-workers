@@ -79,3 +79,66 @@ export async function recordAudit(tx: CompanyTx, event: AuditEventInput): Promis
     fields: event.fields ? [...event.fields] : null,
   });
 }
+
+export type InvitationLookup = {
+  readonly id: string;
+  readonly companyId: string;
+  readonly companyName: string;
+  readonly inviterName: string;
+  readonly email: string;
+  readonly role: MemberRole;
+  readonly departmentId: string | null;
+  readonly departmentName: string | null;
+  readonly departmentArchived: boolean;
+  readonly status: 'pending' | 'accepted' | 'cancelled';
+  readonly expiresAt: Date;
+};
+
+/**
+ * The invitation whose token hashes to `tokenHash`, through
+ * `app.invitation_by_token_hash` (SECURITY DEFINER, design D4). One row or null;
+ * there is deliberately no way to list invitations without a company.
+ */
+export async function invitationByTokenHash(
+  database: Pick<Database, 'pool'>,
+  tokenHash: Buffer,
+): Promise<InvitationLookup | null> {
+  const { rows } = await database.pool.query<{
+    id: string;
+    company_id: string;
+    company_name: string;
+    inviter_name: string;
+    email: string;
+    role: MemberRole;
+    department_id: string | null;
+    department_name: string | null;
+    department_archived: boolean;
+    status: InvitationLookup['status'];
+    expires_at: Date;
+  }>('select * from app.invitation_by_token_hash($1)', [tokenHash]);
+  const row = rows[0];
+  return row
+    ? {
+        id: row.id,
+        companyId: row.company_id,
+        companyName: row.company_name,
+        inviterName: row.inviter_name,
+        email: row.email,
+        role: row.role,
+        departmentId: row.department_id,
+        departmentName: row.department_name,
+        departmentArchived: row.department_archived,
+        status: row.status,
+        expiresAt: row.expires_at,
+      }
+    : null;
+}
+
+/** True when `error` (or its Drizzle `cause`) is a unique violation of `constraint`. */
+export function isUniqueViolation(error: unknown, constraint?: string): boolean {
+  const cause = (error as { cause?: unknown } | null)?.cause ?? error;
+  const pgError = cause as { code?: string; constraint?: string } | null;
+  return (
+    pgError?.code === '23505' && (constraint === undefined || pgError.constraint === constraint)
+  );
+}

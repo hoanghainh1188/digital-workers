@@ -26,7 +26,11 @@ export function createLogger(level: Level, destination?: DestinationStream): Log
 
 type LoggedRequest = { method?: string; url?: string; id?: unknown };
 
+/** Path segments that are secrets themselves (password-reset link: /reset-password/<token>). */
+const TOKEN_IN_PATH = /(\/reset-password\/)[^/?#]+/g;
+
 /** Query strings can carry tokens (webhooks, OAuth callbacks): log the path only, no headers. */
-function serializeRequest(request: LoggedRequest) {
-  return { method: request.method, url: request.url?.split('?')[0], reqId: request.id };
+export function serializeRequest(request: LoggedRequest) {
+  const path = request.url?.split('?')[0]?.replace(TOKEN_IN_PATH, '$1[redacted]');
+  return { method: request.method, url: path, reqId: request.id };
 }
