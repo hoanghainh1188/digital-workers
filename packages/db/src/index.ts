@@ -3,6 +3,13 @@ export { migrationsFolder, runMigrations } from './migrate.ts';
 export { ping } from './ping.ts';
 export * from './schema/index.ts';
 export {
+  type EffectiveSkill,
+  effectiveSkills,
+  suspendScriptSkillsOnActivation,
+  workerSkillTarget,
+  workersHoldingSkill,
+} from './skills.ts';
+export {
   type AuditEventInput,
   type CompanyTx,
   type InvitationLookup,

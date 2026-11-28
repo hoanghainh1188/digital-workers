@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { workers, workerTesters } from './schema/workers.ts';
+import { suspendScriptSkillsOnActivation } from './skills.ts';
 import type { CompanyTx } from './tenancy.ts';
 
 export type WorkerStatusValue = (typeof workers.$inferSelect)['status'];
@@ -51,10 +52,16 @@ export async function workerRuntimeState(
 }
 
 /**
- * Runs inside the transaction that makes a worker active (design D3). Empty in change 2;
- * change 3 adds `suspendScriptSkillsOnActivation` here.
+ * Runs inside the transaction that makes a worker active (design D3): script skills
+ * are suspended until review exists (change add-skill-library, D8).
  */
-export async function onWorkerActivated(_tx: CompanyTx, _workerId: string): Promise<void> {}
+export async function onWorkerActivated(
+  tx: CompanyTx,
+  workerId: string,
+  actorMemberId: string | null,
+): Promise<void> {
+  await suspendScriptSkillsOnActivation(tx, workerId, actorMemberId);
+}
 
 /**
  * Runs inside the transaction that offboards a worker. Empty in change 2; changes 6, 8

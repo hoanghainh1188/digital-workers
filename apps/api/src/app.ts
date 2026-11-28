@@ -7,6 +7,7 @@ import { registerDepartmentRoutes } from './routes/departments.ts';
 import { type HealthDeps, registerHealthRoutes } from './routes/health.ts';
 import { type InvitationRouteDeps, registerInvitationRoutes } from './routes/invitations.ts';
 import { registerMemberRoutes } from './routes/members.ts';
+import { registerSkillRoutes } from './routes/skills.ts';
 import { registerTenancyRoutes, type TenancyRouteDeps } from './routes/tenancy.ts';
 import { registerWorkerRoutes } from './routes/workers.ts';
 import { type ContextResolver, registerRequestContext } from './tenancy/index.ts';
@@ -43,6 +44,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     registerMemberRoutes(app, deps.platform);
     registerInvitationRoutes(app, deps.platform);
     registerWorkerRoutes(app, deps.platform);
+    registerSkillRoutes(app, deps.platform);
   }
   return app;
 }

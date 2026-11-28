@@ -39,6 +39,7 @@ export const PERMISSIONS = {
   'worker.suspend': ownDept,
   'skill.edit': { owner: 'all', admin: 'all', manager: 'all', member: 'all' },
   'skill.approve': ownerAdmin,
+  'skill.assign': ownDept,
   'task.assign': { owner: 'all', admin: 'all', manager: 'all', member: 'assigned' },
   'channel.connect': ownerAdmin,
   'credit.topup': { owner: 'all', admin: false, manager: false, member: false },

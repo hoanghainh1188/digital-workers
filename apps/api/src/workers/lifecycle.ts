@@ -135,7 +135,8 @@ export async function transitionWorker(
     },
     { action: 'worker.status_changed', fields },
   );
-  if (to === 'active' && input.event === 'activate') await onWorkerActivated(tx, id);
+  if (to === 'active' && input.event === 'activate')
+    await onWorkerActivated(tx, id, actor.memberId);
   if (to === 'offboarded') await onWorkerOffboarded(tx, id);
   return ok({ id, status: to });
 }

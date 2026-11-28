@@ -67,6 +67,10 @@ Giao kỹ năng có script SHALL luôn tạo yêu cầu Chờ duyệt, kể cả
 - **WHEN** worker Thử việc đang được giao kỹ năng có script được chuyển sang Chính thức
 - **THEN** kỹ năng có script của worker đó ngừng có hiệu lực (Tạm khoá) cho tới khi có kiểm duyệt, các kỹ năng khác không đổi
 
+#### Scenario: Version mới thêm script cho kỹ năng worker chính thức đang dùng
+- **WHEN** Owner duyệt version có `scripts/` của một kỹ năng đang được worker Chính thức dùng
+- **THEN** phần giao kỹ năng đó của worker Chính thức chuyển Tạm khoá trong cùng thao tác, worker Thử việc vẫn dùng version mới
+
 ### Requirement: Duyệt yêu cầu giao kỹ năng
 Chỉ Owner / Admin SHALL duyệt hoặc từ chối yêu cầu giao Chờ duyệt. Duyệt làm worker dùng version đang dùng của kỹ năng; từ chối xoá yêu cầu và ghi người từ chối. Trưởng phòng / Nhân viên duyệt MUST bị 403.
 
