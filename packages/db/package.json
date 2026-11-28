@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./testing": "./test/pg.ts",
     "./auth-schema": "./src/schema/auth.ts",
-    "./drizzle": "./src/drizzle.ts"
+    "./drizzle": "./src/drizzle.ts",
+    "./queue": "./src/queue.ts",
+    "./testing/fixtures": "./test/fixtures.ts"
   },
   "scripts": {
     "migrate": "node --env-file-if-exists=../../.env src/migrate-cli.ts",
@@ -18,6 +20,7 @@
     "@dw/core": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "pg": "^8.23.1",
+    "pg-boss": "12.38.2",
     "zod": "^4"
   },
   "devDependencies": {

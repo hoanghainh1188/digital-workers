@@ -9,7 +9,16 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@dw/billing": "workspace:*",
+    "@dw/channels": "workspace:*",
     "@dw/core": "workspace:*",
+    "@dw/crypto": "workspace:*",
+    "@dw/db": "workspace:*",
+    "@dw/llm": "workspace:*",
+    "@dw/mail": "workspace:*",
     "zod": "^4"
+  },
+  "devDependencies": {
+    "pg": "^8.23.1"
   }
 }

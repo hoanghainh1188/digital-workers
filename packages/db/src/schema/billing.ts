@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { tasks } from './tasks.ts';
 import { companies } from './tenancy.ts';
 
 /**
@@ -162,7 +163,7 @@ export const creditAccounts = pgTable(
   ],
 );
 
-/** One per billed model call. Append-only. worker_id / task_id get foreign keys in change 5. */
+/** One per billed model call. Append-only. task_id → tasks since change 5 (design D1). */
 export const costEntries = pgTable(
   'cost_entries',
   {
@@ -189,6 +190,12 @@ export const costEntries = pgTable(
   },
   (table) => [
     unique('cost_entries_company_id_id_unique').on(table.companyId, table.id),
+    foreignKey({
+      name: 'cost_entries_company_task_fk',
+      columns: [table.companyId, table.taskId],
+      foreignColumns: [tasks.companyId, tasks.id],
+    }),
+    index('cost_entries_company_task_idx').on(table.companyId, table.taskId),
     index('cost_entries_company_created_idx').on(table.companyId, table.createdAt),
     index('cost_entries_company_worker_created_idx').on(
       table.companyId,

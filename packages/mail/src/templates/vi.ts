@@ -166,3 +166,31 @@ export function exhaustedCreditTemplate(input: {
   );
   return { subject, text, html };
 }
+
+/** "Nhân viên số hết ngân sách tháng" to the worker's manager, once a month (0.2 #129). */
+export function workerBudgetExhaustedTemplate(input: {
+  name: string;
+  workerName: string;
+  budgetVnd: number;
+  url: string;
+}): RenderedEmail {
+  const subject = `${input.workerName} đã dùng hết ngân sách tháng này — Digital Workers`;
+  const budget = formatVnd(input.budgetVnd);
+  const text = [
+    `Chào ${input.name},`,
+    '',
+    `${input.workerName} đã dùng hết ngân sách tháng này (${budget}). Nhân viên số không nhận việc mới cho tới tháng sau, hoặc tới khi ngân sách được tăng.`,
+    'Người giao việc đã được báo bằng một câu trả lời cố định, không tốn credit.',
+    '',
+    `Xem hồ sơ nhân viên số: ${input.url}`,
+  ].join('\n');
+  const html = page(
+    [
+      `<p>Chào ${escapeHtml(input.name)},</p>`,
+      `<p><strong>${escapeHtml(input.workerName)}</strong> đã dùng hết ngân sách tháng này (<strong>${budget}</strong>). Nhân viên số không nhận việc mới cho tới tháng sau, hoặc tới khi ngân sách được tăng.</p>`,
+      '<p>Người giao việc đã được báo bằng một câu trả lời cố định, không tốn credit.</p>',
+      button(escapeHtml(input.url), 'Xem hồ sơ'),
+    ].join('\n'),
+  );
+  return { subject, text, html };
+}

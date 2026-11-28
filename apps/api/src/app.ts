@@ -1,8 +1,12 @@
+import websocket from '@fastify/websocket';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import { type Auth, registerAuthRoutes } from './auth/index.ts';
+import type { ChatHub } from './chat/hub.ts';
 import { registerErrorHandling } from './plugins/errors.ts';
 import { registerOriginCheck } from './plugins/request-guards.ts';
 import { zodSerializerCompiler, zodValidatorCompiler } from './plugins/zod.ts';
+import { type ChatRouteDeps, registerChatRoutes } from './routes/chat.ts';
+import { registerChatSocket } from './routes/chat-ws.ts';
 import { type CreditRouteDeps, registerCreditRoutes } from './routes/credit.ts';
 import { registerDepartmentRoutes } from './routes/departments.ts';
 import { type HealthDeps, registerHealthRoutes } from './routes/health.ts';
@@ -23,6 +27,10 @@ export type PlatformDeps = TenancyRouteDeps &
     readonly resolveContext: ContextResolver;
     /** Origins allowed to send state-changing requests (CSRF). */
     readonly trustedOrigins: readonly string[];
+    readonly chat: ChatRouteDeps['chat'] & {
+      readonly hub: ChatHub;
+      readonly recheckMs?: number;
+    };
   };
 
 export type AppDeps = HealthDeps & {
@@ -51,6 +59,16 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     registerSkillRoutes(app, deps.platform);
     registerCreditRoutes(app, deps.platform);
     registerPlatformRoutes(app, deps.platform);
+    registerChatRoutes(app, deps.platform);
+    const platform = deps.platform;
+    void app.register(websocket, { options: { maxPayload: 4_096 } });
+    void app.register(async (scoped) =>
+      registerChatSocket(scoped, {
+        ...platform,
+        hub: platform.chat.hub,
+        recheckMs: platform.chat.recheckMs,
+      }),
+    );
   }
   return app;
 }

@@ -50,6 +50,13 @@
       "when": 1795860554254,
       "tag": "0006_llm_gateway_credit",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795874780306,
+      "tag": "0007_worker_runtime_webchat",
+      "breakpoints": true
     }
   ]
 }

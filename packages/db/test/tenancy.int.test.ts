@@ -188,11 +188,14 @@ describe('tenant isolation in the database (dw_app)', () => {
         'member_for_user',
         // Platform admin totals (change add-llm-gateway-and-credit, design D10).
         'platform_company_summaries',
+        // Reaper ids, apps/runner only (change add-worker-runtime-webchat, design D9).
+        'tasks_needing_attention',
       ]);
       for (const name of [
         'member_for_user',
         'invitation_by_token_hash',
         'platform_company_summaries',
+        'tasks_needing_attention',
       ]) {
         const definer = rows.find((row) => row.proname === name);
         expect(definer?.prosecdef).toBe(true);

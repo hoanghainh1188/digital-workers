@@ -63,7 +63,22 @@ services:
   runner:
     build: { context: ., target: runner }
     restart: unless-stopped
-    environment: *server-env
+    environment:
+      <<: *server-env
+      DATABASE_URL: postgres://dw_app:${DW_APP_PASSWORD}@postgres:5432/dw
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY}
+      SMTP_URL: ${SMTP_URL:?set SMTP_URL}
+      MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM}
+      WEB_ORIGIN: ${PUBLIC_URL:?set PUBLIC_URL}
+      # Worker runtime (add-worker-runtime-webchat, 0.2 #123, #131). Defaults shown.
+      WORKER_MODEL: ${WORKER_MODEL:-anthropic:claude-sonnet-5-5}
+      RUNNER_CONCURRENCY: ${RUNNER_CONCURRENCY:-4}
+      TASK_MAX_STEPS: ${TASK_MAX_STEPS:-12}
+      TASK_MAX_SECONDS: ${TASK_MAX_SECONDS:-180}
+      TASK_MAX_CHARGE_VND: ${TASK_MAX_CHARGE_VND:-8000}
+    # A running Task may take TASK_MAX_SECONDS: let it finish on deploy (0.2 #136).
+    # Docker's default is 10 seconds, then SIGKILL.
+    stop_grace_period: 200s
     depends_on:
       migrate: { condition: service_completed_successfully }
 
