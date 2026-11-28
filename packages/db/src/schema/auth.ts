@@ -1,4 +1,4 @@
-import { boolean, index, pgSchema, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, pgSchema, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 /**
  * Better Auth tables (design D2): global identities, no company_id and no RLS.
@@ -18,6 +18,8 @@ export const users = authSchema.table('users', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),
+  // Better Auth plugin twoFactor (change add-llm-gateway-and-credit, design D10).
+  twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
   ...timestamps,
 });
 
@@ -68,4 +70,24 @@ export const verifications = authSchema.table(
     ...timestamps,
   },
   (table) => [index('verifications_identifier_idx').on(table.identifier)],
+);
+
+/** TOTP secrets and backup codes of the twoFactor plugin (encrypted by Better Auth). */
+export const twoFactors = authSchema.table(
+  'two_factors',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    secret: text('secret').notNull(),
+    backupCodes: text('backup_codes').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    verified: boolean('verified').notNull().default(true),
+    failedVerificationCount: integer('failed_verification_count').notNull().default(0),
+    lockedUntil: timestamp('locked_until', { withTimezone: true }),
+  },
+  (table) => [
+    index('two_factors_user_id_idx').on(table.userId),
+    index('two_factors_secret_idx').on(table.secret),
+  ],
 );

@@ -117,12 +117,17 @@ interface ChannelAdapter {
 - Bảng giá mô hình lưu trong DB (giá input / output / cache theo 1 triệu token, ngày hiệu lực). Không mã cứng.
 - Tỉ giá USD → VNĐ cấu hình chung cho mọi công ty; hệ số giá mặc định chung, đặt riêng được cho từng công ty (0.2 #075).
 - Lựa chọn khác: LiteLLM proxy (Python, thêm 1 dịch vụ). Để sau nếu cần nhiều nhà cung cấp.
-- API key là **của platform** (#016), cấp hệ thống. Một key cho mỗi nhà cung cấp, đặt giới hạn chi tiêu ở trang nhà cung cấp làm lớp chặn cuối.
+- API key là **của platform** (#016), cấp hệ thống. Một key cho mỗi nhà cung cấp, đặt giới hạn chi tiêu ở trang nhà cung cấp làm lớp chặn cuối. Key lưu đã mã hoá trong bảng `provider_keys` (platform admin nhập ở `/platform/keys`), không phải biến môi trường.
+- **Một cửa gọi mô hình** (`packages/llm`, `createGateway().generate`): chỉ package này import `ai` / `@ai-sdk/*` (có test chặn import). Thứ tự mỗi lần gọi: tìm giá đang hiệu lực (không có → từ chối) → đọc số dư (≤ 0 → từ chối) → mở key → gọi mô hình → đọc số token → ghi `CostEntry` + trừ credit → gửi email báo sau commit. Gọi lỗi trước khi có số token thì không tính tiền. Test chỉ dùng mô hình giả (`@dw/llm/testing`), chặn `fetch`.
+- Token vào tính tiền = phần không cache (AI SDK 7 báo sẵn `inputTokenDetails.noCacheTokens`); cache đọc và cache ghi tính theo giá riêng, cache ghi dùng giá vào nếu nhà cung cấp không có giá riêng.
 
 ### Credit (#016)
-- Trừ credit **sau** mỗi lần gọi mô hình, theo `CostEntry` × hệ số giá (#025).
-- Trước mỗi bước của vòng lặp: kiểm tra số dư > ngưỡng an toàn (ước tính chi phí 1 bước). Không đủ → dừng `Task`.
-- `CreditTransaction` chỉ thêm, không sửa. Số dư = tổng giao dịch (có bảng số dư lưu sẵn, cập nhật trong cùng transaction DB).
+- 1 credit = 1 đồng. Trừ credit **sau** mỗi lần gọi mô hình, theo `CostEntry` × hệ số giá (#025).
+- **Tính bằng số nguyên, không số thực** (`packages/billing/pricing.ts`, BigInt): giá lưu theo micro-USD / 1 triệu token, tỉ giá là số nguyên đồng / USD, hệ số theo phần nghìn (1,30 → 1300). Chi phí thật và số tiền bán của một lần gọi tính tới micro-đồng, làm tròn một lần. Số trừ là đồng nguyên: **làm tròn xuống, phần lẻ dưới 1 đồng cộng dồn sang lần sau** của công ty (0.2 #097), nên tổng đã trừ luôn bằng phần nguyên của tổng số tiền bán.
+- `CreditTransaction` và `CostEntry` chỉ thêm (`dw_app` không có `UPDATE` / `DELETE`). Số dư lưu ở `credit_accounts`, đổi trong cùng transaction với giao dịch, sau khi khoá dòng tài khoản (`SELECT … FOR UPDATE`): các lần trừ của một công ty xếp hàng, không mất lần nào. Mỗi lần gọi có đúng một giao dịch `usage`, kể cả 0đ.
+- Lần gọi đã xong thì trừ đủ, **số dư được âm** (0.2 #095). Trước mỗi lần gọi mô hình: số dư ≤ 0 → từ chối; việc đang làm dở **dừng ở lần gọi tiếp theo** (0.2 #096). Kiểm tra này không khoá, nên N lần gọi song song lúc gần hết credit có thể âm tối đa ≈ N × chi phí một lần.
+- Ngân sách tháng của worker tính từ `CostEntry` theo tháng giờ Việt Nam; runtime (change 5) kiểm tra khi nhận việc mới, không dừng việc đang chạy (#018).
+- Báo "sắp hết" (dưới 20% lần cộng gần nhất, #071) cho Owner và "hết credit" cho Owner, Admin, Trưởng phòng (0.2 #101) qua email, mỗi lần xuống ngưỡng một lần.
 - Nạp tiền (#023): `TopUp` sinh nội dung chuyển khoản duy nhất → VietQR → Harry xác nhận trên màn quản trị platform (FR-13-07). Tự động đối soát qua webhook ngân hàng / cổng thanh toán để sau MVP.
 
 ### Chạy script của skill (#015, #024)
@@ -140,7 +145,9 @@ interface ChannelAdapter {
 - Từ phiên tìm ra thành viên bằng một hàm duy nhất `app.member_for_user(user_id)` (`SECURITY DEFINER`, owner `dw_owner`, `search_path` cố định, chỉ `dw_app` được `EXECUTE`); nó chỉ trả thành viên của chính `user_id` đó. Đây là lối đi qua RLS duy nhất.
 - `audit_events` chỉ thêm: `dw_app` không có `UPDATE` / `DELETE` / `TRUNCATE`. Ghi tên trường đã đổi, không ghi giá trị.
 - Truy cập id của công ty khác trả 404 giống id không tồn tại, kèm `AuditEvent access.not_found` ở công ty người gọi.
-- Bí mật (`ProviderKey`, token bot, mật khẩu connector) mã hoá AES-256-GCM; khoá chính lấy từ biến môi trường, không nằm trong DB.
+- Bí mật (`ProviderKey`, token bot, mật khẩu connector) mã hoá AES-256-GCM (`packages/crypto`): khoá chính `ENCRYPTION_KEY` (32 byte, base64) lấy từ biến môi trường, không nằm trong DB; bản mã `v1.<iv>.<ct+tag>` gắn với chỗ lưu (AAD, vd. `provider_key:anthropic`) nên chép sang dòng khác thì không mở được. API chỉ trả "đã cấu hình". Mất `ENCRYPTION_KEY` = mất mọi key đã lưu: sao lưu khoá riêng với bản sao lưu DB.
+- **Platform admin** (#076, #077): tài khoản có email trong `PLATFORM_ADMIN_EMAILS`, đã xác minh, không thuộc công ty nào (không tạo được công ty, không nhận được lời mời). Bắt buộc TOTP (plugin `twoFactor` của Better Auth; không "ghi nhớ thiết bị"; mã sai tính vào khoá tài khoản của plugin), chỉ đăng nhập bằng email + mật khẩu (phiên tạo bằng Google bị từ chối vì sẽ bỏ qua TOTP), quyền quản trị hết sau 12 giờ kể từ lúc đăng nhập. Guard chạy ở `onRequest` của mọi `/api/platform/*`, trước khi kiểm tra dữ liệu gửi lên: người khác nhận 404 như đường dẫn không tồn tại (thành viên công ty có thêm `AuditEvent access.not_found`).
+- Platform admin không có `company_id` nên RLS chặn mọi bảng nghiệp vụ. Lối đi qua RLS thứ hai, hẹp: `app.platform_company_summaries()` (`SECURITY DEFINER`) chỉ trả cột tổng theo công ty (tên, email Owner, số dư, đã trừ 30 ngày, chi phí thật 30 ngày cho tổng platform, hệ số riêng, lần dùng gần nhất). Chỉ `apps/api/src/platform/` được gọi (có test). Ghi cho một công ty (điều chỉnh credit, hệ số riêng) vẫn đi qua `withCompany`. Mọi thay đổi của platform admin ghi `platform_audit_events` (chỉ thêm, chỉ tên trường, không giá trị key).
 - Xác thực web (#012): Better Auth, email + mật khẩu và Google OAuth, gắn ở `/api/auth/*`. Phiên lưu trong PostgreSQL, cookie httpOnly + SameSite=Lax (+ Secure ở prod), 30 ngày tự gia hạn (#043). Giới hạn thử sai theo IP (Better Auth) và theo email (10 lần / 15 phút, #044). Zalo login sau MVP.
 - Tài khoản chat của nhân viên (`ChannelIdentity`) ghép bằng mã một lần, hết hạn sau 10 phút.
 - Log (pino) che dữ liệu cá nhân và bí mật.

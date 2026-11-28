@@ -6,12 +6,13 @@ import {
   PASSWORD_MIN_LENGTH,
 } from '@dw/core';
 import { type Database, memberForUser, recordAudit, withCompany } from '@dw/db';
-import { accounts, sessions, users, verifications } from '@dw/db/auth-schema';
+import { accounts, sessions, twoFactors, users, verifications } from '@dw/db/auth-schema';
 import { and, eq } from '@dw/db/drizzle';
 import { type Mailer, resetPasswordTemplate, verifyEmailTemplate } from '@dw/mail';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
+import { twoFactor } from 'better-auth/plugins';
 import type { FastifyBaseLogger } from 'fastify';
 import { type ApiConfig, googleCredentials } from '../config.ts';
 import type { FailedLoginLimiter } from './failed-login-limiter.ts';
@@ -27,6 +28,7 @@ export type AuthDeps = {
     | 'NODE_ENV'
     | 'GOOGLE_CLIENT_ID'
     | 'GOOGLE_CLIENT_SECRET'
+    | 'PLATFORM_ADMIN_EMAILS'
   >;
   readonly database: Database;
   readonly mailer: Mailer;
@@ -37,7 +39,36 @@ export type AuthDeps = {
   readonly resetLimiter: FailedLoginLimiter;
   /** Better Auth's own per-IP limiter (design D6). Defaults to on. */
   readonly ipRateLimit?: boolean;
+  /**
+   * Called after a user's email became verified, by any path (link, password reset,
+   * invitation). Grants the trial credit when the user is an Owner (design D8).
+   */
+  readonly onEmailVerified?: (userId: string) => Promise<void>;
 };
+
+/** True for an email in PLATFORM_ADMIN_EMAILS (design D10). */
+export function isPlatformAdminEmail(
+  config: Pick<ApiConfig, 'PLATFORM_ADMIN_EMAILS'>,
+  email: string,
+): boolean {
+  return config.PLATFORM_ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
+
+/**
+ * The only endpoints that may create a session for a platform admin: email sign-in
+ * (the twoFactor plugin replaces it with a TOTP challenge once TOTP is on), the TOTP
+ * steps, and the first sign-up. Google sign-in would skip TOTP, so it is refused.
+ */
+const PLATFORM_ADMIN_SESSION_PATHS = new Set([
+  '/sign-in/email',
+  '/sign-up/email',
+  '/two-factor/verify-totp',
+  '/two-factor/verify-backup-code',
+]);
+const TWO_FACTOR_VERIFY_PATHS = new Set([
+  '/two-factor/verify-totp',
+  '/two-factor/verify-backup-code',
+]);
 
 /** Every Better Auth endpoint that sets a password, and the body field carrying it (#032). */
 const PASSWORD_FIELDS: Readonly<Record<string, string>> = {
@@ -80,8 +111,17 @@ export function createAuth(deps: AuthDeps) {
     telemetry: { enabled: false },
     database: drizzleAdapter(database.db, {
       provider: 'pg',
-      schema: { user: users, session: sessions, account: accounts, verification: verifications },
+      schema: {
+        user: users,
+        session: sessions,
+        account: accounts,
+        verification: verifications,
+        twoFactor: twoFactors,
+      },
     }),
+    // TOTP for platform admins only (design D10). Secrets are encrypted by the plugin;
+    // wrong codes count towards its per-account lockout (10 tries, then 15 minutes).
+    plugins: [twoFactor({ issuer: 'Digital Workers' })],
     advanced: {
       database: { generateId: 'uuid' },
       cookiePrefix: 'dw',
@@ -115,7 +155,9 @@ export function createAuth(deps: AuthDeps) {
       // Holding the inbox proves the email: this is how the real owner takes back an
       // address someone else signed up with (0.2 #067).
       onPasswordReset: async ({ user }) => {
-        await markEmailVerified(database, user.id);
+        // Taking back a platform-admin address also drops any TOTP enrolled before.
+        if (isPlatformAdminEmail(config, user.email)) await resetTwoFactor(database, user.id);
+        await markEmailVerified(database, user.id, deps.onEmailVerified);
         const member = await memberForUser(database, user.id);
         if (!member) return;
         await withCompany(database, member.companyId, (tx) =>
@@ -152,6 +194,7 @@ export function createAuth(deps: AuthDeps) {
         '/sign-up/email': { window: 60, max: 10 },
         '/send-verification-email': { window: 60, max: 5 },
         [REQUEST_PASSWORD_RESET]: { window: 60, max: 5 },
+        '/two-factor/*': { window: 60, max: 5 },
       },
     },
     logger: {
@@ -189,6 +232,19 @@ export function createAuth(deps: AuthDeps) {
           }
           if (email) resetLimiter.recordFailure(email);
         }
+        if (ctx.path === '/two-factor/enable') {
+          // MVP: TOTP is for platform admins only; anyone else sees "not found".
+          const session = await getSessionFromCtx(ctx);
+          // Verified email first: otherwise someone who signed up with the address
+          // before the real admin could enrol their own TOTP (code review finding).
+          if (!session?.user.emailVerified || !isPlatformAdminEmail(config, session.user.email)) {
+            throw new APIError('NOT_FOUND', { code: 'NOT_FOUND', message: 'Not found' });
+          }
+        }
+        if (TWO_FACTOR_VERIFY_PATHS.has(ctx.path)) {
+          // No "remember this device" (0.2 #100): every sign-in asks for a code.
+          return { context: { body: { ...(ctx.body ?? {}), trustDevice: false } } };
+        }
         if (ctx.path === '/verify-email') {
           await rejectUsedVerificationLink(ctx.query?.token, ctx.context.secret, (email) =>
             ctx.context.internalAdapter.findUserByEmail(email),
@@ -205,11 +261,39 @@ export function createAuth(deps: AuthDeps) {
       }),
     },
     databaseHooks: {
+      user: {
+        update: {
+          // Better Auth's own verification link (and anything else that updates a user).
+          after: async (user) => {
+            if (!user.emailVerified || !deps.onEmailVerified) return;
+            await deps
+              .onEmailVerified(user.id)
+              .catch((error: unknown) =>
+                logger.error({ error: describeError(error) }, 'email-verified hook failed'),
+              );
+          },
+        },
+      },
       session: {
         create: {
           // Every way of creating a session (email, Google, invited sign-up) goes
           // through here: a locked member gets no session (design D6, 0.2 #040).
-          before: async (session) => {
+          before: async (session, ctx) => {
+            if (
+              config.PLATFORM_ADMIN_EMAILS.length > 0 &&
+              !PLATFORM_ADMIN_SESSION_PATHS.has(ctx?.path ?? '')
+            ) {
+              const [user] = await database.db
+                .select({ email: users.email })
+                .from(users)
+                .where(eq(users.id, session.userId));
+              if (user && isPlatformAdminEmail(config, user.email)) {
+                throw new APIError('FORBIDDEN', {
+                  code: 'PLATFORM_ADMIN_PASSWORD_ONLY',
+                  message: 'Platform admins sign in with email, password and TOTP',
+                });
+              }
+            }
             const member = await memberForUser(database, session.userId);
             if (member?.status === 'locked') {
               throw new APIError('FORBIDDEN', {
@@ -250,11 +334,28 @@ async function hasPasswordAccount(database: Database, userId: string): Promise<b
   return rows.length > 0;
 }
 
-/** Marks the user's email as verified (invitation accepted, password reset). */
-export async function markEmailVerified(database: Database, userId: string): Promise<void> {
+/**
+ * Marks the user's email as verified (invitation accepted, password reset). This
+ * bypasses Better Auth, so it calls `onVerified` itself (trial credit, design D8).
+ */
+export async function markEmailVerified(
+  database: Database,
+  userId: string,
+  onVerified?: (userId: string) => Promise<void>,
+): Promise<void> {
   await database.db
     .update(users)
     .set({ emailVerified: true, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+  await onVerified?.(userId);
+}
+
+/** Removes the user's TOTP secret and turns two-step verification off. */
+async function resetTwoFactor(database: Database, userId: string): Promise<void> {
+  await database.db.delete(twoFactors).where(eq(twoFactors.userId, userId));
+  await database.db
+    .update(users)
+    .set({ twoFactorEnabled: false, updatedAt: new Date() })
     .where(eq(users.id, userId));
 }
 

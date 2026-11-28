@@ -1,3 +1,5 @@
+import { creditVi } from './credit.vi.ts';
+import { platformVi } from './platform.vi.ts';
 import { skillsVi } from './skills.vi.ts';
 import { workersVi } from './workers.vi.ts';
 
@@ -343,6 +345,8 @@ export const vi = {
   'form.invalid': 'Giá trị chưa hợp lệ.',
   ...workersVi,
   ...skillsVi,
+  ...creditVi,
+  ...platformVi,
 } as const;
 
 export type MessageKey = keyof typeof vi;

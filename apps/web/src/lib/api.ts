@@ -21,15 +21,18 @@ export class ApiError extends Error {
 /** JSON fetch to the same-origin API (cookies included). Throws ApiError on 4xx/5xx. */
 export async function api<T>(
   path: string,
-  init: { method?: string; body?: unknown } = {},
+  init: { method?: string; body?: unknown; headers?: Record<string, string> } = {},
 ): Promise<T> {
   const response = await fetch(path, {
     method: init.method ?? 'GET',
     credentials: 'same-origin',
-    headers: init.body === undefined ? {} : { 'content-type': 'application/json' },
+    headers: {
+      ...(init.body === undefined ? {} : { 'content-type': 'application/json' }),
+      ...init.headers,
+    },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
   });
-  const payload = await response.json().catch(() => null);
+  const payload = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
     const error = payload?.error ?? payload ?? {};
     throw new ApiError(response.status, String(error.code ?? 'UNKNOWN'), error.details ?? []);

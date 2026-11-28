@@ -10,9 +10,26 @@ const authEnv = {
   BETTER_AUTH_URL: 'http://localhost:5173',
   SMTP_URL: 'smtp://127.0.0.1:1',
   MAIL_FROM: 'noreply@dw.test',
+  ENCRYPTION_KEY: Buffer.alloc(32, 1).toString('base64'),
 };
 
 describe('api startup configuration', () => {
+  it('exits non-zero without ENCRYPTION_KEY and names it (spec secret-encryption)', async () => {
+    const { ENCRYPTION_KEY: _omit, ...env } = authEnv;
+    const result = await runNode(entry, env);
+    expect(result.code).not.toBe(0);
+    expect(result.stderr).toContain('ENCRYPTION_KEY: missing');
+    expect(result.stdout).not.toContain('started');
+  });
+
+  it('exits non-zero with a 16-byte ENCRYPTION_KEY, never printing it', async () => {
+    const short = Buffer.alloc(16, 'K').toString('base64');
+    const result = await runNode(entry, { ...authEnv, ENCRYPTION_KEY: short });
+    expect(result.code).not.toBe(0);
+    expect(result.stderr).toContain('ENCRYPTION_KEY: invalid');
+    expect(result.stderr + result.stdout).not.toContain(short);
+  });
+
   it('exits non-zero without DATABASE_URL, before listening', async () => {
     const result = await runNode(entry, {});
     expect(result.code).not.toBe(0);

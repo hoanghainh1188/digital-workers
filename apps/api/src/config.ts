@@ -5,6 +5,17 @@ const optionalText = z.preprocess(
   (value) => (value === '' ? undefined : value),
   z.string().optional(),
 );
+/** Comma-separated emails, compared lower-case. Empty = nobody is a platform admin. */
+const emailList = z
+  .string()
+  .default('')
+  .transform((value) =>
+    value
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  )
+  .pipe(z.array(z.email()));
 const booleanFlag = z
   .enum(['true', 'false', '1', '0', ''])
   .default('false')
@@ -28,6 +39,10 @@ export const apiConfigSchema = z
     GOOGLE_CLIENT_SECRET: optionalText,
     /** True behind Caddy: take the client IP from X-Forwarded-For. */
     TRUST_PROXY: booleanFlag,
+    /** Master key for stored secrets (spec secret-encryption): 32 bytes, base64. */
+    ENCRYPTION_KEY: envFields.encryptionKey,
+    /** Platform admins (design D10, 0.2 #076): not members of any company, TOTP required. */
+    PLATFORM_ADMIN_EMAILS: emailList,
   })
   .superRefine((config, ctx) => {
     // Google needs both values or neither (design D10).

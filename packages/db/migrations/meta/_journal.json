@@ -43,6 +43,13 @@
       "when": 1795853438862,
       "tag": "0005_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795860554254,
+      "tag": "0006_llm_gateway_credit",
+      "breakpoints": true
     }
   ]
 }

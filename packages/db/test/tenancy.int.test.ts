@@ -186,8 +186,14 @@ describe('tenant isolation in the database (dw_app)', () => {
         'current_company_id',
         'invitation_by_token_hash',
         'member_for_user',
+        // Platform admin totals (change add-llm-gateway-and-credit, design D10).
+        'platform_company_summaries',
       ]);
-      for (const name of ['member_for_user', 'invitation_by_token_hash']) {
+      for (const name of [
+        'member_for_user',
+        'invitation_by_token_hash',
+        'platform_company_summaries',
+      ]) {
         const definer = rows.find((row) => row.proname === name);
         expect(definer?.prosecdef).toBe(true);
         expect(definer?.proconfig).toEqual(['search_path=pg_catalog, pg_temp']);

@@ -6,6 +6,10 @@ export type Me = {
   user: { id: string; name: string; email: string; emailVerified: boolean };
   member: { id: string; role: Role } | null;
   company: { id: string; name: string; contactPhone: string | null } | null;
+  /** Owner / Admin / Trưởng phòng only: drives the "hết credit" banner. */
+  credit?: { exhausted: boolean };
+  /** Only for a platform admin (never a company member). */
+  platformAdmin?: { twoFactorEnabled: boolean };
 };
 
 /** `null` when signed out. Drives every redirect (design D9). */

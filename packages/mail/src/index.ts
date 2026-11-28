@@ -7,7 +7,10 @@ export {
 } from './mailer.ts';
 export {
   escapeHtml,
+  exhaustedCreditTemplate,
+  formatVnd,
   inviteTemplate,
+  lowCreditTemplate,
   type RenderedEmail,
   resetPasswordTemplate,
   verifyEmailTemplate,

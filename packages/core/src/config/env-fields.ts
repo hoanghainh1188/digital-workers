@@ -17,8 +17,24 @@ function port(fallback: number) {
   );
 }
 
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
+
+/**
+ * Master key for secrets (spec secret-encryption): base64 of exactly 32 bytes.
+ * Produces the decoded bytes. Failures carry only a reason, never the value.
+ */
+const encryptionKey = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((value) => BASE64.test(value) && Buffer.from(value, 'base64').length === 32, {
+    message: 'must be 32 bytes, base64-encoded',
+  })
+  .transform((value) => Buffer.from(value, 'base64'));
+
 /** Reusable environment field schemas shared by every process. */
 export const envFields = {
+  encryptionKey,
   databaseUrl: z.url({ protocol: /^postgres(ql)?$/ }),
   port,
   host: z.string().min(1),
