@@ -10,7 +10,8 @@
     "./permissions": "./src/access/permissions.ts",
     "./org-schemas": "./src/org/schemas.ts",
     "./member-rules": "./src/access/member-rules.ts",
-    "./workers": "./src/workers/index.ts"
+    "./workers": "./src/workers/index.ts",
+    "./skills": "./src/skills/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"

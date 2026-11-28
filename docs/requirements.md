@@ -137,6 +137,10 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 112 | 2026-11-28 | **Không lưu trữ phòng ban còn worker chưa nghỉ việc** (bổ sung #064); worker đã nghỉ việc không chặn và vẫn hiện tên phòng cũ. (`add-worker-profile`) |
 | 113 | 2026-11-28 | Ma trận quyền mục 1 thêm hàng **"Xem hồ sơ worker"** (Owner, Admin cả công ty; Trưởng phòng, Nhân viên phòng mình), **"Sửa hồ sơ worker"** (Owner, Admin; Trưởng phòng phòng mình) và **"Đề nghị worker lên chính thức"** (Trưởng phòng phòng mình). "Tạm nghỉ / nghỉ việc" phủ cả đi làm lại và gia hạn thử việc; "Duyệt worker lên chính thức" phủ cả trả lại đề nghị. (Ghi vào bảng cùng code khi apply, task 1.1.) (`add-worker-profile`) |
 | 114 | 2026-11-28 | Hết hạn thử việc: change 2 **chỉ báo trên web** (hồ sơ, sơ đồ); email / tin nhắn nhắc người quản lý làm ở change 8 (`add-schedules`). Trưởng phòng **không rút lại** đề nghị chính thức trong MVP; Owner / Admin trả lại. (`add-worker-profile`) |
+| 115 | 2026-11-28 | Duyệt (hoặc quay lại) một version **có script** làm phần giao kỹ năng đó của worker Chính thức / Tạm nghỉ chuyển sang **Tạm khoá** trong cùng giao dịch, kèm `AuditEvent worker_skill.suspended` (giữ #088 khi kỹ năng không script được thêm `scripts/`). (`add-skill-library`) |
+| 116 | 2026-11-28 | Chi tiết kỹ năng chỉ liệt kê worker mà người xem **được xem hồ sơ** (luật #047); số worker đang giữ kỹ năng (`holderCount`) vẫn đếm đủ để nút Lưu trữ báo đúng. (`add-skill-library`) |
+| 117 | 2026-11-28 | `AuditEvent` của phần giao kỹ năng dùng `target_type = worker_skill`, `target_id = "<id worker>:<id kỹ năng>"` để một sự kiện nêu đủ cả hai id kể cả sau khi dòng bị xoá; sự kiện version dùng `target_type = skill_version`. (`add-skill-library`) |
+| 118 | 2026-11-28 | Nhập `.zip`: tối đa **30 lần / phút / IP**; `dryRun` có lỗi cũng trả **422** cùng danh sách kiểm tra như lần nhập thật. (`add-skill-library`) |
 
 ### 0.3. Đề xuất chờ chốt
 
@@ -186,7 +190,8 @@ Hiện không có đề xuất chờ chốt.
 | Duyệt worker lên chính thức | ✓ | ✓ | — | — |
 | Tạm nghỉ / nghỉ việc worker | ✓ | ✓ | ✓ (phòng mình) | — |
 | Tạo / sửa skill (bản nháp) | ✓ | ✓ | ✓ | ✓ |
-| Duyệt skill | ✓ | ✓ | — | — |
+| Duyệt skill (duyệt / từ chối version, quay lại version cũ, lưu trữ, duyệt yêu cầu giao) | ✓ | ✓ | — | — |
+| Giao / gỡ skill cho worker | ✓ | ✓ | ✓ (phòng mình) | — |
 | Giao việc cho worker | ✓ | ✓ | ✓ | ✓ (nếu được gán) |
 | Duyệt việc của worker | theo quy tắc duyệt của worker |||
 | Kết nối kênh chat, connector | ✓ | ✓ | — | — |

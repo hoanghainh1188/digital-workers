@@ -1,7 +1,7 @@
 import { can } from '@dw/core/permissions';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Bot, Building2, House, LogOut, Users } from 'lucide-react';
+import { BookOpenCheck, Bot, Building2, House, LogOut, Users } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { BrandMark } from '@/components/auth/auth-layout';
 import { initials } from '@/components/ui/avatar';
@@ -77,6 +77,10 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
           <Link to="/workers" className={navLinkClass} activeProps={{ className: navActiveClass }}>
             <Bot aria-hidden="true" className="size-4.25 shrink-0" />
             <span className="max-[560px]:sr-only">{t('shell.nav.orgChart')}</span>
+          </Link>
+          <Link to="/skills" className={navLinkClass} activeProps={{ className: navActiveClass }}>
+            <BookOpenCheck aria-hidden="true" className="size-4.25 shrink-0" />
+            <span className="max-[560px]:sr-only">{t('shell.nav.skills')}</span>
           </Link>
           <h2 className={navGroupClass}>{t('shell.nav.company')}</h2>
           <Link

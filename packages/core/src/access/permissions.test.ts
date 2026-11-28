@@ -50,7 +50,10 @@ const ROW_ACTIONS: Record<string, ReadonlyArray<readonly [Action, CellReader]>> 
   'Duyệt worker lên chính thức': [['worker.approve', plain]],
   'Tạm nghỉ / nghỉ việc worker': [['worker.suspend', plain]],
   'Tạo / sửa skill (bản nháp)': [['skill.edit', plain]],
-  'Duyệt skill': [['skill.approve', plain]],
+  'Duyệt skill (duyệt / từ chối version, quay lại version cũ, lưu trữ, duyệt yêu cầu giao)': [
+    ['skill.approve', plain],
+  ],
+  'Giao / gỡ skill cho worker': [['skill.assign', plain]],
   'Giao việc cho worker': [['task.assign', plain]],
   'Kết nối kênh chat, connector': [['channel.connect', plain]],
   'Nạp credit, xem sao kê': [

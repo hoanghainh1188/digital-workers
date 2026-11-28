@@ -12,11 +12,11 @@ export type Outcome<T> =
   | { readonly ok: false; readonly kind: 'not_found' }
   /** Missing permission (design D2): 403 + `access.denied`. */
   | { readonly ok: false; readonly kind: 'denied'; readonly code: string }
-  /** A data rule (400 / 409 / 410) with its own code; no `access.denied`. */
+  /** A data rule (400 / 409 / 410 / 413 / 422) with its own code; no `access.denied`. */
   | {
       readonly ok: false;
       readonly kind: 'rejected';
-      readonly status: 400 | 409 | 410;
+      readonly status: 400 | 409 | 410 | 413 | 422;
       readonly code: string;
       readonly details?: unknown;
     };
@@ -25,7 +25,7 @@ export const ok = <T>(value: T): Outcome<T> => ({ ok: true, value });
 export const notFound: Outcome<never> = { ok: false, kind: 'not_found' };
 export const denied = (code: string): Outcome<never> => ({ ok: false, kind: 'denied', code });
 export const rejected = (
-  status: 400 | 409 | 410,
+  status: 400 | 409 | 410 | 413 | 422,
   code: string,
   details?: unknown,
 ): Outcome<never> => ({ ok: false, kind: 'rejected', status, code, details });

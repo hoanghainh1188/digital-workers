@@ -1,0 +1,19 @@
+{
+  "name": "@dw/skills",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./templates": "./src/templates.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@dw/core": "workspace:*",
+    "fflate": "^0.8.3",
+    "gray-matter": "^4.0.3",
+    "zod": "^4"
+  }
+}

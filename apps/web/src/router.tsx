@@ -1,4 +1,5 @@
 import { ROLES } from '@dw/core/permissions';
+import { RISK_LEVELS, SKILL_STATUSES } from '@dw/core/skills';
 import { WORKER_STATUSES } from '@dw/core/workers';
 import { type QueryClient, useQuery } from '@tanstack/react-query';
 import {
@@ -22,6 +23,9 @@ import { LoginPage } from '@/pages/login';
 import { OnboardingPage } from '@/pages/onboarding';
 import { ResetPasswordPage } from '@/pages/reset-password';
 import { SignupPage } from '@/pages/signup';
+import { SkillDetailPage } from '@/pages/skill-detail';
+import { SkillEditorPage } from '@/pages/skill-editor';
+import { SkillsPage } from '@/pages/skills';
 import { UsersPage } from '@/pages/users';
 import { VerifyEmailPage } from '@/pages/verify-email';
 import { WorkerProfilePage } from '@/pages/worker-profile';
@@ -144,6 +148,45 @@ const workerRoute = createRoute({
   },
 });
 
+/** Library filters live in the URL (spec skill-library "Lọc theo rủi ro"). */
+const skillsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/skills',
+  validateSearch: z.object({
+    tab: z.enum(['company', 'templates']).optional().catch(undefined),
+    q: z.string().max(100).optional().catch(undefined),
+    status: z.enum(SKILL_STATUSES).optional().catch(undefined),
+    risk: z.enum(RISK_LEVELS).optional().catch(undefined),
+  }),
+  beforeLoad: requireCompany,
+  component: function SkillsRoute() {
+    const search = skillsRoute.useSearch();
+    return <InApp render={(me) => <SkillsPage me={me} search={search} />} />;
+  },
+});
+
+const skillRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/skills/$id',
+  validateSearch: z.object({ v: z.coerce.number().int().min(1).optional().catch(undefined) }),
+  beforeLoad: requireCompany,
+  component: function SkillRoute() {
+    const { id } = skillRoute.useParams();
+    const { v } = skillRoute.useSearch();
+    return <InApp render={(me) => <SkillDetailPage key={id} me={me} id={id} version={v} />} />;
+  },
+});
+
+const skillEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/skills/$id/edit',
+  beforeLoad: requireCompany,
+  component: function SkillEditRoute() {
+    const { id } = skillEditRoute.useParams();
+    return <InApp render={() => <SkillEditorPage key={id} id={id} />} />;
+  },
+});
+
 /** Filters live in the URL so a filtered list can be shared (spec member-management). */
 const usersSearch = z.object({
   q: z.string().max(100).optional().catch(undefined),
@@ -204,6 +247,9 @@ const routeTree = rootRoute.addChildren([
   departmentsRoute,
   workersRoute,
   workerRoute,
+  skillsRoute,
+  skillRoute,
+  skillEditRoute,
   usersRoute,
   inviteRoute,
   forgotPasswordRoute,

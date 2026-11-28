@@ -36,6 +36,13 @@
       "when": 1795846649783,
       "tag": "0004_workers",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795853438862,
+      "tag": "0005_skills",
+      "breakpoints": true
     }
   ]
 }

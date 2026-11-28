@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { SignedInMe } from '@/components/app/app-shell';
+import { WorkerSkillsTab } from '@/components/skills/assignments';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
@@ -42,7 +43,6 @@ const PRIMARY: ReadonlySet<WorkerEvent> = new Set([
 
 /** Tabs for later changes ("Sắp có · change N", design D9). */
 const SOON_TABS: ReadonlyArray<readonly [MessageKey, number]> = [
-  ['profile.tab.skills', 3],
   ['profile.tab.channels', 6],
   ['profile.tab.data', 9],
   ['profile.tab.schedules', 8],
@@ -57,6 +57,7 @@ export function WorkerProfilePage({ me, id }: { me: SignedInMe; id: string }) {
   const { data: worker, error, isPending } = useQuery(workerQuery(id));
   const [open, setOpen] = useState<Open>(null);
   const [done, setDone] = useState(false);
+  const [tab, setTab] = useState<'profile' | 'skills'>('profile');
   const [savedRevision, setSavedRevision] = useState<number | null>(null);
   const role = me.member.role;
   const listsPeople =
@@ -185,14 +186,20 @@ export function WorkerProfilePage({ me, id }: { me: SignedInMe; id: string }) {
         aria-label={t('profile.tabs.label')}
         className="my-6 flex gap-1 overflow-x-auto border-b"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected="true"
-          className="-mb-px border-b-2 border-primary px-3.5 py-2.5 text-sm font-medium whitespace-nowrap"
-        >
-          {t('profile.tab.profile')}
-        </button>
+        {(['profile', 'skills'] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            id={`tab-${value}`}
+            aria-selected={tab === value}
+            aria-controls={`panel-${value}`}
+            onClick={() => setTab(value)}
+            className={`-mb-px border-b-2 px-3.5 py-2.5 text-sm font-medium whitespace-nowrap ${tab === value ? 'border-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            {t(`profile.tab.${value}`)}
+          </button>
+        ))}
         {SOON_TABS.map(([label, change]) => (
           <button
             key={label}
@@ -211,7 +218,18 @@ export function WorkerProfilePage({ me, id }: { me: SignedInMe; id: string }) {
         ))}
       </div>
 
-      <div className="grid items-start gap-5 min-[1025px]:grid-cols-[minmax(0,1.6fr)_minmax(17rem,1fr)]">
+      {tab === 'skills' ? (
+        <div role="tabpanel" id="panel-skills" aria-labelledby="tab-skills">
+          <WorkerSkillsTab worker={worker} role={role} />
+        </div>
+      ) : null}
+      <div
+        role="tabpanel"
+        id="panel-profile"
+        aria-labelledby="tab-profile"
+        hidden={tab !== 'profile'}
+        className="grid items-start gap-5 min-[1025px]:grid-cols-[minmax(0,1.6fr)_minmax(17rem,1fr)]"
+      >
         <ProfileForm
           key={worker.revision}
           worker={worker}
