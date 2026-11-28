@@ -115,7 +115,7 @@ interface ChannelAdapter {
 
 - Vercel AI SDK: một giao diện cho Anthropic / OpenAI, có tool calling.
 - Bảng giá mô hình lưu trong DB (giá input / output / cache theo 1 triệu token, ngày hiệu lực). Không mã cứng.
-- Tỉ giá USD → VNĐ cấu hình theo công ty.
+- Tỉ giá USD → VNĐ cấu hình chung cho mọi công ty; hệ số giá mặc định chung, đặt riêng được cho từng công ty (0.2 #075).
 - Lựa chọn khác: LiteLLM proxy (Python, thêm 1 dịch vụ). Để sau nếu cần nhiều nhà cung cấp.
 - API key là **của platform** (#016), cấp hệ thống. Một key cho mỗi nhà cung cấp, đặt giới hạn chi tiêu ở trang nhà cung cấp làm lớp chặn cuối.
 

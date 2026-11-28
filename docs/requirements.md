@@ -95,6 +95,13 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 068 | 2026-11-27 | Ma trận quyền mục 1 thêm hàng **"Xem danh sách người dùng"** (ghi vào bảng cùng code khi apply, task 1.1): Owner, Admin cả công ty; Trưởng phòng phòng mình; Nhân viên không (khớp #038). Mọi thành viên xem được danh sách phòng ban. (`add-departments-and-invites`) |
 | 069 | 2026-11-27 | Trang **Quên mật khẩu / Đặt lại mật khẩu** dựng theo phong cách trang đăng nhập, **không vẽ màn riêng**. (`add-departments-and-invites`) |
 | 070 | 2026-11-27 | Khoá tài khoản **không ghi lý do** trong MVP: chỉ lưu ngày khoá, hiện "Đã khoá · dd/mm". (`add-departments-and-invites`) |
+| 071 | 2026-11-28 | Báo Owner "credit sắp hết" khi số dư xuống dưới **20% của lần cộng credit gần nhất** (nạp tiền, cộng tay "đã nhận chuyển khoản", hoặc credit dùng thử); báo một lần mỗi lần xuống dưới ngưỡng. Owner chưa đổi được tỉ lệ trong MVP. (`add-llm-gateway-and-credit`) |
+| 072 | 2026-11-28 | Sổ credit ghi **từng lần** gọi mô hình; trang Credit **gộp mỗi worker mỗi ngày một dòng**, mở ra xem từng lần. (`add-llm-gateway-and-credit`) |
+| 073 | 2026-11-28 | Công ty mới nhận **200.000đ credit dùng thử**, cộng tự động **một lần** khi Owner xác minh email (#033). (`add-llm-gateway-and-credit`) |
+| 074 | 2026-11-28 | Trang Credit chỉ hiện **số đã nhân hệ số giá**; không hiện chi phí thật hay hệ số (hệ số ghi trong điều khoản và bảng lương, #025). (`add-llm-gateway-and-credit`) |
+| 075 | 2026-11-28 | Tỉ giá USD → VNĐ **chung cho mọi công ty**. Hệ số giá mặc định chung (1,3); platform admin **đặt hệ số riêng cho từng công ty** được. Đổi tỉ giá / hệ số không tính lại giao dịch cũ. (Thay câu "tỉ giá theo công ty" ở architecture.md mục 6.) (`add-llm-gateway-and-credit`) |
+| 076 | 2026-11-28 | Platform admin là các email đặt trong **biến môi trường**, đăng nhập **bắt buộc xác thực 2 bước TOTP** (plugin `twoFactor` có sẵn trong Better Auth, không thêm thư viện). Không phải vai trò trong công ty nào. (`add-llm-gateway-and-credit`) |
+| 077 | 2026-11-28 | Platform admin chỉ xem **tổng theo công ty** (số dư, đã trừ, số worker, email Owner); không xem tên worker, nội dung việc hay dữ liệu nghiệp vụ. (`add-llm-gateway-and-credit`) |
 
 ### 0.3. Đề xuất chờ chốt
 
