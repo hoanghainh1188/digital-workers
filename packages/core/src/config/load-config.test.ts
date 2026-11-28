@@ -79,3 +79,46 @@ describe('loadConfig', () => {
     expect(issuesOf({ DATABASE_URL: 'https://example.com' }).issues[0]?.name).toBe('DATABASE_URL');
   });
 });
+
+describe('envFields.encryptionKey', () => {
+  const keySchema = z.object({
+    DATABASE_URL: envFields.databaseUrl,
+    ENCRYPTION_KEY: envFields.encryptionKey,
+  });
+  const key32 = Buffer.alloc(32, 7).toString('base64');
+
+  function keyError(env: Record<string, string | undefined>) {
+    try {
+      loadConfig(keySchema, { ...valid, ...env });
+    } catch (error) {
+      if (error instanceof ConfigError) return error;
+    }
+    throw new Error('expected ConfigError');
+  }
+
+  it('decodes a 32-byte base64 key', () => {
+    expect(loadConfig(keySchema, { ...valid, ENCRYPTION_KEY: key32 }).ENCRYPTION_KEY).toEqual(
+      Buffer.alloc(32, 7),
+    );
+  });
+
+  it('reports a missing key', () => {
+    expect(keyError({}).issues).toEqual([{ name: 'ENCRYPTION_KEY', reason: 'missing' }]);
+  });
+
+  it('rejects a 16-byte key without printing it, together with other errors', () => {
+    const short = Buffer.alloc(16, 9).toString('base64');
+    const error = keyError({ ENCRYPTION_KEY: short, DATABASE_URL: 'nope' });
+    expect(error.issues.map((issue) => issue.name).sort()).toEqual([
+      'DATABASE_URL',
+      'ENCRYPTION_KEY',
+    ]);
+    expect(JSON.stringify(error.issues) + error.message).not.toContain(short);
+  });
+
+  it('rejects text that is not base64', () => {
+    expect(keyError({ ENCRYPTION_KEY: 'not base64 at all!!' }).issues[0]?.name).toBe(
+      'ENCRYPTION_KEY',
+    );
+  });
+});

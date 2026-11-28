@@ -1,7 +1,15 @@
 import { can } from '@dw/core/permissions';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { BookOpenCheck, Bot, Building2, House, LogOut, Users } from 'lucide-react';
+import {
+  BookOpenCheck,
+  Bot,
+  Building2,
+  CircleDollarSign,
+  House,
+  LogOut,
+  Users,
+} from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { BrandMark } from '@/components/auth/auth-layout';
 import { initials } from '@/components/ui/avatar';
@@ -12,6 +20,7 @@ import { t } from '@/i18n/t';
 import { authClient } from '@/lib/auth-client';
 import type { Me } from '@/lib/queries';
 import { meQuery } from '@/lib/queries';
+import { CreditExhaustedBanner } from './credit-banner.tsx';
 import { VerifyEmailBanner } from './verify-banner.tsx';
 
 type SignedInMe = Me & { member: NonNullable<Me['member']>; company: NonNullable<Me['company']> };
@@ -98,6 +107,13 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
               <span className="max-[560px]:sr-only">{t('shell.nav.people')}</span>
             </Link>
           )}
+          {/* Credit: Owner and Admin only (credit.view); others never see the item. */}
+          {can(me.member.role, 'credit.view') === false ? null : (
+            <Link to="/credit" className={navLinkClass} activeProps={{ className: navActiveClass }}>
+              <CircleDollarSign aria-hidden="true" className="size-4.25 shrink-0" />
+              <span className="max-[560px]:sr-only">{t('shell.nav.credit')}</span>
+            </Link>
+          )}
         </nav>
         <div className="ml-auto flex items-center gap-2.5 text-sm min-[901px]:mt-auto min-[901px]:ml-0 min-[901px]:p-2">
           <span className="hidden size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-semibold text-primary-ink min-[901px]:grid">
@@ -124,6 +140,9 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
           <Callout tone="danger" role="alert" className="rounded-none">
             {t('shell.signOut.failed')}
           </Callout>
+        ) : null}
+        {me.credit?.exhausted ? (
+          <CreditExhaustedBanner showLink={can(me.member.role, 'credit.view') !== false} />
         ) : null}
         {me.user.emailVerified ? null : <VerifyEmailBanner email={me.user.email} />}
         <main className="w-full max-w-[76rem] px-[clamp(1rem,0.5rem+3vw,3rem)] pt-[clamp(1.25rem,1rem+2vw,2.5rem)] pb-16">

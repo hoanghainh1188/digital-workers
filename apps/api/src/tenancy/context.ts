@@ -7,6 +7,8 @@ export type RequestContext = {
   readonly name: string;
   readonly email: string;
   readonly emailVerified: boolean;
+  readonly twoFactorEnabled: boolean;
+  readonly sessionCreatedAt: Date;
   /** Null until the user has created or joined a company. */
   readonly member: MemberForUser | null;
 };

@@ -9,8 +9,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@dw/billing": "workspace:*",
     "@dw/core": "workspace:*",
+    "@dw/crypto": "workspace:*",
     "@dw/db": "workspace:*",
+    "@dw/llm": "workspace:*",
     "@dw/mail": "workspace:^",
     "@dw/skills": "workspace:*",
     "better-auth": "1.7.28",

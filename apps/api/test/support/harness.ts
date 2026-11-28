@@ -9,14 +9,20 @@ import { captureLogger } from '../log-capture.ts';
 export const WEB_ORIGIN = 'http://localhost:5173';
 export const STRONG_PASSWORD = 'gom an phu bat trang';
 
-const testConfig = {
+/** In PLATFORM_ADMIN_EMAILS for every test app (spec platform-admin). */
+export const PLATFORM_ADMIN_EMAIL = 'root@platform.test';
+export const TEST_ENCRYPTION_KEY = Buffer.alloc(32, 'test-key');
+
+export const testConfig: PlatformOptions['config'] = {
   BETTER_AUTH_SECRET: 'test-secret-that-is-long-enough-0123456789',
   BETTER_AUTH_URL: WEB_ORIGIN,
   WEB_ORIGIN,
   NODE_ENV: 'test',
   GOOGLE_CLIENT_ID: undefined,
   GOOGLE_CLIENT_SECRET: undefined,
-} as const;
+  PLATFORM_ADMIN_EMAILS: [PLATFORM_ADMIN_EMAIL],
+  ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
+};
 
 export type Harness = {
   readonly pg: TestPostgres;

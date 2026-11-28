@@ -13,6 +13,8 @@ function context(overrides: Partial<RequestContext> = {}): RequestContext {
     name: 'An',
     email: 'an@example.com',
     emailVerified: true,
+    twoFactorEnabled: false,
+    sessionCreatedAt: new Date(),
     member: { memberId: MEMBER, companyId: COMPANY, role: 'owner', status: 'active' },
     ...overrides,
   };

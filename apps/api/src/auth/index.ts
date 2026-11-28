@@ -2,6 +2,7 @@ export {
   type Auth,
   type AuthDeps,
   createAuth,
+  isPlatformAdminEmail,
   markEmailVerified,
   revokeUserSessions,
   userIdByEmail,

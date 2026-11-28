@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { startTestPostgres } from '@dw/db/testing';
 
 export const E2E_API_PORT = 4310;
+/** The e2e platform admin (spec platform-admin); signs up through the normal flow. */
+export const E2E_PLATFORM_ADMIN = 'platform-admin@dw.test';
 const serverEntry = fileURLToPath(new URL('../../api/test/e2e-server.ts', import.meta.url));
 
 /**
@@ -24,6 +26,8 @@ export default async function globalSetup() {
       WEB_ORIGIN: 'http://localhost:4173',
       SMTP_URL: 'smtp://127.0.0.1:1',
       MAIL_FROM: 'e2e@dw.test',
+      ENCRYPTION_KEY: Buffer.alloc(32, 'e2e').toString('base64'),
+      PLATFORM_ADMIN_EMAILS: E2E_PLATFORM_ADMIN,
     },
     stdio: ['ignore', 'inherit', 'inherit'],
   });

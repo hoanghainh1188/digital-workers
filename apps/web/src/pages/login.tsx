@@ -30,7 +30,7 @@ export function LoginPage() {
     if (!parsed.success) return;
     setSubmitting(true);
     try {
-      const { error } = await authClient.signIn.email(parsed.data);
+      const { data, error } = await authClient.signIn.email(parsed.data);
       if (error) {
         setFailure(
           error.code === 'ACCOUNT_LOCKED'
@@ -41,6 +41,11 @@ export function LoginPage() {
                 ? t('login.error.invalid')
                 : t('app.error.generic'),
         );
+        return;
+      }
+      // TOTP is on (platform admin): no session yet, the code comes next (design D10).
+      if ((data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect) {
+        await navigate({ to: '/two-factor' });
         return;
       }
       forgetMe(queryClient);

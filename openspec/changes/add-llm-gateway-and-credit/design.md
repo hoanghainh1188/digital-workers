@@ -230,6 +230,23 @@ Tên worker chưa có ở change 4: API trả `workerId`, web hiện "Nhân viê
 2. `.env.example` thêm `ENCRYPTION_KEY` (kèm lệnh sinh: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) và `PLATFORM_ADMIN_EMAILS`.
 3. Rollback: chưa có dữ liệu tiền thật trước change 16; rollback = revert code + migration xuống (drop các bảng mới). Không rollback sau khi đã có khách nạp tiền.
 
+## Ghi chú khi apply (2026-11-28)
+
+Những chỗ code khác hoặc cụ thể hơn bản design trên; không đổi requirement nào của spec.
+
+1. **Đọc token cache (D6 bước 5).** AI SDK 7 (`ai@7.0.184`) báo sẵn `inputTokenDetails.noCacheTokens / cacheReadTokens / cacheWriteTokens` cho cả Anthropic và OpenAI, nên `readUsage` không đọc `providerMetadata`. Đã kiểm bằng hai provider thật với phản hồi HTTP dựng sẵn (không mạng): Anthropic `input_tokens` không gồm cache; OpenAI `input_tokens` gồm `cached_tokens` và được tách ra.
+2. **Thứ tự sổ (D5).** `credit_transactions.created_at` ghi bằng `clock_timestamp()` **sau khi đã khoá** dòng tài khoản, nên thứ tự thời gian khớp thứ tự "số dư sau". `cost_entries.created_at` là thời điểm gọi; lịch sử gộp theo ngày và chi phí tháng của worker dùng mốc này.
+3. **Guard platform (D10)** chạy ở `onRequest` (trước khi kiểm tra params / body), nên người ngoài gửi gì cũng nhận 404 như đường dẫn không tồn tại.
+4. **Phiên của platform admin** chỉ được tạo qua `/sign-in/email`, `/sign-up/email`, `/two-factor/verify-totp`, `/two-factor/verify-backup-code`. Đăng nhập Google bằng email platform admin bị từ chối (Google sẽ bỏ qua TOTP vì plugin chỉ chặn đăng nhập bằng mật khẩu).
+5. **Email platform admin** (0.2 #098): `/api/signup` tạo tài khoản (đăng nhập luôn, gửi email xác minh) nhưng không tạo công ty, trả `201 { companyId: null, platformAdmin: true }`; `POST /api/companies` → 409 `PLATFORM_ADMIN`; nhận lời mời → 409 `PLATFORM_ADMIN`. `GET /api/me` có `platformAdmin: { twoFactorEnabled }` để web chuyển sang bật TOTP.
+6. **Mã TOTP sai** tính vào bộ đếm khoá của plugin `twoFactor` theo tài khoản (10 lần sai liên tiếp → khoá 15 phút), thay cho `FailedLoginLimiter` theo email: bước nhập mã không có email trong body. Thêm `customRules` `/two-factor/*`: 5 lần / phút / IP.
+7. **`app.platform_company_summaries()`** trả thêm `last_credit_vnd` (và `created_at` để sắp xếp) để tính trạng thái "sắp hết" (20% lần cộng gần nhất); vẫn chỉ là cột tổng.
+8. **Tên worker trong lịch sử credit**: bảng `workers` đã có (change 2), nên lịch sử gộp `LEFT JOIN workers` lấy tên trong cùng công ty (RLS). Dòng không có worker hiện tên chung.
+9. **Khoá chính**: kiểm tra `ENCRYPTION_KEY` nằm ở `envFields.encryptionKey` (`@dw/core`, trả `Buffer`); `packages/crypto` chỉ nhận `Buffer` 32 byte.
+10. **Giá mới**: `effectiveFrom` bỏ trống = bây giờ; sớm hơn bây giờ quá 60 giây (lệch đồng hồ) → 400 `EFFECTIVE_IN_PAST`.
+11. **`.env.example`** bỏ `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`: key nhà cung cấp lưu trong DB, không phải biến môi trường.
+12. **Sau code review:** nhật ký cấp platform ghi **trong cùng transaction** với thay đổi (điều chỉnh credit, giá, tỉ giá, hệ số, key); cùng `Idempotency-Key` nhưng khác số tiền / lý do / ghi chú → 409 `IDEMPOTENCY_CONFLICT`; ghi sổ lỗi sau khi nhà cung cấp đã trả kết quả → thử lại 3 lần rồi ném `UsageNotRecordedError` và log công ty, mô hình, số token (không key) để tính tay; chỉ bật TOTP được khi email platform admin **đã xác minh** (chặn người đăng ký trước chiếm địa chỉ), và đặt lại mật khẩu của email platform admin xoá TOTP cũ; kiểm tra key có timeout 10 giây; ngày không có thật (2026-02-31) → 400.
+
 ## Open Questions
 
 Không còn. Câu hỏi nghiệp vụ của PR propose đã chốt ở `docs/requirements.md` 0.2 #095–#104.

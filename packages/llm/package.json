@@ -1,0 +1,24 @@
+{
+  "name": "@dw/llm",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.111",
+    "@ai-sdk/openai": "^4.0.125",
+    "@dw/billing": "workspace:*",
+    "@dw/crypto": "workspace:*",
+    "@dw/db": "workspace:*",
+    "ai": "^7.0.184"
+  },
+  "devDependencies": {
+    "@dw/core": "workspace:*"
+  }
+}

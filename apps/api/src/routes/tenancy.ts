@@ -1,3 +1,4 @@
+import { isExhausted } from '@dw/billing';
 import { companyInput, companyPatchInput, describeError, signupInput } from '@dw/core';
 import { type Database, memberProfiles, recordAudit, withCompany } from '@dw/db';
 import { eq } from '@dw/db/drizzle';
@@ -23,7 +24,12 @@ export type TenancyRouteDeps = {
   readonly guards: Guards;
   readonly createCompany: CreateCompany;
   readonly googleEnabled: boolean;
+  /** Email in PLATFORM_ADMIN_EMAILS (design D10): such accounts never get a company. */
+  readonly isPlatformAdmin: (email: string) => boolean;
 };
+
+/** Roles that see the "hết credit" banner (spec credit-ledger "Báo hết credit trên mọi trang"). */
+const CREDIT_BANNER_ROLES = new Set(['owner', 'admin', 'manager']);
 
 const company = z.strictObject({
   id: z.uuid(),
@@ -41,6 +47,10 @@ const meResponse = z.strictObject({
   }),
   member: z.strictObject({ id: z.uuid(), role }).nullable(),
   company: company.nullable(),
+  /** Owner / Admin / Trưởng phòng only; Nhân viên never get it. No balance here. */
+  credit: z.strictObject({ exhausted: z.boolean() }).optional(),
+  /** Only for a platform admin (no company): where to go next. */
+  platformAdmin: z.strictObject({ twoFactorEnabled: z.boolean() }).optional(),
 });
 
 const memberResponse = z.strictObject({
@@ -70,9 +80,18 @@ export function registerTenancyRoutes(app: FastifyInstance, deps: TenancyRouteDe
     async (request) => {
       const ctx = request.ctx;
       if (!ctx) throw new Error('requireAuth did not run');
-      const current = ctx.member
-        ? await withCompany(database, ctx.member.companyId, readCompany)
-        : null;
+      const member = ctx.member;
+      const [current, exhausted] = member
+        ? await withCompany(
+            database,
+            member.companyId,
+            async (tx) =>
+              [
+                await readCompany(tx),
+                CREDIT_BANNER_ROLES.has(member.role) ? await isExhausted(tx) : null,
+              ] as const,
+          )
+        : [null, null];
       return {
         user: {
           id: ctx.userId,
@@ -82,6 +101,10 @@ export function registerTenancyRoutes(app: FastifyInstance, deps: TenancyRouteDe
         },
         member: ctx.member ? { id: ctx.member.memberId, role: ctx.member.role } : null,
         company: current,
+        ...(exhausted === null ? {} : { credit: { exhausted } }),
+        ...(!ctx.member && deps.isPlatformAdmin(ctx.email)
+          ? { platformAdmin: { twoFactorEnabled: ctx.twoFactorEnabled } }
+          : {}),
       };
     },
   );
@@ -114,6 +137,11 @@ export function registerTenancyRoutes(app: FastifyInstance, deps: TenancyRouteDe
         return sendError(reply, Math.max(account.status, 400), account.code, 'Sign-up failed');
       }
       reply.header('set-cookie', [...account.setCookies]);
+      // A platform admin gets the account (signed in, verification email sent) but
+      // never a company (spec platform-admin "Platform admin tạo công ty").
+      if (deps.isPlatformAdmin(input.email)) {
+        return reply.status(201).send({ companyId: null, platformAdmin: true });
+      }
       try {
         const created = await deps.createCompany({
           userId: account.userId,
@@ -137,11 +165,15 @@ export function registerTenancyRoutes(app: FastifyInstance, deps: TenancyRouteDe
       if (ctx.member) {
         return sendError(reply, 409, 'ALREADY_IN_COMPANY', 'Already a member of a company');
       }
+      if (deps.isPlatformAdmin(ctx.email)) {
+        return sendError(reply, 409, 'PLATFORM_ADMIN', 'Platform admins cannot create a company');
+      }
       try {
         const created = await deps.createCompany({
           userId: ctx.userId,
           name: request.body.name,
           contactPhone: request.body.contactPhone ?? null,
+          emailVerified: ctx.emailVerified,
         });
         return reply.status(201).send({ companyId: created.companyId });
       } catch (error) {

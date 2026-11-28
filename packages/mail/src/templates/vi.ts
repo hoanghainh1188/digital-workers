@@ -103,3 +103,66 @@ ${button(escapeHtml(input.url), 'Đặt lại mật khẩu')}
 <p style="font-size:13px;color:#6b7280">Hoặc mở link: ${escapeHtml(input.url)}<br>Link dùng được một lần và hết hạn sau 1 giờ. Đặt lại xong, mọi phiên đăng nhập cũ sẽ bị đăng xuất.<br>Nếu bạn không yêu cầu, hãy bỏ qua email này: mật khẩu hiện tại vẫn giữ nguyên.</p>`);
   return { subject, text, html };
 }
+
+const VND = new Intl.NumberFormat('vi-VN');
+
+/** 1284500 → "1.284.500đ". */
+export function formatVnd(amount: number): string {
+  return `${VND.format(amount)}đ`;
+}
+
+/** "Credit sắp hết" to Owners (spec credit-ledger, 0.2 #071). */
+export function lowCreditTemplate(input: {
+  name: string;
+  companyName: string;
+  balanceVnd: number;
+  thresholdVnd: number;
+  url: string;
+}): RenderedEmail {
+  const subject = `Credit của ${input.companyName} sắp hết — Digital Workers`;
+  const balance = formatVnd(input.balanceVnd);
+  const threshold = formatVnd(input.thresholdVnd);
+  const text = [
+    `Chào ${input.name},`,
+    '',
+    `Số dư credit của ${input.companyName} còn ${balance}, dưới mức báo ${threshold} (20% lần cộng gần nhất).`,
+    'Khi hết credit, nhân viên số sẽ dừng ở bước tiếp theo cho tới khi được cộng thêm.',
+    '',
+    `Xem số dư: ${input.url}`,
+  ].join('\n');
+  const html = page(
+    [
+      `<p>Chào ${escapeHtml(input.name)},</p>`,
+      `<p>Số dư credit của <strong>${escapeHtml(input.companyName)}</strong> còn <strong>${balance}</strong>, dưới mức báo ${threshold} (20% lần cộng gần nhất).</p>`,
+      '<p>Khi hết credit, nhân viên số sẽ dừng ở bước tiếp theo cho tới khi được cộng thêm.</p>',
+      button(escapeHtml(input.url), 'Xem số dư'),
+    ].join('\n'),
+  );
+  return { subject, text, html };
+}
+
+/** "Công ty đã hết credit" to Owners, Admins and Trưởng phòng (0.2 #101). */
+export function exhaustedCreditTemplate(input: {
+  name: string;
+  companyName: string;
+  url: string;
+}): RenderedEmail {
+  const subject = `${input.companyName} đã hết credit — Digital Workers`;
+  const text = [
+    `Chào ${input.name},`,
+    '',
+    `${input.companyName} đã hết credit. Nhân viên số không gọi được mô hình AI nữa: việc đang làm dở dừng ở bước tiếp theo.`,
+    'Owner của công ty liên hệ Digital Workers để được cộng thêm credit.',
+    '',
+    `Xem chi tiết: ${input.url}`,
+  ].join('\n');
+  const html = page(
+    [
+      `<p>Chào ${escapeHtml(input.name)},</p>`,
+      `<p><strong>${escapeHtml(input.companyName)}</strong> đã hết credit. Nhân viên số không gọi được mô hình AI nữa: việc đang làm dở dừng ở bước tiếp theo.</p>`,
+      '<p>Owner của công ty liên hệ Digital Workers để được cộng thêm credit.</p>',
+      button(escapeHtml(input.url), 'Xem chi tiết'),
+    ].join('\n'),
+  );
+  return { subject, text, html };
+}

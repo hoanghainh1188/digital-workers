@@ -39,6 +39,10 @@ export type InvitationRouteDeps = OrgRouteDeps & {
   readonly webOrigin: string;
   /** Per-IP limit on the public preview / accept endpoints (spec invitations). */
   readonly invitationLimit: RequestLimit;
+  /** Trial credit when an invited Owner is the company's first verified Owner (design D8). */
+  readonly onEmailVerified: (userId: string) => Promise<void>;
+  /** Platform admins never join a company (0.2 #098). */
+  readonly isPlatformAdmin: (email: string) => boolean;
 };
 
 const idParams = z.object({ id: z.string() });
@@ -229,6 +233,9 @@ export function registerInvitationRoutes(app: FastifyInstance, deps: InvitationR
       const found = await invitationByTokenHash(database, hashInvitationToken(token));
       const problem = invitationProblem(found);
       if (problem || !found) return sendError(reply, 410, problem ?? 'INVITATION_INVALID', 'Gone');
+      if (deps.isPlatformAdmin(found.email)) {
+        return sendError(reply, 409, 'PLATFORM_ADMIN', 'Platform admins cannot join a company');
+      }
 
       let userId: string;
       const ctx = request.ctx;
@@ -300,6 +307,7 @@ export function registerInvitationRoutes(app: FastifyInstance, deps: InvitationR
       }
       // Holding the token proves the inbox (0.2 #033); only once the membership exists.
       if (ctx) await markEmailVerified(database, userId);
+      await deps.onEmailVerified(userId);
       return reply.status(201).send({ companyId: found.companyId });
     },
   );

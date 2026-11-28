@@ -54,6 +54,9 @@ services:
       MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM}
       # Caddy is the only way in: trust its X-Forwarded-For / -Proto.
       TRUST_PROXY: "true"
+      # Secrets and platform admin (add-llm-gateway-and-credit).
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY}
+      PLATFORM_ADMIN_EMAILS: ${PLATFORM_ADMIN_EMAILS:-}
     depends_on:
       migrate: { condition: service_completed_successfully }
 
