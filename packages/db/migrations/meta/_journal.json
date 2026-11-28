@@ -29,6 +29,13 @@
       "when": 1795823298993,
       "tag": "0003_departments_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795846649783,
+      "tag": "0004_workers",
+      "breakpoints": true
     }
   ]
 }

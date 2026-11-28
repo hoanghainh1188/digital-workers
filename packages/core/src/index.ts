@@ -6,3 +6,4 @@ export * from './config/index.ts';
 export { createLogger, REDACT_PATHS } from './logging/logger.ts';
 export * from './org/schemas.ts';
 export { describeError, onShutdown } from './process/shutdown.ts';
+export * from './workers/index.ts';

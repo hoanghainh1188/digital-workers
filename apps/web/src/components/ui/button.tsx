@@ -13,6 +13,10 @@ const buttonVariants = cva(
         outline:
           'border border-border-strong bg-background hover:bg-primary-soft hover:text-primary-ink',
         ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        danger:
+          'bg-destructive text-primary-foreground shadow-[var(--shadow-sm)] hover:bg-destructive-ink',
+        dangerOutline:
+          'border border-[oklch(86%_0.06_25)] bg-background text-destructive-ink hover:bg-destructive-soft',
         google:
           'h-auto min-h-11 whitespace-normal border border-border-strong bg-background py-2 text-center font-semibold hover:bg-canvas',
       },

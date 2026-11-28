@@ -1,3 +1,5 @@
+import { workersVi } from './workers.vi.ts';
+
 /** Vietnamese UI strings (0.2 #020). Components read these through `t()` only. */
 export const vi = {
   'app.name': 'Digital Workers',
@@ -338,6 +340,7 @@ export const vi = {
   'form.required.emails': 'Nhập ít nhất một email.',
   'form.required.newPassword': 'Nhập mật khẩu mới.',
   'form.invalid': 'Giá trị chưa hợp lệ.',
+  ...workersVi,
 } as const;
 
 export type MessageKey = keyof typeof vi;

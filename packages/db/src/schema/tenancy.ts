@@ -82,6 +82,8 @@ export const members = pgTable(
   },
   (table) => [
     index('members_company_id_idx').on(table.companyId),
+    // Target of composite foreign keys from worker tables (change add-worker-profile).
+    unique('members_company_id_id_unique').on(table.companyId, table.id),
     foreignKey({
       name: 'members_company_department_fk',
       columns: [table.companyId, table.departmentId],

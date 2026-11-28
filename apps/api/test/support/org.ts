@@ -29,7 +29,7 @@ export type OrgTenant = {
   readonly member: Person;
 };
 
-type Method = 'GET' | 'POST' | 'PATCH';
+type Method = 'GET' | 'POST' | 'PATCH' | 'PUT';
 
 /** JSON request with the trusted Origin (and a session cookie when given). */
 export function call(
