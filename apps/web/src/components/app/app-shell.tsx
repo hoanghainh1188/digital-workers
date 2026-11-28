@@ -16,8 +16,6 @@ import { VerifyEmailBanner } from './verify-banner.tsx';
 
 type SignedInMe = Me & { member: NonNullable<Me['member']>; company: NonNullable<Me['company']> };
 
-const soonLinks = [{ label: 'shell.nav.workers', Icon: Bot }] as const;
-
 const navLinkClass =
   'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground no-underline transition-colors duration-150 hover:bg-muted hover:text-foreground';
 const navActiveClass =
@@ -76,19 +74,10 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
             <House aria-hidden="true" className="size-4.25 shrink-0" />
             <span className="max-[560px]:sr-only">{t('shell.nav.home')}</span>
           </Link>
-          {soonLinks.map(({ label, Icon }) => (
-            <span
-              key={label}
-              aria-disabled="true"
-              className="hidden items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground min-[901px]:flex"
-            >
-              <Icon aria-hidden="true" className="size-4.25 shrink-0" />
-              {t(label)}
-              <span className="ml-auto text-[0.625rem] font-semibold opacity-80">
-                {t('shell.nav.soon')}
-              </span>
-            </span>
-          ))}
+          <Link to="/workers" className={navLinkClass} activeProps={{ className: navActiveClass }}>
+            <Bot aria-hidden="true" className="size-4.25 shrink-0" />
+            <span className="max-[560px]:sr-only">{t('shell.nav.orgChart')}</span>
+          </Link>
           <h2 className={navGroupClass}>{t('shell.nav.company')}</h2>
           <Link
             to="/departments"

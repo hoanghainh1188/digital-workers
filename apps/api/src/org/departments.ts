@@ -7,8 +7,10 @@ import {
   memberProfiles,
   members,
   recordAudit,
+  workers,
 } from '@dw/db';
 import { and, asc, count, eq, isNull, lt, ne, sql } from '@dw/db/drizzle';
+import { reassignWorkersOf } from '../workers/reassign.ts';
 import { currentActor, departmentHeadTaken, lockActiveOwners } from './members.ts';
 import { denied, fieldError, notFound, type Outcome, ok, rejected } from './outcome.ts';
 
@@ -243,6 +245,7 @@ export async function setDepartmentHead(
     }
     if (candidate.departmentId !== departmentId) {
       await audit(tx, actor, 'member.moved', candidate.id, ['department']);
+      await reassignWorkersOf(tx, actor.memberId, candidate.id);
     }
   }
   return ok({ changed: true });
@@ -259,8 +262,8 @@ function audit(tx: CompanyTx, actor: Actor, action: string, memberId: string, fi
 }
 
 /**
- * Archives an empty department (0.2 #037, #064): no member in any state and no
- * pending, unexpired invitation. Expired invitations into it are cancelled.
+ * Archives an empty department (0.2 #037, #064, #112): no member in any state, no
+ * pending, unexpired invitation and no worker that has not been offboarded. Expired invitations into it are cancelled.
  */
 export async function archiveDepartment(
   tx: CompanyTx,
@@ -293,6 +296,13 @@ export async function archiveDepartment(
       invitations: invitationCount,
     });
   }
+  // Workers that have not left keep the department alive (0.2 #112).
+  const [live] = await tx
+    .select({ n: count() })
+    .from(workers)
+    .where(and(eq(workers.departmentId, id), ne(workers.status, 'offboarded')));
+  const workerCount = live?.n ?? 0;
+  if (workerCount > 0) return rejected(409, 'DEPARTMENT_HAS_WORKERS', { workers: workerCount });
   await tx
     .update(invitations)
     .set({ status: 'cancelled', updatedAt: new Date() })

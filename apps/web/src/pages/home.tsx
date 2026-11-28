@@ -35,14 +35,17 @@ export function HomePage({ me }: { me: SignedInMe }) {
               <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
             </Link>
           </li>
-          <li className="flex items-center gap-3 rounded-lg bg-canvas px-4 py-3 text-sm">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary-ink">
-              <Bot aria-hidden="true" className="size-4" />
-            </span>
-            <span className="min-w-0 flex-1">{t('home.next.worker')}</span>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {t('shell.nav.soon')}
-            </span>
+          <li>
+            <Link
+              to="/workers"
+              className="flex items-center gap-3 rounded-lg bg-canvas px-4 py-3 text-sm text-foreground no-underline transition-colors duration-150 hover:bg-primary-soft hover:text-primary-ink"
+            >
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary-ink">
+                <Bot aria-hidden="true" className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1 font-medium">{t('home.next.worker')}</span>
+              <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+            </Link>
           </li>
         </ol>
       </section>

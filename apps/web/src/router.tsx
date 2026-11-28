@@ -1,4 +1,5 @@
 import { ROLES } from '@dw/core/permissions';
+import { WORKER_STATUSES } from '@dw/core/workers';
 import { type QueryClient, useQuery } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
@@ -23,6 +24,8 @@ import { ResetPasswordPage } from '@/pages/reset-password';
 import { SignupPage } from '@/pages/signup';
 import { UsersPage } from '@/pages/users';
 import { VerifyEmailPage } from '@/pages/verify-email';
+import { WorkerProfilePage } from '@/pages/worker-profile';
+import { WorkersPage } from '@/pages/workers';
 
 type RouterContext = { queryClient: QueryClient };
 
@@ -108,6 +111,39 @@ const departmentsRoute = createRoute({
   component: () => <InApp render={(me) => <DepartmentsPage me={me} />} />,
 });
 
+/** The status filter lives in the URL (spec worker-profile "Lọc theo trạng thái"). */
+const workersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workers',
+  validateSearch: z.object({
+    status: z
+      .enum(WORKER_STATUSES.filter((status) => status !== 'offboarded') as [string, ...string[]])
+      .optional()
+      .catch(undefined),
+  }),
+  beforeLoad: requireCompany,
+  component: function WorkersRoute() {
+    const { status } = workersRoute.useSearch();
+    return (
+      <InApp
+        render={(me) => (
+          <WorkersPage me={me} status={status as Parameters<typeof WorkersPage>[0]['status']} />
+        )}
+      />
+    );
+  },
+});
+
+const workerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workers/$id',
+  beforeLoad: requireCompany,
+  component: function WorkerRoute() {
+    const { id } = workerRoute.useParams();
+    return <InApp render={(me) => <WorkerProfilePage key={id} me={me} id={id} />} />;
+  },
+});
+
 /** Filters live in the URL so a filtered list can be shared (spec member-management). */
 const usersSearch = z.object({
   q: z.string().max(100).optional().catch(undefined),
@@ -166,6 +202,8 @@ const resetPasswordRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   homeRoute,
   departmentsRoute,
+  workersRoute,
+  workerRoute,
   usersRoute,
   inviteRoute,
   forgotPasswordRoute,

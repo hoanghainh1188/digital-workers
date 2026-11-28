@@ -20,6 +20,7 @@ import {
   withCompany,
 } from '@dw/db';
 import { and, asc, eq, ilike, isNull, or, sql } from '@dw/db/drizzle';
+import { reassignWorkersOf } from '../workers/reassign.ts';
 import { denied, fieldError, notFound, type Outcome, ok, rejected } from './outcome.ts';
 
 export type MemberActor = { readonly memberId: string; readonly role: Role };
@@ -231,6 +232,7 @@ export async function patchMember(
   }
 
   await tx.update(members).set({ role, departmentId }).where(eq(members.id, id));
+  await reassignWorkersOf(tx, actor.memberId, id);
   const changed: string[] = [];
   if (roleChanged) {
     changed.push('role');
@@ -267,6 +269,7 @@ export async function lockMember(
     .update(members)
     .set({ status: 'locked', lockedAt: sql`now()` })
     .where(eq(members.id, id));
+  await reassignWorkersOf(tx, actor.memberId, id);
   await audit(tx, actor, 'member.locked', id);
   return ok({ userId: target.userId, changed: true });
 }

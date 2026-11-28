@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "../components/workers/workers.css";
 
 @theme inline {
   --color-background: var(--background);

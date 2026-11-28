@@ -19,7 +19,16 @@ const { mailer, sent } = createMemoryMailer();
 const app = buildApp({
   logger,
   checkDatabase: async () => true,
-  platform: createPlatform({ config, database, mailer, logger, ipRateLimit: false }),
+  // Many tests sign up and invite within a minute; the limits themselves have int tests.
+  platform: createPlatform({
+    config,
+    database,
+    mailer,
+    logger,
+    ipRateLimit: false,
+    signupLimit: { max: 1_000, windowMs: 60_000 },
+    invitationLimit: { max: 1_000, windowMs: 60_000 },
+  }),
 });
 app.get('/__e2e/emails', async (request) => {
   const to = (request.query as { to?: string }).to;

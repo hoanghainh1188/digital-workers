@@ -15,3 +15,10 @@ export {
   recordAudit,
   withCompany,
 } from './tenancy.ts';
+export {
+  onWorkerActivated,
+  onWorkerOffboarded,
+  type WorkerRuntimeState,
+  type WorkerStatusValue,
+  workerRuntimeState,
+} from './workers.ts';

@@ -8,6 +8,7 @@ import { type HealthDeps, registerHealthRoutes } from './routes/health.ts';
 import { type InvitationRouteDeps, registerInvitationRoutes } from './routes/invitations.ts';
 import { registerMemberRoutes } from './routes/members.ts';
 import { registerTenancyRoutes, type TenancyRouteDeps } from './routes/tenancy.ts';
+import { registerWorkerRoutes } from './routes/workers.ts';
 import { type ContextResolver, registerRequestContext } from './tenancy/index.ts';
 
 /** Everything behind sign-in. Optional so health-only tests can build a bare app. */
@@ -41,6 +42,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     registerDepartmentRoutes(app, deps.platform);
     registerMemberRoutes(app, deps.platform);
     registerInvitationRoutes(app, deps.platform);
+    registerWorkerRoutes(app, deps.platform);
   }
   return app;
 }

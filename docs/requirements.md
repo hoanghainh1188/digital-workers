@@ -179,7 +179,10 @@ Hiện không có đề xuất chờ chốt.
 | Quản lý phòng ban, người dùng | ✓ | ✓ | — | — |
 | Xem danh sách người dùng | ✓ | ✓ | ✓ (phòng mình) | — |
 | Tạo worker (bản nháp) | ✓ | ✓ | ✓ (phòng mình) | — |
+| Xem hồ sơ worker | ✓ | ✓ | ✓ (phòng mình) | ✓ (phòng mình) |
+| Sửa hồ sơ worker | ✓ | ✓ | ✓ (phòng mình) | — |
 | Chuyển worker sang thử việc | ✓ | ✓ | ✓ (phòng mình) | — |
+| Đề nghị worker lên chính thức | — | — | ✓ (phòng mình) | — |
 | Duyệt worker lên chính thức | ✓ | ✓ | — | — |
 | Tạm nghỉ / nghỉ việc worker | ✓ | ✓ | ✓ (phòng mình) | — |
 | Tạo / sửa skill (bản nháp) | ✓ | ✓ | ✓ | ✓ |
