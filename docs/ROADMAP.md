@@ -278,7 +278,7 @@ Dừng lại sau khi propose để tôi duyệt.
 sao lưu PostgreSQL hằng ngày ra object storage ở Việt Nam (giữ 14 bản), có cách khôi phục đã thử.
 
 Đọc trước:
-- docs/requirements.md 0.2 #011 #019 #027 #029 #030 #031, NFR-04, NFR-10
+- docs/requirements.md 0.2 #011 #019 #027 #029 #030 #031 #082, NFR-04, NFR-10
 - docs/architecture.md mục 8
 - compose.prod.yaml, Caddyfile, Dockerfile (từ change 0)
 
@@ -288,6 +288,7 @@ Design.md cần chốt rõ:
 3. Bí mật trên máy chủ (file .env quyền 600, ai giữ khoá ENCRYPTION_KEY) — không commit.
 4. Sao lưu: lịch, mã hoá, giữ 14 bản, thử khôi phục.
 5. Tường lửa: chỉ mở 80/443 (và SSH giới hạn IP).
+6. Hạn mức gửi lời mời theo công ty (số người nhận mỗi ngày cho công ty mới, giới hạn gửi lại) — 0.2 #082.
 
 Test bắt buộc:
 - https://<staging>/health/ready trả 200 với chứng chỉ hợp lệ.

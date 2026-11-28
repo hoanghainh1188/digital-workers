@@ -102,6 +102,9 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 075 | 2026-11-28 | Tỉ giá USD → VNĐ **chung cho mọi công ty**. Hệ số giá mặc định chung (1,3); platform admin **đặt hệ số riêng cho từng công ty** được. Đổi tỉ giá / hệ số không tính lại giao dịch cũ. (Thay câu "tỉ giá theo công ty" ở architecture.md mục 6.) (`add-llm-gateway-and-credit`) |
 | 076 | 2026-11-28 | Platform admin là các email đặt trong **biến môi trường**, đăng nhập **bắt buộc xác thực 2 bước TOTP** (plugin `twoFactor` có sẵn trong Better Auth, không thêm thư viện). Không phải vai trò trong công ty nào. (`add-llm-gateway-and-credit`) |
 | 077 | 2026-11-28 | Platform admin chỉ xem **tổng theo công ty** (số dư, đã trừ, số worker, email Owner); không xem tên worker, nội dung việc hay dữ liệu nghiệp vụ. (`add-llm-gateway-and-credit`) |
+| 080 | 2026-11-28 | Trang Phòng ban giữ số **"N người chưa có phòng ban"** như spec. Theo ràng buộc mới, chỉ Owner / Admin có thể không có phòng nên con số thực chất đếm Owner / Admin chưa gán phòng. (`add-departments-and-invites`) |
+| 081 | 2026-11-28 | Owner / Admin **được gán vào phòng ban** (không bắt buộc, #036). Khi đã gán, họ **tính là người trong phòng** và chặn lưu trữ phòng như mọi thành viên khác (#064). (`add-departments-and-invites`) |
+| 082 | 2026-11-28 | **Hạn mức gửi lời mời** theo công ty (chống dùng lời mời để gửi email lừa đảo / rác: số người nhận mỗi ngày cho công ty mới, giới hạn gửi lại) **làm ở change `deploy-staging`**, trước khi mở cho khách thật. 1b chỉ có giới hạn 50 email mỗi lần mời. (`add-departments-and-invites`) |
 
 ### 0.3. Đề xuất chờ chốt
 
