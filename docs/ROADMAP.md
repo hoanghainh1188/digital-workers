@@ -30,7 +30,7 @@ last_updated: 2026-11-27
 | 1b | #26 | `add-departments-and-invites` | 1a | Phòng ban, người dùng, nhận lời mời | ⏳ |
 | 2 | #3 | `add-worker-profile` | 1b | Sơ đồ nhân sự số, hồ sơ worker | ⏳ |
 | 3 | #4 | `add-skill-library` | 1a | Thư viện kỹ năng | ⏳ |
-| 4 | #5 | `add-llm-gateway-and-credit` | 1a | Số dư credit (đơn giản) | ⏳ |
+| 4 | #5 | `add-llm-gateway-and-credit` | 1a | Số dư credit, quản trị platform (credit, giá, key) | ⏳ |
 | 5 | #6 | `add-worker-runtime-webchat` | 2, 3, 4 | Web chat | ⏳ |
 | 5a | #21 | `deploy-staging` | 0 | — | ⏳ |
 | 6 | #7 | `add-channel-telegram` | 5, 5a | Kết nối kênh | ⏳ |
@@ -211,7 +211,8 @@ tính chi phí mỗi lần gọi, trừ credit của công ty theo hệ số gi�
 cho platform admin cộng / trừ credit tay có ghi lý do. Nạp tiền VietQR làm ở change 16.
 
 Đọc trước:
-- docs/requirements.md 0.2 #016 #018 #025 #026, FR-04-05, FR-10-01, FR-10-03, FR-13, NFR-02, NFR-09
+- docs/requirements.md 0.2 #016 #018 #025 #026 #033 #071–#077, FR-04-05, FR-10-01, FR-10-03, FR-13, NFR-02, NFR-09
+- docs/design/screens/credit.html, platform-admin.html
 - docs/architecture.md mục 6 (Credit), 7
 - CLAUDE.md mục "Bí mật", "Chi phí"
 
