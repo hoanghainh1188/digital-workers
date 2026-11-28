@@ -135,6 +135,7 @@ Hiện không có đề xuất chờ chốt.
 |---|:-:|:-:|:-:|:-:|
 | Đổi thông tin công ty (tên, số điện thoại) | ✓ | ✓ | — | — |
 | Quản lý phòng ban, người dùng | ✓ | ✓ | — | — |
+| Xem danh sách người dùng | ✓ | ✓ | ✓ (phòng mình) | — |
 | Tạo worker (bản nháp) | ✓ | ✓ | ✓ (phòng mình) | — |
 | Chuyển worker sang thử việc | ✓ | ✓ | ✓ (phòng mình) | — |
 | Duyệt worker lên chính thức | ✓ | ✓ | — | — |

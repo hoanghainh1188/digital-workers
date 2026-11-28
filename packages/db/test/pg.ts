@@ -22,7 +22,9 @@ export type TestPostgres = {
  * Starts PostgreSQL 16 in Docker, applies docker/postgres/roles.sql exactly as
  * production does, then runs all migrations as dw_owner.
  */
-export async function startTestPostgres(): Promise<TestPostgres> {
+export async function startTestPostgres(
+  options: { migrate?: boolean } = {},
+): Promise<TestPostgres> {
   const container = await new PostgreSqlContainer('postgres:16-alpine')
     .withUsername('postgres')
     .withPassword('postgres_test')
@@ -42,7 +44,7 @@ export async function startTestPostgres(): Promise<TestPostgres> {
   const ownerUrl = urlFor('dw_owner', OWNER_PASSWORD);
   const appUrl = urlFor('dw_app', APP_PASSWORD);
 
-  await runMigrations(ownerUrl);
+  if (options.migrate ?? true) await runMigrations(ownerUrl);
 
   return Object.freeze({
     container,

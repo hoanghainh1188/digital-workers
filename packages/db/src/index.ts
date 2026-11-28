@@ -5,6 +5,9 @@ export * from './schema/index.ts';
 export {
   type AuditEventInput,
   type CompanyTx,
+  type InvitationLookup,
+  invitationByTokenHash,
+  isUniqueViolation,
   type MemberForUser,
   type MemberRole,
   type MemberStatus,

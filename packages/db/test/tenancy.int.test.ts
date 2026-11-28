@@ -81,13 +81,17 @@ describe('tenant isolation in the database (dw_app)', () => {
   });
 
   describe('raw SQL without a company set', () => {
-    it.each(['companies', 'members', 'audit_events', 'member_profiles'])(
-      '%s returns no rows',
-      async (table) => {
-        const { rows } = await app.pool.query(`select * from ${table}`);
-        expect(rows).toEqual([]);
-      },
-    );
+    it.each([
+      'companies',
+      'members',
+      'audit_events',
+      'member_profiles',
+      'departments',
+      'invitations',
+    ])('%s returns no rows', async (table) => {
+      const { rows } = await app.pool.query(`select * from ${table}`);
+      expect(rows).toEqual([]);
+    });
 
     it('cannot insert a business row', async () => {
       await expect(
@@ -171,17 +175,23 @@ describe('tenant isolation in the database (dw_app)', () => {
       expect(await memberForUser(app, randomUUID())).toBeNull();
     });
 
-    it('is the only function dw_app may execute in schema app besides current_company_id', async () => {
+    it('are the only SECURITY DEFINER functions dw_app may execute in schema app', async () => {
       const { rows } = await app.pool.query(
         `select p.proname, p.prosecdef, p.proconfig
            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
           where n.nspname = 'app' and has_function_privilege('dw_app', p.oid, 'execute')
           order by 1`,
       );
-      expect(rows.map((row) => row.proname)).toEqual(['current_company_id', 'member_for_user']);
-      const definer = rows.find((row) => row.proname === 'member_for_user');
-      expect(definer?.prosecdef).toBe(true);
-      expect(definer?.proconfig).toEqual(['search_path=pg_catalog, pg_temp']);
+      expect(rows.map((row) => row.proname)).toEqual([
+        'current_company_id',
+        'invitation_by_token_hash',
+        'member_for_user',
+      ]);
+      for (const name of ['member_for_user', 'invitation_by_token_hash']) {
+        const definer = rows.find((row) => row.proname === name);
+        expect(definer?.prosecdef).toBe(true);
+        expect(definer?.proconfig).toEqual(['search_path=pg_catalog, pg_temp']);
+      }
     });
   });
 

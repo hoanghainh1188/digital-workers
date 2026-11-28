@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { members, withCompany } from '@dw/db';
+import { departments, members, withCompany } from '@dw/db';
 import { eq } from '@dw/db/drizzle';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -39,9 +39,14 @@ describe('companies and members (specs company-signup, tenant-isolation, access-
     });
     const userId = account.json().user.id as string;
     const memberId = await withCompany(harness.database, companyId, async (tx) => {
+      // A Nhân viên must belong to a department (change 1b, 0.2 #036).
+      const [dept] = await tx
+        .insert(departments)
+        .values({ companyId, name: 'Kinh doanh' })
+        .returning({ id: departments.id });
       const [row] = await tx
         .insert(members)
-        .values({ companyId, userId, role: 'member' })
+        .values({ companyId, userId, role: 'member', departmentId: dept?.id ?? null })
         .returning({ id: members.id });
       return row?.id ?? '';
     });

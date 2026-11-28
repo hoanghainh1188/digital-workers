@@ -41,6 +41,7 @@ const writeOnly: CellReader = (cell) => (cell.includes('(xem)') ? false : plain(
 const ROW_ACTIONS: Record<string, ReadonlyArray<readonly [Action, CellReader]>> = {
   'Đổi thông tin công ty (tên, số điện thoại)': [['company.update', plain]],
   'Quản lý phòng ban, người dùng': [['org.manage', plain]],
+  'Xem danh sách người dùng': [['member.list', plain]],
   'Tạo worker (bản nháp)': [['worker.create', plain]],
   'Chuyển worker sang thử việc': [['worker.startProbation', plain]],
   'Duyệt worker lên chính thức': [['worker.approve', plain]],
