@@ -33,11 +33,13 @@ export function LoginPage() {
       const { error } = await authClient.signIn.email(parsed.data);
       if (error) {
         setFailure(
-          error.status === 429
-            ? t('login.error.tooMany')
-            : error.status === 401
-              ? t('login.error.invalid')
-              : t('app.error.generic'),
+          error.code === 'ACCOUNT_LOCKED'
+            ? t('login.error.locked')
+            : error.status === 429
+              ? t('login.error.tooMany')
+              : error.status === 401
+                ? t('login.error.invalid')
+                : t('app.error.generic'),
         );
         return;
       }
@@ -81,6 +83,9 @@ export function LoginPage() {
             />
           )}
         </Field>
+        <p className="-mt-2 text-right text-sm">
+          <Link to="/forgot-password">{t('login.forgot')}</Link>
+        </p>
         <Button type="submit" size="lg" block disabled={submitting} aria-busy={submitting}>
           {submitting ? (
             <>

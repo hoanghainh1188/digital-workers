@@ -1,4 +1,5 @@
-import { Bot, Building2 } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ArrowRight, Bot, Building2 } from 'lucide-react';
 import type { SignedInMe } from '@/components/app/app-shell';
 import { t } from '@/i18n/t';
 
@@ -22,25 +23,27 @@ export function HomePage({ me }: { me: SignedInMe }) {
           {t('home.next.title')}
         </h2>
         <ol className="mt-4 grid gap-3">
-          {(
-            [
-              ['home.next.departments', Building2],
-              ['home.next.worker', Bot],
-            ] as const
-          ).map(([key, Icon], index) => (
-            <li
-              key={key}
-              className="flex items-center gap-3 rounded-lg bg-canvas px-4 py-3 text-sm"
+          <li>
+            <Link
+              to="/departments"
+              className="flex items-center gap-3 rounded-lg bg-canvas px-4 py-3 text-sm text-foreground no-underline transition-colors duration-150 hover:bg-primary-soft hover:text-primary-ink"
             >
               <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary-ink">
-                <Icon aria-hidden="true" className="size-4" />
+                <Building2 aria-hidden="true" className="size-4" />
               </span>
-              <span className="min-w-0 flex-1">{t(key)}</span>
-              <span className="text-xs font-semibold text-muted-foreground">
-                {index + 1}/2 · {t('shell.nav.soon')}
-              </span>
-            </li>
-          ))}
+              <span className="min-w-0 flex-1 font-medium">{t('home.next.departments')}</span>
+              <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+            </Link>
+          </li>
+          <li className="flex items-center gap-3 rounded-lg bg-canvas px-4 py-3 text-sm">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary-ink">
+              <Bot aria-hidden="true" className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1">{t('home.next.worker')}</span>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {t('shell.nav.soon')}
+            </span>
+          </li>
         </ol>
       </section>
     </>

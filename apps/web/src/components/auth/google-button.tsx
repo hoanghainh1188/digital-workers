@@ -25,7 +25,7 @@ export function GoogleSignIn() {
   );
 }
 
-function GoogleLogo() {
+export function GoogleLogo() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path

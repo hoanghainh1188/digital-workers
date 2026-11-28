@@ -5,13 +5,16 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly details: readonly FieldIssue[];
+  /** Non-field details, e.g. `{ members, invitations }` for DEPARTMENT_NOT_EMPTY. */
+  readonly info: unknown;
 
-  constructor(status: number, code: string, details: readonly FieldIssue[] = []) {
+  constructor(status: number, code: string, details: unknown = []) {
     super(`${status} ${code}`);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
-    this.details = details;
+    this.details = Array.isArray(details) ? details : [];
+    this.info = Array.isArray(details) ? null : details;
   }
 }
 

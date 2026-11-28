@@ -1,8 +1,10 @@
+import { can } from '@dw/core/permissions';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Bot, House, LogOut, Users } from 'lucide-react';
+import { Bot, Building2, House, LogOut, Users } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { BrandMark } from '@/components/auth/auth-layout';
+import { initials } from '@/components/ui/avatar';
 import { RoleBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
@@ -14,19 +16,14 @@ import { VerifyEmailBanner } from './verify-banner.tsx';
 
 type SignedInMe = Me & { member: NonNullable<Me['member']>; company: NonNullable<Me['company']> };
 
-function initials(name: string): string {
-  const words = name.trim().split(/\s+/);
-  const letters = words.length > 1 ? [words[0], words.at(-1)] : [words[0]];
-  return letters
-    .map((word) => word?.[0] ?? '')
-    .join('')
-    .toUpperCase();
-}
+const soonLinks = [{ label: 'shell.nav.workers', Icon: Bot }] as const;
 
-const soonLinks = [
-  { label: 'shell.nav.workers', Icon: Bot },
-  { label: 'shell.nav.people', Icon: Users },
-] as const;
+const navLinkClass =
+  'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground no-underline transition-colors duration-150 hover:bg-muted hover:text-foreground';
+const navActiveClass =
+  'bg-primary-soft text-primary-ink hover:bg-primary-soft hover:text-primary-ink';
+const navGroupClass =
+  'hidden px-2.5 pt-3 pb-1 text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase min-[901px]:block';
 
 /** App frame with sidebar (from _shared.css .app / .sidebar). */
 export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode }) {
@@ -48,8 +45,8 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
   }
 
   return (
-    <div className="grid min-h-dvh grid-cols-1 bg-canvas min-[901px]:grid-cols-[15.5rem_minmax(0,1fr)]">
-      <aside className="flex items-center gap-3 overflow-x-auto border-b bg-background px-4 py-3 min-[901px]:sticky min-[901px]:top-0 min-[901px]:h-dvh min-[901px]:flex-col min-[901px]:items-stretch min-[901px]:gap-5 min-[901px]:overflow-visible min-[901px]:border-r min-[901px]:border-b-0 min-[901px]:px-3.5 min-[901px]:py-5">
+    <div className="grid min-h-dvh grid-cols-[minmax(0,1fr)] bg-canvas min-[901px]:grid-cols-[15.5rem_minmax(0,1fr)]">
+      <aside className="flex min-w-0 items-center gap-3 overflow-x-auto border-b bg-background px-4 py-3 min-[901px]:sticky min-[901px]:top-0 min-[901px]:h-dvh min-[901px]:flex-col min-[901px]:items-stretch min-[901px]:gap-5 min-[901px]:overflow-visible min-[901px]:border-r min-[901px]:border-b-0 min-[901px]:px-3.5 min-[901px]:py-5">
         <div className="flex items-center gap-2.5 px-2 font-bold tracking-tight whitespace-nowrap">
           <BrandMark />
           <span className="hidden min-[901px]:inline">{t('app.name')}</span>
@@ -72,11 +69,12 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
           </h2>
           <Link
             to="/"
-            aria-current="page"
-            className="flex items-center gap-2.5 rounded-lg bg-primary-soft px-2.5 py-2 text-sm font-medium whitespace-nowrap text-primary-ink no-underline"
+            activeOptions={{ exact: true }}
+            className={navLinkClass}
+            activeProps={{ className: navActiveClass }}
           >
             <House aria-hidden="true" className="size-4.25 shrink-0" />
-            {t('shell.nav.home')}
+            <span className="max-[560px]:sr-only">{t('shell.nav.home')}</span>
           </Link>
           {soonLinks.map(({ label, Icon }) => (
             <span
@@ -91,6 +89,22 @@ export function AppShell({ me, children }: { me: SignedInMe; children: ReactNode
               </span>
             </span>
           ))}
+          <h2 className={navGroupClass}>{t('shell.nav.company')}</h2>
+          <Link
+            to="/departments"
+            className={navLinkClass}
+            activeProps={{ className: navActiveClass }}
+          >
+            <Building2 aria-hidden="true" className="size-4.25 shrink-0" />
+            <span className="max-[560px]:sr-only">{t('shell.nav.departments')}</span>
+          </Link>
+          {/* Nhân viên do not see the Người dùng page (0.2 #038, #068). */}
+          {can(me.member.role, 'member.list') === false ? null : (
+            <Link to="/users" className={navLinkClass} activeProps={{ className: navActiveClass }}>
+              <Users aria-hidden="true" className="size-4.25 shrink-0" />
+              <span className="max-[560px]:sr-only">{t('shell.nav.people')}</span>
+            </Link>
+          )}
         </nav>
         <div className="ml-auto flex items-center gap-2.5 text-sm min-[901px]:mt-auto min-[901px]:ml-0 min-[901px]:p-2">
           <span className="hidden size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-semibold text-primary-ink min-[901px]:grid">
