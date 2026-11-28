@@ -2,7 +2,7 @@
 type: roadmap
 product: digital-workers (tên tạm)
 version: 0.1-draft
-last_updated: 2026-11-27
+last_updated: 2026-11-28
 ---
 
 # ROADMAP — MVP
@@ -292,7 +292,7 @@ Design.md cần chốt rõ:
 6. Hạn mức gửi lời mời theo công ty (số người nhận mỗi ngày cho công ty mới, giới hạn gửi lại) — 0.2 #082.
 
 Test bắt buộc:
-- https://<staging>/health/ready trả 200 với chứng chỉ hợp lệ.
+- https://<staging>/health trả 200 với chứng chỉ hợp lệ; /health/ready trả 200 trong mạng nội bộ, 404 từ ngoài (0.2 #144).
 - Khôi phục bản sao lưu mới nhất vào DB trống chạy được.
 - Cổng PostgreSQL không truy cập được từ ngoài.
 

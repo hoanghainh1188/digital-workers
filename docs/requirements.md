@@ -2,7 +2,7 @@
 type: requirements
 product: digital-workers (tên tạm)
 version: 0.1-draft
-last_updated: 2026-11-27
+last_updated: 2026-11-28
 status: draft
 source: docs/brief.md
 ---
@@ -165,6 +165,9 @@ Nền tảng để SME Việt **tuyển, đào tạo, giao việc và quản lý
 | 140 | 2026-11-28 | MVP **chưa giới hạn số `Task` chạy cùng lúc theo công ty**; `RUNNER_CONCURRENCY` (4) chung toàn hệ thống — rủi ro một công ty chiếm runner được chấp nhận khi còn ít khách. Thêm giới hạn theo công ty (mặc định 2) trước khi tăng `RUNNER_CONCURRENCY` hoặc mở cho nhiều khách. (`add-worker-runtime-webchat`) |
 | 141 | 2026-11-28 | Chủ sản phẩm xác nhận **giữ #127**: Owner / Admin không đọc được nội dung web chat của người khác, kể cả khi worker trả lời sai. Xem lại nội dung khi có lý do (kèm `AuditEvent`) để sau nếu khách cần. (`add-worker-runtime-webchat`) |
 | 142 | 2026-11-28 | **Tách change 5**: `add-worker-runtime-webchat` gồm nền, runner, runtime, kênh, API và WebSocket (chạy được bằng API + test); màn hình web chat và nút "Trò chuyện" thành change **5b `add-webchat-ui`**, propose sau khi có `docs/design/screens/web-chat.html` (#128). Thay cho câu hỏi tách giữa chừng (Q16). (`add-worker-runtime-webchat`) |
+| 143 | 2026-11-28 | **Hạn mức gửi lời mời** (chốt #082): mỗi công ty tối đa **20 người nhận / 24 giờ** khi công ty tạo chưa đủ 7 ngày, **200** sau đó (tính cả gửi lại, theo công ty, không theo người mời); một lời mời **gửi lại tối đa 3 lần**, hai lần gửi cách nhau **ít nhất 10 phút**. Vượt → HTTP 429, không gửi email. Con số là hằng số trong code, đổi số là đổi spec. (`deploy-staging`) |
+| 144 | 2026-11-28 | **`/health/ready` vẫn chặn từ ngoài** (Caddy trả 404). Staging kiểm từ ngoài bằng `https://<staging>/health` + chứng chỉ hợp lệ; `/health/ready` kiểm trong mạng nội bộ ở script deploy. Thay cho test "`https://<staging>/health/ready` trả 200" trong ROADMAP. (`deploy-staging`) |
+| 145 | 2026-11-28 | **Ảnh Docker build ở GitHub Actions, lưu ở GHCR riêng tư**, tag theo git sha; máy chủ chỉ kéo ảnh (token `read:packages`). Ảnh chỉ chứa code, không dữ liệu / bí mật nên đặt ngoài Việt Nam không trái #011. `compose.prod.yaml` giữ `build:` làm đường lùi. (`deploy-staging`) |
 
 ### 0.3. Đề xuất chờ chốt
 
